@@ -114,8 +114,6 @@ func (pinSet *userPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinSet *userPinSet) getPins() ([]pin, error) {
-	log.Println("GetBooks called")
-
 	pinSet.mutex.RLock()
 	defer pinSet.mutex.RUnlock()
 
