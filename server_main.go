@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"pinterest/pins"
 )
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
@@ -11,8 +12,30 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func pinHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("{}"))
-	// TODO /pin and /pins handling
+	w.Header().Set("Content-Type", "application/json")
+
+	fmt.Println(r.URL.Path)
+	switch r.URL.Path {
+
+	case "/pins/{id:[0-9]+}":
+		if r.Method == http.MethodGet {
+			pins.MyPins.GetPinByID(w, r)
+		} else if r.Method == http.MethodDelete {
+			pins.MyPins.DelPinByID(w, r)
+		} else {
+			w.Write([]byte(`{"code": 400}`))
+			return
+		}
+	case "/pin":
+		if r.Method != http.MethodPost {
+			w.Write([]byte(`{"code": 400}`))
+			return
+		}
+		pins.MyPins.AddPin(w, r)
+	default:
+		w.Write([]byte(`{"code": 400}`))
+		return
+	}
 }
 
 func boardHandler(w http.ResponseWriter, r *http.Request) {
