@@ -1,3 +1,8 @@
-module github.com/go-park-mail-ru/2021_1_Code_Magicians
+module pinterest
 
-go 1.13
+go 1.16
+
+require (
+	github.com/lib/pq v1.9.0 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
+)
