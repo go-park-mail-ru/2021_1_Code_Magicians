@@ -9,19 +9,19 @@ import (
 )
 
 type user struct {
-	username     string
-	passwordHash string
-	firstName    string
-	lastName     string
-	avatar       string // path to avatar
+	username  string
+	password  string // TODO: hashing
+	firstName string
+	lastName  string
+	avatar    string // path to avatar
 }
 
 type UserInput struct {
-	Username     string `json:"username"`
-	PasswordHash string `json:"passwordHash"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Avatar       string `json:"avatar"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar"`
 }
 
 type usersMap struct {
@@ -31,6 +31,7 @@ type usersMap struct {
 }
 
 var users usersMap
+var sessions map[int]bool
 
 func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -49,11 +50,11 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	// TODO: Check if these fields are empty
 	users.users[users.lastFreeUserID] = user{
-		username:     newUserInput.Username,
-		passwordHash: newUserInput.PasswordHash,
-		firstName:    newUserInput.FirstName,
-		lastName:     newUserInput.LastName,
-		avatar:       newUserInput.Avatar,
+		username:  newUserInput.Username,
+		password:  newUserInput.Password,
+		firstName: newUserInput.FirstName,
+		lastName:  newUserInput.LastName,
+		avatar:    newUserInput.Avatar,
 	}
 	users.lastFreeUserID++
 
@@ -75,12 +76,13 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, user := range users.users {
+	for id, user := range users.users {
 		if user.username == newUserInput.Username {
-			if user.passwordHash != newUserInput.PasswordHash {
+			if user.password != newUserInput.Password {
 				w.Write([]byte(`{"code": 400}`))
 				return
 			}
+			sessions[id] = true
 			w.Write([]byte(`{"code": 200, "X-Expires-After": "Expires: Mon, 29 Mar 2021 10:00:00 GMT"}`)) // TODO: normal datetime
 			return
 		}
@@ -91,9 +93,14 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	//TODO: session handling
-	w.Write([]byte(`{"code": 400}`))
+	// TODO: "Current session" handling
+
+	//logout all users
+	for id := range sessions {
+		delete(sessions, id)
+	}
+
+	w.Write([]byte(`{"code": 200}`)) // No users with passed username
 	return
 }
 
@@ -146,6 +153,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 func runServer(addr string) {
 	users = usersMap{users: make(map[int]user), lastFreeUserID: 0}
+	sessions = make(map[int]bool)
 	mux := http.NewServeMux()
 
 	server := http.Server{
