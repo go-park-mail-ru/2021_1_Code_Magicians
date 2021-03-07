@@ -1,0 +1,1 @@
+This repository will contain Golang code for CodeMagicians' next big project: Pinterbest
