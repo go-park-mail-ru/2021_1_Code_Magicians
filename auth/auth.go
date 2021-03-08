@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
+	"time"
 )
 
 type user struct {
@@ -30,8 +32,13 @@ type usersMap struct {
 	mu             sync.Mutex
 }
 
+type sessionMap struct {
+	sessions map[string]int // key - cookie value, value - user's id
+	mu       sync.Mutex
+}
+
 var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
-var sessions map[int]bool = make(map[int]bool)
+var sessions sessionMap = sessionMap{sessions: make(map[string]int)}
 
 func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -63,6 +70,24 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte(`{"code": 201}`)) // returning success code
 }
 
+// checkCookies returns users' id, cookie value and true if cookie is present in sessions slice, -1, "" and false othervise
+func checkCookies(r *http.Request) (int, string, bool) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie {
+		return -1, "", false
+	}
+
+	sessions.mu.Lock()
+	id, ok := sessions.sessions[cookie.Value]
+	sessions.mu.Unlock()
+
+	if !ok { // cookie was not found
+		return -1, "", false
+	}
+
+	return id, cookie.Value, true
+}
+
 func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -76,31 +101,53 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, _, cookieFound := checkCookies(r)
+	if cookieFound {
+		w.Write([]byte(`{"code": 400}`))
+		return
+	}
+
 	for id, user := range users.users {
 		if user.username == newUserInput.Username {
 			if user.password != newUserInput.Password {
 				w.Write([]byte(`{"code": 400}`))
 				return
 			}
-			sessions[id] = true
-			w.Write([]byte(`{"code": 200, "X-Expires-After": "Expires: Mon, 29 Mar 2021 10:00:00 GMT"}`)) // TODO: normal datetime
+
+			sessions.mu.Lock()
+			sessions.sessions[strconv.Itoa(id)] = id
+			sessions.mu.Unlock()
+
+			expiration := time.Now().Add(10 * time.Hour)
+			cookie := http.Cookie{
+				Name:     "session_id",
+				Value:    strconv.Itoa(id), // TODO: replace with random string
+				Expires:  expiration,
+				HttpOnly: true, // So that frontend won't have direct access to cookies
+			}
+			http.SetCookie(w, &cookie)
+
+			w.Write([]byte(`{"code": 200}`))
 			return
 		}
 	}
 
-	w.Write([]byte(`{"code": 400}`)) // No users with passed username
+	w.Write([]byte(`{"code": 400}`)) // No users with supplied username
 	return
 }
 
 func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	// TODO: "Current session" handling
-
-	//logout all users
-	for id := range sessions {
-		delete(sessions, id)
+	_, cookieValue, found := checkCookies(r)
+	if !found {
+		w.Write([]byte(`{"code": 400}`)) // No logged-in users with that cookie
+		return
 	}
 
-	w.Write([]byte(`{"code": 200}`)) // No users with passed username
+	sessions.mu.Lock()
+	delete(sessions.sessions, cookieValue)
+	sessions.mu.Unlock()
+
+	w.Write([]byte(`{"code": 200}`))
 	return
 }
 
