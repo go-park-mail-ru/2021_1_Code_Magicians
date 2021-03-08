@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -39,6 +39,17 @@ type sessionMap struct {
 
 var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
 var sessions sessionMap = sessionMap{sessions: make(map[string]int)}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+// randSeq generates random string with length of n
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
 
 func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -126,14 +137,15 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			sessionValue := randSeq(30) // cookie value - random string
 			sessions.mu.Lock()
-			sessions.sessions[strconv.Itoa(id)] = id
+			sessions.sessions[sessionValue] = id
 			sessions.mu.Unlock()
 
 			expiration := time.Now().Add(10 * time.Hour)
 			cookie := http.Cookie{
 				Name:     "session_id",
-				Value:    strconv.Itoa(id), // TODO: replace with random string
+				Value:    sessionValue,
 				Expires:  expiration,
 				HttpOnly: true, // So that frontend won't have direct access to cookies
 			}
