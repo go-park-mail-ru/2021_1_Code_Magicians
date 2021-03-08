@@ -31,13 +31,18 @@ type usersMap struct {
 	mu             sync.Mutex
 }
 
+type cookieInfo struct {
+	userID int
+	cookie *http.Cookie
+}
+
 type sessionMap struct {
-	sessions map[string]int // key - cookie value, value - user's id
+	sessions map[string]cookieInfo // key is cookie value, for easier lookup
 	mu       sync.Mutex
 }
 
 var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
-var sessions sessionMap = sessionMap{sessions: make(map[string]int)}
+var sessions sessionMap = sessionMap{sessions: make(map[string]cookieInfo)}
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -91,22 +96,22 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// checkCookies returns users' id, cookie value and true if cookie is present in sessions slice, -1, "" and false othervise
-func checkCookies(r *http.Request) (int, string, bool) {
+// checkCookies returns *cookieInfo and true if cookie is present in sessions slice, nil and false othervise
+func checkCookies(r *http.Request) (*cookieInfo, bool) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie {
-		return -1, "", false
+		return nil, false
 	}
 
 	sessions.mu.Lock()
-	id, ok := sessions.sessions[cookie.Value]
+	userCookieInfo, ok := sessions.sessions[cookie.Value]
 	sessions.mu.Unlock()
 
 	if !ok { // cookie was not found
-		return -1, "", false
+		return nil, false
 	}
 
-	return id, cookie.Value, true
+	return &userCookieInfo, true
 }
 
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +127,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _, cookieFound := checkCookies(r)
+	_, cookieFound := checkCookies(r)
 	if cookieFound {
 		log.Printf("Cannot log in: user %s is already logged in", userInput.Username)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -138,10 +143,6 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			}
 
 			sessionValue := randSeq(cookieLength) // cookie value - random string
-			sessions.mu.Lock()
-			sessions.sessions[sessionValue] = id
-			sessions.mu.Unlock()
-
 			expiration := time.Now().Add(expirationTime)
 			cookie := http.Cookie{
 				Name:     "session_id",
@@ -150,6 +151,10 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 				HttpOnly: true, // So that frontend won't have direct access to cookies
 			}
 			http.SetCookie(w, &cookie)
+
+			sessions.mu.Lock()
+			sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+			sessions.mu.Unlock()
 
 			log.Printf("Logged in user %s successfully", userInput.Username)
 			w.WriteHeader(http.StatusOK)
@@ -163,19 +168,24 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	id, cookieValue, found := checkCookies(r)
+	userCookieInfo, found := checkCookies(r)
 	if !found {
 		log.Print("No cookies passed - user is not logged in or cookie is inactive")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	userCookieInfo.cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
+	http.SetCookie(w, userCookieInfo.cookie)
+
+	cookieValue := userCookieInfo.cookie.Value
 	sessions.mu.Lock()
 	delete(sessions.sessions, cookieValue)
 	sessions.mu.Unlock()
 
+	userID := userCookieInfo.userID
 	users.mu.Lock()
-	log.Printf("Successfully logged out user: %s", users.users[id].username)
+	log.Printf("Successfully logged out user: %s", users.users[userID].username)
 	users.mu.Unlock()
 	w.WriteHeader(http.StatusOK)
 	return
