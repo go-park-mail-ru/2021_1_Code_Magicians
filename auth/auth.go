@@ -21,9 +21,9 @@ type user struct {
 type UserInput struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Avatar    string `json:"avatar"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Avatar    string `json:"avatar,omitempty"`
 }
 
 type usersMap struct {
@@ -55,7 +55,7 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	users.mu.Lock()
 
-	// TODO: Check if these fields are empty
+	// TODO: Check if these fields are empty and for login uniqueness
 	users.users[users.lastFreeUserID] = user{
 		username:  newUserInput.Username,
 		password:  newUserInput.Password,
@@ -67,6 +67,7 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	users.mu.Unlock()
 
+	log.Printf("Created user %s successfully", newUserInput.Username)
 	w.Write([]byte(`{"code": 201}`)) // returning success code
 }
 
@@ -93,8 +94,8 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 
-	newUserInput := new(UserInput)
-	err := decoder.Decode(newUserInput)
+	userInput := new(UserInput)
+	err := decoder.Decode(userInput)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.Write([]byte(`{"code": 400}`))
@@ -103,13 +104,15 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	_, _, cookieFound := checkCookies(r)
 	if cookieFound {
+		log.Printf("Cannot log in: user %s is already logged in", userInput.Username)
 		w.Write([]byte(`{"code": 400}`))
 		return
 	}
 
 	for id, user := range users.users {
-		if user.username == newUserInput.Username {
-			if user.password != newUserInput.Password {
+		if user.username == userInput.Username {
+			if user.password != userInput.Password {
+				log.Printf("Password %s does not match", userInput.Password)
 				w.Write([]byte(`{"code": 400}`))
 				return
 			}
@@ -127,19 +130,22 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			}
 			http.SetCookie(w, &cookie)
 
+			log.Printf("Logged in user %s successfully", userInput.Username)
 			w.Write([]byte(`{"code": 200}`))
 			return
 		}
 	}
 
+	log.Printf("User %s not found", userInput.Username)
 	w.Write([]byte(`{"code": 400}`)) // No users with supplied username
 	return
 }
 
 func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	_, cookieValue, found := checkCookies(r)
+	id, cookieValue, found := checkCookies(r)
 	if !found {
-		w.Write([]byte(`{"code": 400}`)) // No logged-in users with that cookie
+		log.Print("No cookies passed - user is not logged in")
+		w.Write([]byte(`{"code": 400}`))
 		return
 	}
 
@@ -147,6 +153,9 @@ func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) 
 	delete(sessions.sessions, cookieValue)
 	sessions.mu.Unlock()
 
+	users.mu.Lock()
+	log.Printf("Successfully logged out user: %s", users.users[id].username)
+	users.mu.Unlock()
 	w.Write([]byte(`{"code": 200}`))
 	return
 }
