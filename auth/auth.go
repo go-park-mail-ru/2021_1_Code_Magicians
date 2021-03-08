@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"log"
 	"math/rand"
 	"net/http"
 	"sync"
@@ -17,6 +16,7 @@ type user struct {
 	avatar    string // path to avatar
 }
 
+// UserInput if used to parse JSON with users' data
 type UserInput struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
@@ -58,13 +58,13 @@ func randSeq(n int) string {
 const cookieLength int = 30
 const expirationTime time.Duration = 10 * time.Hour
 
+// HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userInput := new(UserInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
-		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -74,7 +74,6 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Checking for username uniqueness
 	for _, user := range users.users {
 		if user.username == userInput.Username {
-			log.Printf("Username is already taken: %s", userInput.Username)
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
@@ -92,7 +91,6 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	users.mu.Unlock()
 
-	log.Printf("Created user %s successfully", userInput.Username)
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -114,6 +112,7 @@ func checkCookies(r *http.Request) (*cookieInfo, bool) {
 	return &userCookieInfo, true
 }
 
+// HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -122,14 +121,12 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	userInput := new(UserInput)
 	err := decoder.Decode(userInput)
 	if err != nil {
-		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	_, cookieFound := checkCookies(r)
 	if cookieFound {
-		log.Printf("Cannot log in: user %s is already logged in", userInput.Username)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -137,7 +134,6 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	for id, user := range users.users {
 		if user.username == userInput.Username {
 			if user.password != userInput.Password {
-				log.Printf("Password %s does not match", userInput.Password)
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -156,21 +152,19 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
 			sessions.mu.Unlock()
 
-			log.Printf("Logged in user %s successfully", userInput.Username)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 	}
 
-	log.Printf("User %s not found", userInput.Username)
 	w.WriteHeader(http.StatusUnauthorized)
 	return
 }
 
+// HandleLogoutUser tries to log user out of current session
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookieInfo, found := checkCookies(r)
 	if !found {
-		log.Print("No cookies passed - user is not logged in or cookie is inactive")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -183,10 +177,6 @@ func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	delete(sessions.sessions, cookieValue)
 	sessions.mu.Unlock()
 
-	userID := userCookieInfo.userID
-	users.mu.Lock()
-	log.Printf("Successfully logged out user: %s", users.users[userID].username)
-	users.mu.Unlock()
 	w.WriteHeader(http.StatusOK)
 	return
 }
