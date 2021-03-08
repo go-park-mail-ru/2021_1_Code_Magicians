@@ -61,7 +61,7 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
-		w.Write([]byte(`{"code": 400}`))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	for _, user := range users.users {
 		if user.username == userInput.Username {
 			log.Printf("Username is already taken: %s", userInput.Username)
-			w.Write([]byte(`{"code": 400}`))
+			w.WriteHeader(http.StatusConflict)
 			return
 		}
 	}
@@ -89,7 +89,7 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	users.mu.Unlock()
 
 	log.Printf("Created user %s successfully", userInput.Username)
-	w.Write([]byte(`{"code": 201}`)) // returning success code
+	w.WriteHeader(http.StatusCreated)
 }
 
 // checkCookies returns users' id, cookie value and true if cookie is present in sessions slice, -1, "" and false othervise
@@ -119,14 +119,14 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(userInput)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
-		w.Write([]byte(`{"code": 400}`))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	_, _, cookieFound := checkCookies(r)
 	if cookieFound {
 		log.Printf("Cannot log in: user %s is already logged in", userInput.Username)
-		w.Write([]byte(`{"code": 400}`))
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -134,7 +134,7 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		if user.username == userInput.Username {
 			if user.password != userInput.Password {
 				log.Printf("Password %s does not match", userInput.Password)
-				w.Write([]byte(`{"code": 400}`))
+				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 
@@ -153,21 +153,21 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &cookie)
 
 			log.Printf("Logged in user %s successfully", userInput.Username)
-			w.Write([]byte(`{"code": 200}`))
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 	}
 
 	log.Printf("User %s not found", userInput.Username)
-	w.Write([]byte(`{"code": 400}`)) // No users with supplied username
+	w.WriteHeader(http.StatusUnauthorized)
 	return
 }
 
 func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	id, cookieValue, found := checkCookies(r)
 	if !found {
-		log.Print("No cookies passed - user is not logged in")
-		w.Write([]byte(`{"code": 400}`))
+		log.Print("No cookies passed - user is not logged in or cookie is inactive")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -178,7 +178,7 @@ func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) 
 	users.mu.Lock()
 	log.Printf("Successfully logged out user: %s", users.users[id].username)
 	users.mu.Unlock()
-	w.Write([]byte(`{"code": 200}`))
+	w.WriteHeader(http.StatusOK)
 	return
 }
 
