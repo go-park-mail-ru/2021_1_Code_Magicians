@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"pinterest/auth"
+
+	"github.com/gorilla/mux"
 )
 
 func pinHandler(w http.ResponseWriter, r *http.Request) {
@@ -22,23 +24,21 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func runServer(addr string) {
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
 
-	server := http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
+	r.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
+	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
+	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
 
-	mux.HandleFunc("/auth/", auth.Handler)
-	mux.HandleFunc("/profile/", profileHandler)
+	r.HandleFunc("/profile/", profileHandler) // Will split later
 
-	mux.HandleFunc("/pin/", pinHandler)
-	mux.HandleFunc("/pins/", pinHandler)
+	r.HandleFunc("/pin/", pinHandler)  // Will split later
+	r.HandleFunc("/pins/", pinHandler) // Will split later
 
-	mux.HandleFunc("/board/", boardHandler)
+	r.HandleFunc("/board/", boardHandler) // Will split later
 
 	fmt.Printf("Starting server at localhost%s\n", addr)
-	server.ListenAndServe()
+	http.ListenAndServe(addr, r)
 }
 
 func main() {

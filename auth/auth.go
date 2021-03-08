@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -54,7 +53,7 @@ func randSeq(n int) string {
 const cookieLength int = 30
 const expirationTime time.Duration = 10 * time.Hour
 
-func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
+func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userInput := new(UserInput)
@@ -110,7 +109,7 @@ func checkCookies(r *http.Request) (int, string, bool) {
 	return id, cookie.Value, true
 }
 
-func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
+func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	decoder := json.NewDecoder(r.Body)
@@ -163,7 +162,7 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
+func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	id, cookieValue, found := checkCookies(r)
 	if !found {
 		log.Print("No cookies passed - user is not logged in or cookie is inactive")
@@ -180,37 +179,4 @@ func (users *usersMap) HandleLogoutUser(w http.ResponseWriter, r *http.Request) 
 	users.mu.Unlock()
 	w.WriteHeader(http.StatusOK)
 	return
-}
-
-// Handler handles responses that require authentification
-func Handler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	fmt.Println(r.URL.Path)
-	switch r.URL.Path {
-	case "/auth/signup":
-		if r.Method != http.MethodPost {
-			w.Write([]byte(`{"code": 400}`))
-			return
-		}
-		users.HandleCreateUser(w, r)
-
-	case "/auth/login":
-		if r.Method != http.MethodGet {
-			w.Write([]byte(`{"code": 400}`))
-			return
-		}
-		users.HandleLoginUser(w, r)
-
-	case "/auth/logout":
-		if r.Method != http.MethodGet {
-			w.Write([]byte(`{"code": 400}`))
-			return
-		}
-		users.HandleLogoutUser(w, r)
-
-	default:
-		w.Write([]byte(`{"code": 400}`))
-		return
-	}
 }
