@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	//"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -14,7 +13,7 @@ func NewPinsSet(idUser int) *UserPinSet {
 	return &UserPinSet{
 		mutex:    sync.RWMutex{},
 		userPins: map[int][]*Pin{},
-		userId: idUser,
+		userId:   idUser,
 	}
 }
 
@@ -23,13 +22,6 @@ type Result struct {
 	Err  string      `json:"err,omitempty"`
 }
 
-/*type pin struct {
-	boardID     int
-	pinId       int
-	title       string
-	description string
-	imageLink   string
-}*/
 type UserPinSet struct {
 	userPins map[int][]*Pin
 	userId   int
@@ -45,51 +37,42 @@ type Pin struct {
 	ImageLink   string `json:"image_link"`
 }
 
-
 func (pinSet *UserPinSet) PinHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	fmt.Println(r.URL.Path)
-	switch r.URL.Path {
+	//fmt.Println(r.URL.Path)
+	switch r.Method {
+	case http.MethodGet:
+		pinSet.GetPinByID(w, r)
 
-	case "/pins/{id:[0-9]+}":
-		if r.Method == http.MethodGet {
-			pinSet.GetPinByID(w, r)
-		} else if r.Method == http.MethodDelete {
-			pinSet.DelPinByID(w, r)
-		} else {
-			w.Write([]byte(`{"code": 400}`))
-			return
-		}
-	case "/pin/":
-		if r.Method != http.MethodPost {
-			w.Write([]byte(`{"code": 400}`))
-			return
-		}
+	case http.MethodDelete:
+		pinSet.DelPinByID(w, r)
+
+	case http.MethodPost:
 		pinSet.AddPin(w, r)
+
 	default:
-		w.Write([]byte(`{"code": 400}`))
+		http.Error(w, `{"error":"bad request"}`, 400)
 		return
 	}
 }
 
 func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
-	pinId, _ := strconv.Atoi(r.FormValue("pin_id"))
 	board, _ := strconv.Atoi(r.FormValue("board"))
 	title := r.FormValue("title")
 	description := r.FormValue("description")
 	imageLink := r.FormValue("image_link")
 
+	id := pinSet.pinId
+	pinSet.pinId++
+
 	pinInput := &Pin{
-		PinId: pinId,
+		PinId:       id,
 		BoardID:     board,
 		Title:       title,
 		Description: description,
 		ImageLink:   imageLink,
 	}
-
-	id := pinSet.pinId
-	pinSet.pinId++
 
 	pinSet.mutex.Lock()
 
@@ -97,32 +80,29 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	pinSet.mutex.Unlock()
 	body := map[string]interface{}{
-		"pid_id": id,
+		"pin_id": id,
 	}
 	json.NewEncoder(w).Encode(&Result{Body: body})
-
-	//w.Write([]byte(`{"code": 200}`)) // returning success code
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"code": 200}`)) // returning success code
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, `{"error":"bad pinId"}`, 400)
-		return
-	}
-	pinsSet, err := pinSet.getPins()
-	if err != nil {
-		http.Error(w, `{"error":"db"}`, 500)
+		http.Error(w, `{"error":"bad pin_id"}`, 400)
 		return
 	}
 
-	for _, p := range pinsSet {
+	for _, p := range pinSet.userPins[pinSet.userId] {
 		if p.PinId == pinId {
-			p = pinsSet[len(pinsSet)-1]
-			pinsSet = pinsSet[:len(pinsSet)-1]
+			fmt.Println(p.PinId, " ",(*p).PinId)
+			p = pinSet.userPins[pinSet.userId][len(pinSet.userPins[pinSet.userId])-1]
+			pinSet.userPins[pinSet.userId] = pinSet.userPins[pinSet.userId][:len(pinSet.userPins[pinSet.userId])-1]
 			break
 		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -145,10 +125,15 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	if resultPin == nil {
+		http.Error(w, `{"body":{"pin":null}}`, 404)
+		return
+	}
 	body := map[string]interface{}{
 		"pin": resultPin,
 	}
-	json.NewEncoder(w).Encode(&Result{Body: body})
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(&Result{Body: body})
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {

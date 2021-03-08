@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"pinterest/pins"
 )
@@ -26,7 +27,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func runServer(addr string) {
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	server := http.Server{
 		Addr:    addr,
@@ -40,7 +41,7 @@ func runServer(addr string) {
 	mux.HandleFunc("/auth/", authHandler)
 
 	mux.HandleFunc("/pin/", pins.storage.PinHandler)
-	mux.HandleFunc("/pins/", pins.storage.PinHandler)
+	mux.HandleFunc("/pins/{id:[0-9]+}", pins.storage.PinHandler)
 
 	mux.HandleFunc("/board/", boardHandler)
 	mux.HandleFunc("/profile/", profileHandler)
