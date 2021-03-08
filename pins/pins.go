@@ -2,7 +2,6 @@ package pins
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -40,7 +39,6 @@ type Pin struct {
 func (pinSet *UserPinSet) PinHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	//fmt.Println(r.URL.Path)
 	switch r.Method {
 	case http.MethodGet:
 		pinSet.GetPinByID(w, r)
@@ -82,9 +80,13 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	body := map[string]interface{}{
 		"pin_id": id,
 	}
-	json.NewEncoder(w).Encode(&Result{Body: body})
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"code": 200}`)) // returning success code
+
+	err := json.NewEncoder(w).Encode(&Result{Body: body})
+	if err != nil {
+		http.Error(w, `{"error":"db"}`, 500)
+		return
+	}
+	w.WriteHeader(http.StatusOK) // returning success code
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
@@ -95,48 +97,65 @@ func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, p := range pinSet.userPins[pinSet.userId] {
-		if p.PinId == pinId {
-			fmt.Println(p.PinId, " ", (*p).PinId)
-			p = pinSet.userPins[pinSet.userId][len(pinSet.userPins[pinSet.userId])-1]
-			pinSet.userPins[pinSet.userId] = pinSet.userPins[pinSet.userId][:len(pinSet.userPins[pinSet.userId])-1]
-			break
-		}
-		w.WriteHeader(http.StatusOK)
-	}
-}
-
-func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, `{"error":"bad pinId"}`, 400)
-		return
-	}
 	pinsSet, err := pinSet.getPins()
 	if err != nil {
 		http.Error(w, `{"error":"db"}`, 500)
 		return
 	}
+
+	for _, p := range pinSet.userPins[pinSet.userId] {
+		if p.PinId == pinId {
+			p = pinSet.userPins[pinSet.userId][len(pinsSet)-1]
+			pinSet.userPins[pinSet.userId] = pinSet.userPins[pinSet.userId][:len(pinsSet)-1]
+			break
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pinId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		http.Error(w, `{"error":"bad pinId"}`, 400)
+		return
+	}
+
+	pinsSet, err := pinSet.getPins()
+	if err != nil {
+		http.Error(w, `{"error":"db"}`, 500)
+		return
+	}
+
 	var resultPin *Pin
+
 	for _, p := range pinsSet {
 		if p.PinId == pinId {
 			resultPin = p
 			break
 		}
 	}
+
 	if resultPin == nil {
 		http.Error(w, `{"body":{"pin":null}}`, 404)
 		return
 	}
+
 	body := map[string]interface{}{
 		"pin": resultPin,
 	}
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(&Result{Body: body})
+
+	err = json.NewEncoder(w).Encode(&Result{Body: body})
+	if err != nil {
+		http.Error(w, `{"error":"db"}`, 500)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {
+
 	pinSet.mutex.RLock()
 	defer pinSet.mutex.RUnlock()
 
