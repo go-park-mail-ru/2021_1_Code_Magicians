@@ -51,13 +51,14 @@ func randSeq(n int) string {
 	return string(b)
 }
 
+const cookieLength int = 30
+const expirationTime time.Duration = 10 * time.Hour
+
 func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	decoder := json.NewDecoder(r.Body)
-
 	userInput := new(UserInput)
-	err := decoder.Decode(userInput)
+	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.Write([]byte(`{"code": 400}`))
@@ -137,12 +138,12 @@ func (users *usersMap) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			sessionValue := randSeq(30) // cookie value - random string
+			sessionValue := randSeq(cookieLength) // cookie value - random string
 			sessions.mu.Lock()
 			sessions.sessions[sessionValue] = id
 			sessions.mu.Unlock()
 
-			expiration := time.Now().Add(10 * time.Hour)
+			expiration := time.Now().Add(expirationTime)
 			cookie := http.Cookie{
 				Name:     "session_id",
 				Value:    sessionValue,
