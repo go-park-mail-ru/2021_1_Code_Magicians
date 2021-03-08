@@ -97,7 +97,7 @@ func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 
 	for _, p := range pinSet.userPins[pinSet.userId] {
 		if p.PinId == pinId {
-			fmt.Println(p.PinId, " ",(*p).PinId)
+			fmt.Println(p.PinId, " ", (*p).PinId)
 			p = pinSet.userPins[pinSet.userId][len(pinSet.userPins[pinSet.userId])-1]
 			pinSet.userPins[pinSet.userId] = pinSet.userPins[pinSet.userId][:len(pinSet.userPins[pinSet.userId])-1]
 			break
