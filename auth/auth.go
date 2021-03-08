@@ -45,8 +45,8 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	decoder := json.NewDecoder(r.Body)
 
-	newUserInput := new(UserInput)
-	err := decoder.Decode(newUserInput)
+	userInput := new(UserInput)
+	err := decoder.Decode(userInput)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.Write([]byte(`{"code": 400}`))
@@ -55,19 +55,28 @@ func (users *usersMap) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	users.mu.Lock()
 
-	// TODO: Check if these fields are empty and for login uniqueness
+	// Checking for username uniqueness
+	for _, user := range users.users {
+		if user.username == userInput.Username {
+			log.Printf("Username is already taken: %s", userInput.Username)
+			w.Write([]byte(`{"code": 400}`))
+			return
+		}
+	}
+
+	// TODO: Check if these fields are empty
 	users.users[users.lastFreeUserID] = user{
-		username:  newUserInput.Username,
-		password:  newUserInput.Password,
-		firstName: newUserInput.FirstName,
-		lastName:  newUserInput.LastName,
-		avatar:    newUserInput.Avatar,
+		username:  userInput.Username,
+		password:  userInput.Password,
+		firstName: userInput.FirstName,
+		lastName:  userInput.LastName,
+		avatar:    userInput.Avatar,
 	}
 	users.lastFreeUserID++
 
 	users.mu.Unlock()
 
-	log.Printf("Created user %s successfully", newUserInput.Username)
+	log.Printf("Created user %s successfully", userInput.Username)
 	w.Write([]byte(`{"code": 201}`)) // returning success code
 }
 
