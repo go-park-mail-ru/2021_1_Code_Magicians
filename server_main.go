@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"pinterest/auth"
+	"pinterest/profile"
 
 	"github.com/gorilla/mux"
 )
@@ -30,7 +31,9 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
 
-	r.HandleFunc("/profile/", profileHandler) // Will split later
+	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("POST")
+	r.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
+	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
 
 	r.HandleFunc("/pin/", pinHandler)  // Will split later
 	r.HandleFunc("/pins/", pinHandler) // Will split later
