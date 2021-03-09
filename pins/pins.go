@@ -2,7 +2,9 @@ package pins
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"sync"
@@ -36,33 +38,22 @@ type Pin struct {
 	Description string `json:"description"`
 }
 
-func (pinSet *UserPinSet) PinHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	switch r.Method {
-	case http.MethodGet:
-		pinSet.GetPinByID(w, r)
-
-	case http.MethodDelete:
-		pinSet.DelPinByID(w, r)
-
-	case http.MethodPost:
-		pinSet.AddPin(w, r)
-
-	default:
-		http.Error(w, `{"error":"bad request"}`, 400)
-		return
-	}
-}
-
 func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	currPin := new(Pin)
-	err := json.NewDecoder(r.Body).Decode(currPin)
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		fmt.Println(err)
+	}
+
+	currPin := Pin{
+		PinId: pinSet.pinId,
+	}
+
+	err = json.Unmarshal(data, &currPin)
+	fmt.Println(currPin)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	id := pinSet.pinId
@@ -81,16 +72,10 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	pinSet.userPins[pinSet.userId] = append(pinSet.userPins[pinSet.userId], pinInput)
 
 	pinSet.mutex.Unlock()
-	body := map[string]interface{}{
-		"pin_id": id,
-	}
 
-	err = json.NewEncoder(w).Encode(&ResponseServer{Body: body})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	w.WriteHeader(http.StatusCreated) // returning success code
+	body := "{pin_id: " + strconv.Itoa(currPin.PinId) + "}"
+	w.Write([]byte(body))
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {

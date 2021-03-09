@@ -40,8 +40,9 @@ func runServer(addr string) {
 
 	mux.HandleFunc("/auth/", authHandler)
 
-	mux.HandleFunc("/pin/", pins.storage.PinHandler)
-	mux.HandleFunc("/pins/{id:[0-9]+}", pins.storage.PinHandler)
+	mux.HandleFunc("/pin/", pins.storage.AddPin).Methods("POST")
+	mux.HandleFunc("/pins/{id:[0-9]+}", pins.storage.GetPinByID).Methods("GET")
+	mux.HandleFunc("/pins/{id:[0-9]+}", pins.storage.DelPinByID).Methods("DELETE")
 
 	mux.HandleFunc("/board/", boardHandler)
 	mux.HandleFunc("/profile/", profileHandler)
