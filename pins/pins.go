@@ -16,7 +16,7 @@ func NewPinsSet(idUser int) *UserPinSet {
 	}
 }
 
-type Result struct {
+type ResponseServer struct {
 	Body interface{} `json:"body,omitempty"`
 	Err  string      `json:"err,omitempty"`
 }
@@ -29,11 +29,11 @@ type UserPinSet struct {
 }
 
 type Pin struct {
-	PinId       int    `json:"pin_id"`
-	BoardID     int    `json:"board"`
+	PinId       int    `json:"id"`
+	BoardID     int    `json:"boardID"`
 	Title       string `json:"title"`
+	ImageLink   string `json:"imageLink"`
 	Description string `json:"description"`
-	ImageLink   string `json:"image_link"`
 }
 
 func (pinSet *UserPinSet) PinHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,20 +56,24 @@ func (pinSet *UserPinSet) PinHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
-	board, _ := strconv.Atoi(r.FormValue("board"))
-	title := r.FormValue("title")
-	description := r.FormValue("description")
-	imageLink := r.FormValue("image_link")
+	defer r.Body.Close()
+
+	currPin := new(Pin)
+	err := json.NewDecoder(r.Body).Decode(currPin)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	id := pinSet.pinId
 	pinSet.pinId++
 
 	pinInput := &Pin{
 		PinId:       id,
-		BoardID:     board,
-		Title:       title,
-		Description: description,
-		ImageLink:   imageLink,
+		BoardID:     currPin.BoardID,
+		Title:       currPin.Title,
+		Description: currPin.Description,
+		ImageLink:   currPin.ImageLink,
 	}
 
 	pinSet.mutex.Lock()
@@ -81,25 +85,25 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 		"pin_id": id,
 	}
 
-	err := json.NewEncoder(w).Encode(&Result{Body: body})
+	err = json.NewEncoder(w).Encode(&ResponseServer{Body: body})
 	if err != nil {
-		http.Error(w, `{"error":"db"}`, 500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK) // returning success code
+	w.WriteHeader(http.StatusCreated) // returning success code
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, `{"error":"bad pin_id"}`, 400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	pinsSet, err := pinSet.getPins()
 	if err != nil {
-		http.Error(w, `{"error":"db"}`, 500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -118,13 +122,13 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 	pinId, err := strconv.Atoi(vars["id"])
 
 	if err != nil {
-		http.Error(w, `{"error":"bad pinId"}`, 400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	pinsSet, err := pinSet.getPins()
 	if err != nil {
-		http.Error(w, `{"error":"db"}`, 500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -138,7 +142,7 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if resultPin == nil {
-		http.Error(w, `{"body":{"pin":null}}`, 404)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -146,12 +150,12 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 		"pin": resultPin,
 	}
 
-	err = json.NewEncoder(w).Encode(&Result{Body: body})
+	err = json.NewEncoder(w).Encode(&ResponseServer{Body: body})
 	if err != nil {
-		http.Error(w, `{"error":"db"}`, 500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {
