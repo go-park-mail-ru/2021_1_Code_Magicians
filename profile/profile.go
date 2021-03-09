@@ -1,5 +1,10 @@
 package profile
 
+//HandleChangePassword changes profilefor user specified in request
+func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
+
+}
+
 // HandleEditProfile edits profile specified in request
 func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 

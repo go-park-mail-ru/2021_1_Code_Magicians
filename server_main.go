@@ -31,7 +31,8 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
 
-	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("POST")
+	r.HandleFunc("/profile/change-password", profile.HandleChangePassword).Methods("POST")
+	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
 	r.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
 	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
 
