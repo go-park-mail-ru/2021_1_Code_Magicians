@@ -37,8 +37,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if userInput.Username == "" || userInput.Password == "" ||
-		userInput.FirstName == "" || userInput.LastName == "" ||
-		userInput.Email == "" || userInput.Avatar == "" {
+		userInput.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -54,7 +53,9 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	Users.Users[Users.LastFreeUserID] = User{
+	id := Users.LastFreeUserID
+
+	Users.Users[id] = User{
 		Username:  userInput.Username,
 		Password:  userInput.Password,
 		FirstName: userInput.FirstName,
@@ -65,6 +66,21 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	Users.LastFreeUserID++
 
 	Users.Mu.Unlock()
+
+	sessionValue := randSeq(cookieLength) // cookie value - random string
+	expiration := time.Now().Add(expirationTime)
+	cookie := http.Cookie{
+		Name:     "session_id",
+		Value:    sessionValue,
+		Expires:  expiration,
+		HttpOnly: true, // So that frontend won't have direct access to cookies
+		Path:     "/",  // Cookie should be usable on entire website
+	}
+	http.SetCookie(w, &cookie)
+
+	sessions.mu.Lock()
+	sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
+	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 }
