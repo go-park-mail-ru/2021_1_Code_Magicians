@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,16 +34,22 @@ func (input *authInputStruct) toHTTPRequest() *http.Request {
 }
 
 type authOutputStruct struct {
-	responseCode int
-	headers      map[string][]string
-	postBody     []byte
+	ResponseCode int
+	Headers      map[string][]string
+	PostBody     []byte
 }
 
 func (output *authOutputStruct) fillFromResponse(response *http.Response) error {
-	output.responseCode = response.StatusCode
-	output.headers = response.Header
+	output.ResponseCode = response.StatusCode
+	output.Headers = response.Header
+	if len(output.Headers) == 0 {
+		output.Headers = nil
+	}
 	var err error
-	output.postBody, err = ioutil.ReadAll(response.Body)
+	output.PostBody, err = ioutil.ReadAll(response.Body)
+	if len(output.PostBody) == 0 {
+		output.PostBody = nil
+	}
 	return err
 }
 
@@ -98,7 +103,6 @@ func TestAuth(t *testing.T) {
 			// t.Log(string(responseDump))
 			var result authOutputStruct
 			result.fillFromResponse(resp)
-			fmt.Println(cmp.Equal(result, tt.out))
 
 			require.Equal(t, tt.out, result, fmt.Sprintf("Expected: %v\nbut got:  %v", tt.out, result))
 		})
