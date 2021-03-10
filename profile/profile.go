@@ -16,7 +16,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	cookieInfo, loggedIn := auth.CheckCookies(r)
 	if !loggedIn {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -25,7 +25,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	userInput := new(auth.UserIO)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -49,7 +49,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 
 	cookieInfo, loggedIn := auth.CheckCookies(r)
 	if !loggedIn {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -58,7 +58,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	userInput := new(auth.UserIO)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -93,7 +93,7 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 
 	cookieInfo, loggedIn := auth.CheckCookies(r)
 	if !loggedIn {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -137,8 +137,15 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 		Email:     user.Email,
 		Avatar:    user.Avatar,
 	}
-	w.Header().Set("Content-Type", "application/json")
+
+	responseBody, err := json.Marshal(userOutput)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(userOutput)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseBody)
 	return
 }

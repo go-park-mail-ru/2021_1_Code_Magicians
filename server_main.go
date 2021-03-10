@@ -41,7 +41,7 @@ func runServer(addr string) {
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8000"}, // Change this
+		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
 	})
 
