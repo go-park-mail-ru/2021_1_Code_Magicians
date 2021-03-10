@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"pinterest/auth"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -106,32 +107,38 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 // HandleGetProfile returns specified profile
 func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	username, found := vars["username"]
-	if !found {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	idStr, passedID := vars["id"]
+	id, _ := strconv.Atoi(idStr)
 
-	auth.Users.Mu.Lock()
-	for _, user := range auth.Users.Users {
-		if user.Username == username {
-			auth.Users.Mu.Unlock()
+	if !passedID {
+		username, passedUsername := vars["username"]
+		if !passedUsername {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-			userOutput := auth.UserIO{
-				Username: user.Username,
-				// Password is ommitted on purpose
-				FirstName: user.FirstName,
-				LastName:  user.LastName,
-				Email:     user.Email,
-				Avatar:    user.Avatar,
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(userOutput)
+		var foundUsername bool
+		id, foundUsername = auth.FindUser(username)
+		if !foundUsername {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 	}
 
+	auth.Users.Mu.Lock()
+	user := auth.Users.Users[id]
 	auth.Users.Mu.Unlock()
-	w.WriteHeader(http.StatusNotFound)
+
+	userOutput := auth.UserIO{
+		Username: user.Username,
+		// Password is ommitted on purpose
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Avatar:    user.Avatar,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(userOutput)
+	return
 }

@@ -87,17 +87,31 @@ func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 	return &userCookieInfo, true
 }
 
-// searchUser returns user's id and true if user is found, -1 and false otherwise
-func searchUser(username string, password string) (int, bool) {
+// FindUser tries to find user with passed username in Users map
+func FindUser(username string) (int, bool) {
+	Users.Mu.Lock()
+	defer Users.Mu.Unlock()
 	for id, user := range Users.Users {
 		if user.Username == username {
-			if user.Password == password {
-				return id, true
-			}
-
-			break
+			return id, true
 		}
 	}
+	return -1, false
+}
+
+// checkUserCredentials returns user's id and true if user credentials match, -1 and false otherwise
+func checkUserCredentials(username string, password string) (int, bool) {
+	id, found := FindUser(username)
+	if !found {
+		return -1, false
+	}
+
+	Users.Mu.Lock()
+	defer Users.Mu.Unlock()
+	if Users.Users[id].Password == password {
+		return id, true
+	}
+
 	return -1, false
 }
 
@@ -123,7 +137,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, exists := searchUser(userInput.Username, userInput.Password)
+	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
 
 	if !exists {
 		w.WriteHeader(http.StatusUnauthorized)

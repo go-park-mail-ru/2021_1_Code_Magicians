@@ -25,6 +25,7 @@ func runServer(addr string) {
 	r.HandleFunc("/profile/change-password", profile.HandleChangePassword).Methods("POST")
 	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
 	r.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
+	r.HandleFunc("/profile/{id:[0-9]+}", profile.HandleGetProfile).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
 
 	pins := &pins.PinsStorage{
