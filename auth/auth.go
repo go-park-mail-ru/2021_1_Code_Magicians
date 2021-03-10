@@ -8,41 +8,47 @@ import (
 	"time"
 )
 
-type user struct {
-	username  string
-	password  string // TODO: hashing
-	firstName string
-	lastName  string
-	avatar    string // path to avatar
+// User is, well, a struct depicting a user
+type User struct {
+	Username  string
+	Password  string // TODO: hashing
+	FirstName string
+	LastName  string
+	Email     string
+	Avatar    string // path to avatar
 }
 
 // UserInput if used to parse JSON with users' data
 type UserInput struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
+	Email     string `json:"email,omitempty"`
 	Avatar    string `json:"avatar,omitempty"`
 }
 
-type usersMap struct {
-	users          map[int]user
-	lastFreeUserID int
-	mu             sync.Mutex
+// UsersMap is basically a database's fake
+type UsersMap struct {
+	Users          map[int]User
+	LastFreeUserID int
+	Mu             sync.Mutex
 }
 
-type cookieInfo struct {
-	userID int
+// CookieInfo contains information about a cookie: which user it belongs to and cookie itself
+type CookieInfo struct {
+	UserID int
 	cookie *http.Cookie
 }
 
 type sessionMap struct {
-	sessions map[string]cookieInfo // key is cookie value, for easier lookup
+	sessions map[string]CookieInfo // key is cookie value, for easier lookup
 	mu       sync.Mutex
 }
 
-var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
-var sessions sessionMap = sessionMap{sessions: make(map[string]cookieInfo)}
+// Users is a map of all existing users
+var Users UsersMap = UsersMap{Users: make(map[int]User), LastFreeUserID: 0}
+var sessions sessionMap = sessionMap{sessions: make(map[string]CookieInfo)}
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -69,33 +75,40 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users.mu.Lock()
+	if userInput.Username == "" || userInput.Password == "" ||
+		userInput.FirstName == "" || userInput.LastName == "" ||
+		userInput.Email == "" || userInput.Avatar == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	Users.Mu.Lock()
 
 	// Checking for username uniqueness
-	for _, user := range users.users {
-		if user.username == userInput.Username {
+	for _, user := range Users.Users {
+		if user.Username == userInput.Username {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
 	}
 
-	// TODO: Check if these fields are empty
-	users.users[users.lastFreeUserID] = user{
-		username:  userInput.Username,
-		password:  userInput.Password,
-		firstName: userInput.FirstName,
-		lastName:  userInput.LastName,
-		avatar:    userInput.Avatar,
+	Users.Users[Users.LastFreeUserID] = User{
+		Username:  userInput.Username,
+		Password:  userInput.Password,
+		FirstName: userInput.FirstName,
+		LastName:  userInput.LastName,
+		Email:     userInput.Email,
+		Avatar:    userInput.Avatar,
 	}
-	users.lastFreeUserID++
+	Users.LastFreeUserID++
 
-	users.mu.Unlock()
+	Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 }
 
-// checkCookies returns *cookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func checkCookies(r *http.Request) (*cookieInfo, bool) {
+// CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
+func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie {
 		return nil, false
@@ -125,15 +138,20 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, cookieFound := checkCookies(r)
+	if userInput.Username == "" || userInput.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, cookieFound := CheckCookies(r)
 	if cookieFound {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	for id, user := range users.users {
-		if user.username == userInput.Username {
-			if user.password != userInput.Password {
+	for id, user := range Users.Users {
+		if user.Username == userInput.Username {
+			if user.Password != userInput.Password {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -149,7 +167,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &cookie)
 
 			sessions.mu.Lock()
-			sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+			sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
 			sessions.mu.Unlock()
 
 			w.WriteHeader(http.StatusOK)
@@ -163,7 +181,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser tries to log user out of current session
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	userCookieInfo, found := checkCookies(r)
+	userCookieInfo, found := CheckCookies(r)
 	if !found {
 		w.WriteHeader(http.StatusBadRequest)
 		return
