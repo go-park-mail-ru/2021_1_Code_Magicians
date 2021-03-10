@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var cookies []*http.Cookie
+
 type authInputStruct struct {
 	url      string
 	method   string
@@ -21,6 +23,7 @@ type authInputStruct struct {
 	authFunc func(w http.ResponseWriter, r *http.Request)
 }
 
+// toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
 func (input *authInputStruct) toHTTPRequest() *http.Request {
 	reqURL, _ := url.Parse(input.url)
 	reqBody := bytes.NewBuffer(input.postBody)
@@ -30,30 +33,39 @@ func (input *authInputStruct) toHTTPRequest() *http.Request {
 		Header: input.headers,
 		Body:   ioutil.NopCloser(reqBody),
 	}
+
+	if (len(cookies) > 0) && (request.Header == nil) {
+		request.Header = make(http.Header)
+	}
+
+	for _, cookie := range cookies {
+		request.AddCookie(cookie)
+	}
+
 	return request
 }
 
 type authOutputStruct struct {
-	ResponseCode int
-	Headers      map[string][]string
-	PostBody     []byte
+	responseCode int
+	headers      map[string][]string
+	postBody     []byte
 }
 
+// fillFromResponse transforms http.Response to authOutputStruct
 func (output *authOutputStruct) fillFromResponse(response *http.Response) error {
-	output.ResponseCode = response.StatusCode
-	output.Headers = response.Header
-	if len(output.Headers) == 0 {
-		output.Headers = nil
+	output.responseCode = response.StatusCode
+	output.headers = response.Header
+	if len(output.headers) == 0 {
+		output.headers = nil
 	}
 	var err error
-	output.PostBody, err = ioutil.ReadAll(response.Body)
-	if len(output.PostBody) == 0 {
-		output.PostBody = nil
+	output.postBody, err = ioutil.ReadAll(response.Body)
+	if len(output.postBody) == 0 {
+		output.postBody = nil
 	}
 	return err
 }
 
-var cookie http.Cookie
 var authTest = []struct {
 	in   authInputStruct
 	out  authOutputStruct
@@ -96,6 +108,22 @@ var authTest = []struct {
 		},
 		"Testing user login",
 	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/logout",
+			"GET",
+			nil,
+			nil,
+			HandleLogoutUser,
+		},
+
+		authOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing user logout",
+	},
 }
 
 func TestAuth(t *testing.T) {
@@ -103,37 +131,30 @@ func TestAuth(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			req := tt.in.toHTTPRequest()
-			// requestDump, err := httputil.DumpRequest(req, true)
-			// if err != nil {
-			// 	t.Log(err)
-			// }
-			// t.Log(string(requestDump))
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
 			tt.in.authFunc(rw, req)
 			resp := rw.Result()
 
-			// responseDump, err := httputil.DumpResponse(resp, true)
-			// if err != nil {
-			// 	t.Log(err)
-			// }
-			// t.Log(string(responseDump))
+			// if server returned cookies, we use them
+			cookies = resp.Cookies()
+
 			var result authOutputStruct
 			result.fillFromResponse(resp)
 
-			require.Equal(t, tt.out.ResponseCode, result.ResponseCode,
+			require.Equal(t, tt.out.responseCode, result.responseCode,
 				fmt.Sprintf("Expected: %d as response code\nbut got:  %d",
-					tt.out.ResponseCode, result.ResponseCode))
-			for key, val := range tt.out.Headers {
-				resultVal, ok := result.Headers[key]
+					tt.out.responseCode, result.responseCode))
+			for key, val := range tt.out.headers {
+				resultVal, ok := result.headers[key]
 				require.True(t, !ok,
-					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.Headers, result.Headers))
+					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.headers, result.headers))
 				require.Equal(t, val, resultVal,
 					fmt.Sprintf("Expected value of header %s: %v is different from actual value: %v", key, val, resultVal))
 			}
-			require.Equal(t, tt.out.PostBody, result.PostBody,
+			require.Equal(t, tt.out.postBody, result.postBody,
 				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
-					tt.out.PostBody, result.PostBody))
+					tt.out.postBody, result.postBody))
 		})
 	}
 }
