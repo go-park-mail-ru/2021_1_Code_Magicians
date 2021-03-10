@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
@@ -29,8 +28,6 @@ const expirationTime time.Duration = 10 * time.Hour
 // HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	body, _ := ioutil.ReadAll(r.Body)
-
 
 	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
@@ -51,6 +48,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// Checking for username uniqueness
 	for _, user := range Users.Users {
 		if user.Username == userInput.Username {
+			Users.Mu.Unlock()
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
@@ -91,9 +89,9 @@ func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 
 // searchUser returns user's id and true if user is found, -1 and false otherwise
 func searchUser(username string, password string) (int, bool) {
-	for id, user := range users.users {
-		if user.username == username {
-			if user.password == password {
+	for id, user := range Users.Users {
+		if user.Username == username {
+			if user.Password == password {
 				return id, true
 			}
 
@@ -106,10 +104,9 @@ func searchUser(username string, password string) (int, bool) {
 // HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	body, _ := ioutil.ReadAll(r.Body)
 
 	userInput := new(UserIO)
-	err := decoder.Decode(userInput)
+	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -140,11 +137,12 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionValue,
 		Expires:  expiration,
 		HttpOnly: true, // So that frontend won't have direct access to cookies
+		Path:     "/",  // Cookie should be usable on entire website
 	}
 	http.SetCookie(w, &cookie)
 
 	sessions.mu.Lock()
-	sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+	sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
 	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)

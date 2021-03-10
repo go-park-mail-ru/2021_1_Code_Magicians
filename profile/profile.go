@@ -2,7 +2,6 @@ package profile
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"pinterest/auth"
@@ -102,7 +101,6 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Mu.Lock()
 	delete(auth.Users.Users, cookieInfo.UserID)
 	auth.Users.Mu.Unlock()
-	fmt.Println(auth.Users.Users)
 }
 
 // HandleGetProfile returns specified profile
@@ -117,6 +115,8 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Mu.Lock()
 	for _, user := range auth.Users.Users {
 		if user.Username == username {
+			auth.Users.Mu.Unlock()
+
 			userOutput := auth.UserIO{
 				Username: user.Username,
 				// Password is ommitted on purpose
@@ -132,5 +132,6 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	auth.Users.Mu.Unlock()
 	w.WriteHeader(http.StatusNotFound)
 }
