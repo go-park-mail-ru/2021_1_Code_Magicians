@@ -203,6 +203,22 @@ var authTestFailure = []struct {
 		},
 		"Testing wrong JSON when logging user in",
 	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/logout",
+			"POST",
+			nil,
+			nil,
+			HandleLoginUser,
+		},
+
+		authOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing trying to log user out without any cookies",
+	},
 }
 
 var failureCookies []*http.Cookie
