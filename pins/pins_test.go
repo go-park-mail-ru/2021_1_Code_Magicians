@@ -98,7 +98,7 @@ func TestUserPinSet_DelPinByID(t *testing.T) {
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "0"})
 
-	testPinSet.Storage.GetPinByID(w, r)
+	testPinSet.Storage.DelPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusOK, resResponse.StatusCode)
@@ -106,9 +106,9 @@ func TestUserPinSet_DelPinByID(t *testing.T) {
 }
 
 func TestUserPinSet_DelNoSuchPin(t *testing.T) {
-	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/4", nil)
+	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/0", nil)
 	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "4"})
+	r = mux.SetURLVars(r, map[string]string{"id": "0"})
 
 	testPinSet.Storage.DelPinByID(w, r)
 	resResponse := w.Result()
