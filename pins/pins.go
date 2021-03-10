@@ -3,11 +3,13 @@ package pins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+	"pinterest/auth"
 	"strconv"
 	"sync"
+
+	"github.com/gorilla/mux"
 )
 
 type PinsStorage struct {
@@ -39,6 +41,12 @@ type Pin struct {
 
 func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	_, found := auth.CheckCookies(r)
+	if !found {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -86,6 +94,12 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
+	_, found := auth.CheckCookies(r)
+	if !found {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -111,6 +125,12 @@ func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
+	_, found := auth.CheckCookies(r)
+	if !found {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 
@@ -154,7 +174,6 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {
-
 	pinSet.mutex.RLock()
 	defer pinSet.mutex.RUnlock()
 
