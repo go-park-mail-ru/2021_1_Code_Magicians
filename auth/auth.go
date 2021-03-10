@@ -5,42 +5,8 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"sync"
 	"time"
 )
-
-type user struct {
-	username  string
-	password  string // TODO: hashing
-	firstName string
-	lastName  string
-	avatar    string // path to avatar
-}
-
-// UserInput if used to parse JSON with users' data
-type UserInput struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
-	Avatar    string `json:"avatar,omitempty"`
-}
-
-type usersMap struct {
-	users          map[int]user
-	lastFreeUserID int
-	mu             sync.Mutex
-}
-
-type cookieInfo struct {
-	userID int
-	cookie *http.Cookie
-}
-
-type sessionMap struct {
-	sessions map[string]cookieInfo // key is cookie value, for easier lookup
-	mu       sync.Mutex
-}
 
 var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
 var sessions sessionMap = sessionMap{sessions: make(map[string]cookieInfo)}
@@ -114,6 +80,20 @@ func checkCookies(r *http.Request) (*cookieInfo, bool) {
 	return &userCookieInfo, true
 }
 
+// searchUser returns user's id and true if user is found, -1 and false otherwise
+func searchUser(username string, password string) (int, bool) {
+	for id, user := range users.users {
+		if user.username == username {
+			if user.password == password {
+				return id, true
+			}
+
+			break
+		}
+	}
+	return -1, false
+}
+
 // HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -127,38 +107,33 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, cookieFound := checkCookies(r)
-	if cookieFound {
+	if cookieFound { // User is already logged in
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	for id, user := range users.users {
-		if user.username == userInput.Username {
-			if user.password != userInput.Password {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+	id, exists := searchUser(userInput.Username, userInput.Password)
 
-			sessionValue := randSeq(cookieLength) // cookie value - random string
-			expiration := time.Now().Add(expirationTime)
-			cookie := http.Cookie{
-				Name:     "session_id",
-				Value:    sessionValue,
-				Expires:  expiration,
-				HttpOnly: true, // So that frontend won't have direct access to cookies
-			}
-			http.SetCookie(w, &cookie)
-
-			sessions.mu.Lock()
-			sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
-			sessions.mu.Unlock()
-
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	if !exists {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
-	w.WriteHeader(http.StatusUnauthorized)
+	sessionValue := randSeq(cookieLength) // cookie value - random string
+	expiration := time.Now().Add(expirationTime)
+	cookie := http.Cookie{
+		Name:     "session_id",
+		Value:    sessionValue,
+		Expires:  expiration,
+		HttpOnly: true, // So that frontend won't have direct access to cookies
+	}
+	http.SetCookie(w, &cookie)
+
+	sessions.mu.Lock()
+	sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+	sessions.mu.Unlock()
+
+	w.WriteHeader(http.StatusOK)
 	return
 }
 
