@@ -5,35 +5,40 @@ import (
 	"sync"
 )
 
-type user struct {
-	username  string
-	password  string // TODO: hashing
-	firstName string
-	lastName  string
-	avatar    string // path to avatar
+// User is, well, a struct depicting a user
+type User struct {
+	Username  string
+	Password  string // TODO: hashing
+	FirstName string
+	LastName  string
+	Email     string
+	Avatar    string // path to avatar
 }
 
-// UserInput if used to parse JSON with users' data
-type UserInput struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+// UserIO is used to parse JSON with users' data
+type UserIO struct {
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
+	Email     string `json:"email,omitempty"`
 	Avatar    string `json:"avatar,omitempty"`
 }
 
-type usersMap struct {
-	users          map[int]user
-	lastFreeUserID int
-	mu             sync.Mutex
+// UsersMap is basically a database's fake
+type UsersMap struct {
+	Users          map[int]User
+	LastFreeUserID int
+	Mu             sync.Mutex
 }
 
-type cookieInfo struct {
-	userID int
+// CookieInfo contains information about a cookie: which user it belongs to and cookie itself
+type CookieInfo struct {
+	UserID int
 	cookie *http.Cookie
 }
 
 type sessionMap struct {
-	sessions map[string]cookieInfo // key is cookie value, for easier lookup
+	sessions map[string]CookieInfo // key is cookie value, for easier lookup
 	mu       sync.Mutex
 }

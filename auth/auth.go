@@ -2,14 +2,14 @@ package auth
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
-var users usersMap = usersMap{users: make(map[int]user), lastFreeUserID: 0}
-var sessions sessionMap = sessionMap{sessions: make(map[string]cookieInfo)}
+// Users is a map of all existing users
+var Users UsersMap = UsersMap{Users: make(map[int]User), LastFreeUserID: 0}
+var sessions sessionMap = sessionMap{sessions: make(map[string]CookieInfo)}
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -28,42 +28,49 @@ const expirationTime time.Duration = 10 * time.Hour
 // HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(UserInput)
-	err := json.Unmarshal(body, userInput)
+	userInput := new(UserIO)
+	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	users.mu.Lock()
+	if userInput.Username == "" || userInput.Password == "" ||
+		userInput.FirstName == "" || userInput.LastName == "" ||
+		userInput.Email == "" || userInput.Avatar == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	Users.Mu.Lock()
 
 	// Checking for username uniqueness
-	for _, user := range users.users {
-		if user.username == userInput.Username {
+	for _, user := range Users.Users {
+		if user.Username == userInput.Username {
+			Users.Mu.Unlock()
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
 	}
 
-	// TODO: Check if these fields are empty
-	users.users[users.lastFreeUserID] = user{
-		username:  userInput.Username,
-		password:  userInput.Password,
-		firstName: userInput.FirstName,
-		lastName:  userInput.LastName,
-		avatar:    userInput.Avatar,
+	Users.Users[Users.LastFreeUserID] = User{
+		Username:  userInput.Username,
+		Password:  userInput.Password,
+		FirstName: userInput.FirstName,
+		LastName:  userInput.LastName,
+		Email:     userInput.Email,
+		Avatar:    userInput.Avatar,
 	}
-	users.lastFreeUserID++
+	Users.LastFreeUserID++
 
-	users.mu.Unlock()
+	Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 }
 
-// checkCookies returns *cookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func checkCookies(r *http.Request) (*cookieInfo, bool) {
+// CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
+func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie {
 		return nil, false
@@ -80,39 +87,57 @@ func checkCookies(r *http.Request) (*cookieInfo, bool) {
 	return &userCookieInfo, true
 }
 
-// searchUser returns user's id and true if user is found, -1 and false otherwise
-func searchUser(username string, password string) (int, bool) {
-	for id, user := range users.users {
-		if user.username == username {
-			if user.password == password {
-				return id, true
-			}
-
-			break
+// FindUser tries to find user with passed username in Users map
+func FindUser(username string) (int, bool) {
+	Users.Mu.Lock()
+	defer Users.Mu.Unlock()
+	for id, user := range Users.Users {
+		if user.Username == username {
+			return id, true
 		}
 	}
+	return -1, false
+}
+
+// checkUserCredentials returns user's id and true if user credentials match, -1 and false otherwise
+func checkUserCredentials(username string, password string) (int, bool) {
+	id, found := FindUser(username)
+	if !found {
+		return -1, false
+	}
+
+	Users.Mu.Lock()
+	defer Users.Mu.Unlock()
+	if Users.Users[id].Password == password {
+		return id, true
+	}
+
 	return -1, false
 }
 
 // HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(UserInput)
-	err := json.Unmarshal(body, userInput)
+	userInput := new(UserIO)
+	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, cookieFound := checkCookies(r)
+	if userInput.Username == "" || userInput.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, cookieFound := CheckCookies(r)
 	if cookieFound { // User is already logged in
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	id, exists := searchUser(userInput.Username, userInput.Password)
+	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
 
 	if !exists {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -126,11 +151,12 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionValue,
 		Expires:  expiration,
 		HttpOnly: true, // So that frontend won't have direct access to cookies
+		Path:     "/",  // Cookie should be usable on entire website
 	}
 	http.SetCookie(w, &cookie)
 
 	sessions.mu.Lock()
-	sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+	sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
 	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)
@@ -139,7 +165,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser tries to log user out of current session
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	userCookieInfo, found := checkCookies(r)
+	userCookieInfo, found := CheckCookies(r)
 	if !found {
 		w.WriteHeader(http.StatusBadRequest)
 		return
