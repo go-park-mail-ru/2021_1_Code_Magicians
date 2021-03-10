@@ -2,6 +2,7 @@ package profile
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"pinterest/auth"
@@ -96,11 +97,12 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	auth.HandleLogoutUser(w, r) // User is logged out before profile deletion, for safety reasons
+
 	auth.Users.Mu.Lock()
 	delete(auth.Users.Users, cookieInfo.UserID)
 	auth.Users.Mu.Unlock()
-	w.WriteHeader(http.StatusOK)
-	//TODO: log user out
+	fmt.Println(auth.Users.Users)
 }
 
 // HandleGetProfile returns specified profile
