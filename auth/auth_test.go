@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var cookies []*http.Cookie
-
 type authInputStruct struct {
 	url      string
 	method   string
@@ -24,7 +22,7 @@ type authInputStruct struct {
 }
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
-func (input *authInputStruct) toHTTPRequest() *http.Request {
+func (input *authInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
 	reqURL, _ := url.Parse(input.url)
 	reqBody := bytes.NewBuffer(input.postBody)
 	request := &http.Request{
@@ -66,7 +64,8 @@ func (output *authOutputStruct) fillFromResponse(response *http.Response) error 
 	return err
 }
 
-var authTest = []struct {
+// These tests have to run in that order!!!
+var authTestSuccess = []struct {
 	in   authInputStruct
 	out  authOutputStruct
 	name string
@@ -126,18 +125,100 @@ var authTest = []struct {
 	},
 }
 
-func TestAuth(t *testing.T) {
-	for _, tt := range authTest {
+var successCookies []*http.Cookie
+
+func TestAuthSuccess(t *testing.T) {
+	for _, tt := range authTestSuccess {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			req := tt.in.toHTTPRequest()
+			req := tt.in.toHTTPRequest(successCookies)
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
 			tt.in.authFunc(rw, req)
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
-			cookies = resp.Cookies()
+			successCookies = resp.Cookies()
+
+			var result authOutputStruct
+			result.fillFromResponse(resp)
+
+			require.Equal(t, tt.out.responseCode, result.responseCode,
+				fmt.Sprintf("Expected: %d as response code\nbut got:  %d",
+					tt.out.responseCode, result.responseCode))
+			for key, val := range tt.out.headers {
+				resultVal, ok := result.headers[key]
+				require.True(t, !ok,
+					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.headers, result.headers))
+				require.Equal(t, val, resultVal,
+					fmt.Sprintf("Expected value of header %s: %v is different from actual value: %v", key, val, resultVal))
+			}
+			require.Equal(t, tt.out.postBody, result.postBody,
+				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
+					tt.out.postBody, result.postBody))
+		})
+	}
+}
+
+// These tests have to run in that order!!!
+var authTestFailure = []struct {
+	in   authInputStruct
+	out  authOutputStruct
+	name string
+}{
+	{
+		authInputStruct{
+			"localhost:8080/auth/create",
+			"POST",
+			nil,
+			[]byte(`{"username": "TestUsername,` +
+				`first_name": "TestFirstName",` +
+				`"last_name": TestLastname",` +
+				`"email": "test@example.com",` +
+				`"password": "thisisapassword"`,
+			),
+			HandleCreateUser,
+		},
+
+		authOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing wrong JSON when creating user",
+	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/login",
+			"POST",
+			nil,
+			[]byte(`{"username": "TestUsername, password": "thisisapassword}}}`),
+			HandleLoginUser,
+		},
+
+		authOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing wrong JSON when logging user in",
+	},
+}
+
+var failureCookies []*http.Cookie
+
+func TestAuthFailure(t *testing.T) {
+	for _, tt := range authTestFailure {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			req := tt.in.toHTTPRequest(failureCookies)
+
+			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
+			tt.in.authFunc(rw, req)
+			resp := rw.Result()
+
+			// if server returned cookies, we use them
+			failureCookies = resp.Cookies()
 
 			var result authOutputStruct
 			result.fillFromResponse(resp)
