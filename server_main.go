@@ -9,21 +9,7 @@ import (
   "pinterest/profile"
 )
 
-type PinsStorage struct {
-	storage *pins.UserPinSet
-}
-
-func authHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("{}"))
-	// TODO /auth handling
-}
-
 func boardHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("{}"))
-	// TODO /pin and /pins handling
-}
-
-func profileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 	// TODO /pin and /pins handling
 }
@@ -34,7 +20,6 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
-
 
 	r.HandleFunc("/profile/change-password", profile.HandleChangePassword).Methods("POST")
 	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
