@@ -43,7 +43,8 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	currPin := Pin{
@@ -53,7 +54,8 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(data, &currPin)
 	fmt.Println(currPin)
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	id := pinSet.pinId
