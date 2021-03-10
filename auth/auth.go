@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"sync"
@@ -60,10 +61,11 @@ const expirationTime time.Duration = 10 * time.Hour
 
 // HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 
 	userInput := new(UserInput)
-	err := json.NewDecoder(r.Body).Decode(userInput)
+	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
