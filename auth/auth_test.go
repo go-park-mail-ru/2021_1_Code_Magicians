@@ -53,6 +53,7 @@ func (output *authOutputStruct) fillFromResponse(response *http.Response) error 
 	return err
 }
 
+var cookie http.Cookie
 var authTest = []struct {
 	in   authInputStruct
 	out  authOutputStruct
@@ -79,6 +80,22 @@ var authTest = []struct {
 		},
 		"Testing user creation",
 	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/login",
+			"GET",
+			nil,
+			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
+			HandleLoginUser,
+		},
+
+		authOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing user login",
+	},
 }
 
 func TestAuth(t *testing.T) {
@@ -104,7 +121,19 @@ func TestAuth(t *testing.T) {
 			var result authOutputStruct
 			result.fillFromResponse(resp)
 
-			require.Equal(t, tt.out, result, fmt.Sprintf("Expected: %v\nbut got:  %v", tt.out, result))
+			require.Equal(t, tt.out.ResponseCode, result.ResponseCode,
+				fmt.Sprintf("Expected: %d as response code\nbut got:  %d",
+					tt.out.ResponseCode, result.ResponseCode))
+			for key, val := range tt.out.Headers {
+				resultVal, ok := result.Headers[key]
+				require.True(t, !ok,
+					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.Headers, result.Headers))
+				require.Equal(t, val, resultVal,
+					fmt.Sprintf("Expected value of header %s: %v is different from actual value: %v", key, val, resultVal))
+			}
+			require.Equal(t, tt.out.PostBody, result.PostBody,
+				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
+					tt.out.PostBody, result.PostBody))
 		})
 	}
 }
