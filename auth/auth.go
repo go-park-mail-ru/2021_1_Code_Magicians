@@ -183,7 +183,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookieInfo, found := CheckCookies(r)
 	if !found {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 

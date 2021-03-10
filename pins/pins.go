@@ -44,7 +44,7 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	_, found := auth.CheckCookies(r)
 	if !found {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -96,7 +96,7 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 	_, found := auth.CheckCookies(r)
 	if !found {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -127,7 +127,7 @@ func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 	_, found := auth.CheckCookies(r)
 	if !found {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
