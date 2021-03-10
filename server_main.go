@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"pinterest/auth"
 	"pinterest/pins"
 	"pinterest/profile"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 func boardHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,8 +40,14 @@ func runServer(addr string) {
 
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8000"}, // Change this
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(r)
 	fmt.Printf("Starting server at localhost%s\n", addr)
-	http.ListenAndServe(addr, r)
+	log.Fatal(http.ListenAndServe(addr, handler))
 }
 
 func main() {
