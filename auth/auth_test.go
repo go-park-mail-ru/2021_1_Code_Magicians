@@ -93,22 +93,6 @@ var authTestSuccess = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/login",
-			"GET",
-			nil,
-			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
-			HandleLoginUser,
-		},
-
-		authOutputStruct{
-			200,
-			nil,
-			nil,
-		},
-		"Testing user login",
-	},
-	{
-		authInputStruct{
 			"localhost:8080/auth/logout",
 			"GET",
 			nil,
@@ -122,6 +106,22 @@ var authTestSuccess = []struct {
 			nil,
 		},
 		"Testing user logout",
+	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/login",
+			"GET",
+			nil,
+			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
+			HandleLoginUser,
+		},
+
+		authOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing user login",
 	},
 }
 
@@ -181,7 +181,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			400,
+			500,
 			nil,
 			nil,
 		},
@@ -197,7 +197,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			400,
+			500,
 			nil,
 			nil,
 		},
@@ -209,7 +209,7 @@ var authTestFailure = []struct {
 			"POST",
 			nil,
 			nil,
-			HandleLoginUser,
+			HandleLogoutUser,
 		},
 
 		authOutputStruct{
