@@ -8,9 +8,6 @@ import (
   "pinterest/auth"
 )
 
-type PinsStorage struct {
-	storage *pins.UserPinSet
-}
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
@@ -34,15 +31,15 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
 
-	pins := &PinsStorage{
-		storage: pins.NewPinsSet(0),
+	pins := &pins.PinsStorage{
+		Storage: pins.NewPinsSet(0),
 	}
 
 	r.HandleFunc("/auth/", authHandler)
 
-	r.HandleFunc("/pin/", pins.storage.AddPin).Methods("POST")
-	r.HandleFunc("/pins/{id:[0-9]+}", pins.storage.GetPinByID).Methods("GET")
-	r.HandleFunc("/pins/{id:[0-9]+}", pins.storage.DelPinByID).Methods("DELETE")
+	r.HandleFunc("/pin/", pins.Storage.AddPin).Methods("POST")
+	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
+	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.DelPinByID).Methods("DELETE")
 	r.HandleFunc("/profile/", profileHandler) // Will split later
 
 	r.HandleFunc("/board/", boardHandler) // Will split later

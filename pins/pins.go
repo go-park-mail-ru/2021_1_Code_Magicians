@@ -10,6 +10,10 @@ import (
 	"sync"
 )
 
+type PinsStorage struct {
+	Storage *UserPinSet
+}
+
 func NewPinsSet(idUser int) *UserPinSet {
 	return &UserPinSet{
 		mutex:    sync.RWMutex{},
