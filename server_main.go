@@ -2,15 +2,19 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"pinterest/auth"
-
 	"github.com/gorilla/mux"
+	"net/http"
+	"pinterest/pins"
+  "pinterest/auth"
 )
 
-func pinHandler(w http.ResponseWriter, r *http.Request) {
+type PinsStorage struct {
+	storage *pins.UserPinSet
+}
+
+func authHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
-	// TODO /pin and /pins handling
+	// TODO /auth handling
 }
 
 func boardHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,10 +34,16 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
 
-	r.HandleFunc("/profile/", profileHandler) // Will split later
+	pins := &PinsStorage{
+		storage: pins.NewPinsSet(0),
+	}
 
-	r.HandleFunc("/pin/", pinHandler)  // Will split later
-	r.HandleFunc("/pins/", pinHandler) // Will split later
+	r.HandleFunc("/auth/", authHandler)
+
+	r.HandleFunc("/pin/", pins.storage.AddPin).Methods("POST")
+	r.HandleFunc("/pins/{id:[0-9]+}", pins.storage.GetPinByID).Methods("GET")
+	r.HandleFunc("/pins/{id:[0-9]+}", pins.storage.DelPinByID).Methods("DELETE")
+	r.HandleFunc("/profile/", profileHandler) // Will split later
 
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
