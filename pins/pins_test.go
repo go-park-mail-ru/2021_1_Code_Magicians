@@ -102,7 +102,7 @@ func TestUserPinSet_DelPinByID(t *testing.T) {
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusOK, resResponse.StatusCode)
-	require.Equal(t, len(testPinSet.Storage.userPins[0]), 4)
+	require.Equal(t, len(testPinSet.Storage.userPins[0]), 3)
 }
 
 func TestUserPinSet_DelNoSuchPin(t *testing.T) {
