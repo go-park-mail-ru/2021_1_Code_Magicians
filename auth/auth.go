@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
@@ -28,6 +29,8 @@ const expirationTime time.Duration = 10 * time.Hour
 // HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body)
+
 
 	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
@@ -86,11 +89,24 @@ func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 	return &userCookieInfo, true
 }
 
+// searchUser returns user's id and true if user is found, -1 and false otherwise
+func searchUser(username string, password string) (int, bool) {
+	for id, user := range users.users {
+		if user.username == username {
+			if user.password == password {
+				return id, true
+			}
+
+			break
+		}
+	}
+	return -1, false
+}
+
 // HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	decoder := json.NewDecoder(r.Body)
+	body, _ := ioutil.ReadAll(r.Body)
 
 	userInput := new(UserIO)
 	err := decoder.Decode(userInput)
@@ -105,39 +121,33 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, cookieFound := CheckCookies(r)
-	if cookieFound {
+	if cookieFound { // User is already logged in
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	for id, user := range Users.Users {
-		if user.Username == userInput.Username {
-			if user.Password != userInput.Password {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+	id, exists := searchUser(userInput.Username, userInput.Password)
 
-			sessionValue := randSeq(cookieLength) // cookie value - random string
-			expiration := time.Now().Add(expirationTime)
-			cookie := http.Cookie{
-				Name:     "session_id",
-				Value:    sessionValue,
-				Expires:  expiration,
-				HttpOnly: true, // So that frontend won't have direct access to cookies
-				Path:     "/",  // Cookie should work on entire website
-			}
-			http.SetCookie(w, &cookie)
-
-			sessions.mu.Lock()
-			sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
-			sessions.mu.Unlock()
-
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	if !exists {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
-	w.WriteHeader(http.StatusUnauthorized)
+	sessionValue := randSeq(cookieLength) // cookie value - random string
+	expiration := time.Now().Add(expirationTime)
+	cookie := http.Cookie{
+		Name:     "session_id",
+		Value:    sessionValue,
+		Expires:  expiration,
+		HttpOnly: true, // So that frontend won't have direct access to cookies
+	}
+	http.SetCookie(w, &cookie)
+
+	sessions.mu.Lock()
+	sessions.sessions[sessionValue] = cookieInfo{id, &cookie}
+	sessions.mu.Unlock()
+
+	w.WriteHeader(http.StatusOK)
 	return
 }
 
