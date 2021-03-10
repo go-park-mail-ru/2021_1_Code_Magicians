@@ -35,7 +35,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	currentUser := auth.Users.Users[cookieInfo.UserID]
 	currentUser.Password = userInput.Password
 	auth.Users.Users[cookieInfo.UserID] = currentUser
-	auth.Users.Mu.Lock()
+	auth.Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 }

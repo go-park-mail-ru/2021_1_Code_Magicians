@@ -163,6 +163,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 				Value:    sessionValue,
 				Expires:  expiration,
 				HttpOnly: true, // So that frontend won't have direct access to cookies
+				Path:     "/",
 			}
 			http.SetCookie(w, &cookie)
 
