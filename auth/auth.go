@@ -18,8 +18,8 @@ type User struct {
 	Avatar    string // path to avatar
 }
 
-// UserInput if used to parse JSON with users' data
-type UserInput struct {
+// UserIO is used to parse JSON with users' data
+type UserIO struct {
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
 	FirstName string `json:"first_name,omitempty"`
@@ -68,7 +68,7 @@ const expirationTime time.Duration = 10 * time.Hour
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserInput)
+	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -131,7 +131,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 
-	userInput := new(UserInput)
+	userInput := new(UserIO)
 	err := decoder.Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -163,7 +163,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 				Value:    sessionValue,
 				Expires:  expiration,
 				HttpOnly: true, // So that frontend won't have direct access to cookies
-				Path:     "/",
+				Path:     "/",  // Cookie should work on entire website
 			}
 			http.SetCookie(w, &cookie)
 
