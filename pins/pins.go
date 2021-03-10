@@ -103,10 +103,11 @@ func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 		if p.PinId == pinId {
 			p = pinSet.userPins[pinSet.userId][len(pinsSet)-1]
 			pinSet.userPins[pinSet.userId] = pinSet.userPins[pinSet.userId][:len(pinsSet)-1]
+			w.WriteHeader(http.StatusOK)
 			break
 		}
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
