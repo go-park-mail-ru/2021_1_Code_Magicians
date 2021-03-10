@@ -70,7 +70,6 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	pinSet.mutex.Unlock()
 
-	w.WriteHeader(http.StatusCreated) // returning success code
 	body := "{pin_id: " + strconv.Itoa(currPin.PinId) + "}"
 
 	_, err = w.Write([]byte(body))
@@ -78,6 +77,8 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated) // returning success code
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
@@ -138,12 +139,13 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+
 	_, err = w.Write(body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {
