@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"sync"
@@ -61,9 +62,10 @@ const expirationTime time.Duration = 10 * time.Hour
 // HandleCreateUser creates user with parameters passed in JSON
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body)
 
 	userInput := new(UserInput)
-	err := json.NewDecoder(r.Body).Decode(userInput)
+	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -115,11 +117,10 @@ func checkCookies(r *http.Request) (*cookieInfo, bool) {
 // HandleLoginUser logs user in using provided username and password
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
-	decoder := json.NewDecoder(r.Body)
+	body, _ := ioutil.ReadAll(r.Body)
 
 	userInput := new(UserInput)
-	err := decoder.Decode(userInput)
+	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
