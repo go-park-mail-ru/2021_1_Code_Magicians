@@ -21,10 +21,10 @@ func runServer(addr string) {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
-	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("GET")
-	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("GET")
+	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("POST")
+	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("POST")
 
-	r.HandleFunc("/profile/change-password", profile.HandleChangePassword).Methods("POST")
+	r.HandleFunc("/profile/password", profile.HandleChangePassword).Methods("PUT")
 	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
 	r.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
 	r.HandleFunc("/profile/{id:[0-9]+}", profile.HandleGetProfile).Methods("GET") // Is preferred over next one
@@ -34,7 +34,7 @@ func runServer(addr string) {
 		Storage: pins.NewPinsSet(0),
 	}
 
-	r.HandleFunc("/pin/", pins.Storage.AddPin).Methods("POST")
+	r.HandleFunc("/pin", pins.Storage.AddPin).Methods("POST")
 	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
 	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.DelPinByID).Methods("DELETE")
 
