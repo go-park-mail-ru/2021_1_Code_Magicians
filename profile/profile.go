@@ -122,9 +122,7 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			id = cookieInfo.UserID
-		}
-
-		if !foundUsername {
+		} else if !foundUsername {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
