@@ -23,6 +23,7 @@ func runServer(addr string) {
 	r.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
 	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("POST")
 	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("POST")
+	r.HandleFunc("/auth/check", auth.HandleCheckUser).Methods("GET")
 
 	r.HandleFunc("/profile/password", profile.HandleChangePassword).Methods("PUT")
 	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
