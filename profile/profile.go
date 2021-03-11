@@ -110,15 +110,20 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	idStr, passedID := vars["id"]
 	id, _ := strconv.Atoi(idStr)
 
-	if !passedID {
+	if !passedID { // Id was not passed
 		username, passedUsername := vars["username"]
-		if !passedUsername {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
 		var foundUsername bool
 		id, foundUsername = auth.FindUser(username)
+
+		if !passedUsername { // Username was also not passed
+			cookieInfo, found := auth.CheckCookies(r)
+			if !found {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			id = cookieInfo.UserID
+		}
+
 		if !foundUsername {
 			w.WriteHeader(http.StatusNotFound)
 			return
