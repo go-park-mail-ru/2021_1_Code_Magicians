@@ -35,7 +35,7 @@ type Pin struct {
 	PinId       int    `json:"id"`
 	BoardID     int    `json:"boardID"`
 	Title       string `json:"title"`
-	ImageLink   string `json:"imageLink"`
+	ImageLink   string `json:"pinImage"`
 	Description string `json:"description"`
 }
 

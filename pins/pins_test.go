@@ -19,14 +19,14 @@ func TestUserPinSet_AddPin(t *testing.T) {
 	boardID := 0
 
 	body := strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "imageLink": "example/link", "description": "exampleDescription"}`, boardID),
+		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 	)
 	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin/", body)
 	w := httptest.NewRecorder()
 	testPinSet.Storage.AddPin(w, r)
 
 	body = strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "imageLink": "example/link", "description": "exampleDescription"}`, boardID),
+		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 	)
 	r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 	w = httptest.NewRecorder()
@@ -55,17 +55,17 @@ func TestUserPinSet_AddPinBadData(t *testing.T) {
 }
 
 func TestUserPinSet_GetPinByID(t *testing.T) {
-	expectedResponse := `{"id":1,"boardID":0,"title":"exampletitle","imageLink":"example/link","description":"exampleDescription"}`
+	expectedResponse := `{"id":1,"boardID":0,"title":"exampletitle","pinImage":"example/link","description":"exampleDescription"}`
 	boardID := 0
 	body := strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "imageLink": "example/link", "description": "exampleDescription"}`, boardID),
+		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 	)
 	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 	w := httptest.NewRecorder()
 
 	testPinSet.Storage.AddPin(w, r)
 	body = strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "imageLink": "example/link", "description": "exampleDescription"}`, boardID),
+		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 	)
 	r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 	w = httptest.NewRecorder()
