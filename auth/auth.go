@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -31,6 +32,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
+	fmt.Println(userInput.Avatar)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

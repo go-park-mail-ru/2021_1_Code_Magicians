@@ -82,7 +82,7 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	pinSet.mutex.Unlock()
 
-	body := "{pin_id: " + strconv.Itoa(currPin.PinId) + "}"
+	body := `{"pin_id": ` + strconv.Itoa(currPin.PinId) + `}`
 
 	_, err = w.Write([]byte(body))
 	if err != nil {

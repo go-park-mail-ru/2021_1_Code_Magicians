@@ -78,7 +78,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	if userInput.Email != "" {
 		currentUser.Email = userInput.Email
 	}
-	if userInput.Avatar != "" {
+	if len(userInput.Avatar) > 0 {
 		currentUser.Avatar = userInput.Avatar
 	}
 	auth.Users.Users[cookieInfo.UserID] = currentUser
