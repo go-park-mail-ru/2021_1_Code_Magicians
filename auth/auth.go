@@ -198,3 +198,14 @@ func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	return
 }
+
+// HandleCheckUser checks if current user is logged in
+func HandleCheckUser(w http.ResponseWriter, r *http.Request) {
+	_, found := CheckCookies(r)
+	if !found {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

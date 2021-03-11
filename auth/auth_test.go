@@ -123,6 +123,22 @@ var authTestSuccess = []struct {
 		},
 		"Testing user login",
 	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/check",
+			"GET",
+			nil,
+			nil,
+			HandleCheckUser,
+		},
+
+		authOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing checking if user is logged in when they are",
+	},
 }
 
 var successCookies []*http.Cookie
@@ -213,11 +229,27 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			400,
+			401,
 			nil,
 			nil,
 		},
 		"Testing trying to log user out without any cookies",
+	},
+	{
+		authInputStruct{
+			"localhost:8080/auth/check",
+			"GET",
+			nil,
+			nil,
+			HandleCheckUser,
+		},
+
+		authOutputStruct{
+			401,
+			nil,
+			nil,
+		},
+		"Testing checking if user is logged in when they aren't",
 	},
 }
 
