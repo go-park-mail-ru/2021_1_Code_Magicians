@@ -84,13 +84,8 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 
 	body := `{"pin_id": ` + strconv.Itoa(currPin.PinId) + `}`
 
-	_, err = w.Write([]byte(body))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	w.WriteHeader(http.StatusCreated) // returning success code
+	w.Write([]byte(body))
 }
 
 func (pinSet *UserPinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
