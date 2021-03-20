@@ -200,6 +200,23 @@ var profileTestSuccess = []struct {
 		},
 		"Testing profile output using profile id",
 	},
+	{
+		profileInputStruct{
+			"/profile/delete",
+			"/profile/delete",
+			"DELETE",
+			nil,
+			nil,
+			HandleDeleteProfile,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing profile deletion",
+	},
 }
 
 var successCookies []*http.Cookie
