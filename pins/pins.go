@@ -2,7 +2,6 @@ package pins
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"pinterest/auth"
@@ -59,7 +58,6 @@ func (pinSet *UserPinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.Unmarshal(data, &currPin)
-	fmt.Println(currPin)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

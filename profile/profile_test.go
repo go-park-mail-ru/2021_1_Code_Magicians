@@ -120,6 +120,23 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
+			"/profile/password",
+			"/profile/password",
+			"PUT",
+			nil,
+			[]byte(`{"password":"New Password"}`),
+			HandleChangePassword,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing password change",
+	},
+	{
+		profileInputStruct{
 			"/profile/TestUsername",
 			"/profile/{username}",
 			"GET",
@@ -179,7 +196,9 @@ func TestProfileSuccess(t *testing.T) {
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
-			successCookies = resp.Cookies()
+			if len(resp.Cookies()) > 0 {
+				successCookies = resp.Cookies()
+			}
 
 			var result profileOutputStruct
 			result.fillFromResponse(resp)

@@ -2,7 +2,6 @@ package profile
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"pinterest/auth"
@@ -41,7 +40,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Users[cookieInfo.UserID] = currentUser
 	auth.Users.Mu.Unlock()
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
 
 // HandleEditProfile edits profile of current user
@@ -108,7 +107,6 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 // HandleGetProfile returns specified profile
 func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	fmt.Println(vars)
 	idStr, passedID := vars["id"]
 	id, _ := strconv.Atoi(idStr)
 

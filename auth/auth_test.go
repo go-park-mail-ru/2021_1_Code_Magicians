@@ -154,7 +154,9 @@ func TestAuthSuccess(t *testing.T) {
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
-			successCookies = resp.Cookies()
+			if len(resp.Cookies()) > 0 {
+				successCookies = resp.Cookies()
+			}
 
 			var result authOutputStruct
 			result.fillFromResponse(resp)
@@ -266,7 +268,9 @@ func TestAuthFailure(t *testing.T) {
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
-			failureCookies = resp.Cookies()
+			if len(resp.Cookies()) > 0 {
+				failureCookies = resp.Cookies()
+			}
 
 			var result authOutputStruct
 			result.fillFromResponse(resp)
