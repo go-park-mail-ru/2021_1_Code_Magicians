@@ -23,7 +23,7 @@ type authInputStruct struct {
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
 func (input *authInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
-	reqURL, _ := url.Parse(input.url)
+	reqURL, _ := url.Parse("https://localhost:8080" + input.url)
 	reqBody := bytes.NewBuffer(input.postBody)
 	request := &http.Request{
 		Method: input.method,
@@ -72,7 +72,7 @@ var authTestSuccess = []struct {
 }{
 	{
 		authInputStruct{
-			"localhost:8080/auth/create",
+			"/auth/create",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
@@ -93,7 +93,7 @@ var authTestSuccess = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/logout",
+			"/auth/logout",
 			"GET",
 			nil,
 			nil,
@@ -109,7 +109,7 @@ var authTestSuccess = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/login",
+			"/auth/login",
 			"GET",
 			nil,
 			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
@@ -125,7 +125,7 @@ var authTestSuccess = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/check",
+			"/auth/check",
 			"GET",
 			nil,
 			nil,
@@ -184,7 +184,7 @@ var authTestFailure = []struct {
 }{
 	{
 		authInputStruct{
-			"localhost:8080/auth/create",
+			"/auth/create",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername,` +
@@ -205,7 +205,7 @@ var authTestFailure = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/login",
+			"/auth/login",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername, password": "thisisapassword}}}`),
@@ -221,7 +221,7 @@ var authTestFailure = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/logout",
+			"/auth/logout",
 			"POST",
 			nil,
 			nil,
@@ -237,7 +237,7 @@ var authTestFailure = []struct {
 	},
 	{
 		authInputStruct{
-			"localhost:8080/auth/check",
+			"/auth/check",
 			"GET",
 			nil,
 			nil,

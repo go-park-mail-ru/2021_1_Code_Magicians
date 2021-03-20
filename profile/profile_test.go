@@ -11,20 +11,22 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
 
 type profileInputStruct struct {
-	url         string
-	method      string
-	headers     map[string][]string
-	postBody    []byte // JSON
-	profileFunc func(w http.ResponseWriter, r *http.Request)
+	url          string
+	urlForRouter string
+	method       string
+	headers      map[string][]string
+	postBody     []byte // JSON
+	profileFunc  func(w http.ResponseWriter, r *http.Request)
 }
 
 // toHTTPRequest transforms profileInputStruct to http.Request, adding global cookies
 func (input *profileInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
-	reqURL, _ := url.Parse(input.url)
+	reqURL, _ := url.Parse("https://localhost:8080" + input.url) // Scheme (https://) is required for URL parsing
 	reqBody := bytes.NewBuffer(input.postBody)
 	request := &http.Request{
 		Method: input.method,
@@ -73,7 +75,8 @@ var profileTestSuccess = []struct {
 }{
 	{
 		profileInputStruct{
-			"localhost:8080/auth/create",
+			"/auth/create",
+			"/auth/create",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
@@ -95,7 +98,8 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
-			"localhost:8080/profile",
+			"/profile",
+			"/profile",
 			"GET",
 			nil,
 			nil,
@@ -114,6 +118,50 @@ var profileTestSuccess = []struct {
 		},
 		"Testing profile output",
 	},
+	{
+		profileInputStruct{
+			"/profile/TestUsername",
+			"/profile/{username}",
+			"GET",
+			nil,
+			nil,
+			HandleGetProfile,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+				`"first_name":"TestFirstName",` +
+				`"last_name":"TestLastname",` +
+				`"email":"test@example.com",` +
+				`"avatar":"avatars/1"}`,
+			),
+		},
+		"Testing profile output using profile name",
+	},
+	{
+		profileInputStruct{
+			"/profile/0",
+			"/profile/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			HandleGetProfile,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+				`"first_name":"TestFirstName",` +
+				`"last_name":"TestLastname",` +
+				`"email":"test@example.com",` +
+				`"avatar":"avatars/1"}`,
+			),
+		},
+		"Testing profile output using profile id",
+	},
 }
 
 var successCookies []*http.Cookie
@@ -125,7 +173,9 @@ func TestProfileSuccess(t *testing.T) {
 			req := tt.in.toHTTPRequest(successCookies)
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
-			tt.in.profileFunc(rw, req)
+			m := mux.NewRouter()
+			m.HandleFunc(tt.in.urlForRouter, tt.in.profileFunc).Methods(tt.in.method)
+			m.ServeHTTP(rw, req)
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
