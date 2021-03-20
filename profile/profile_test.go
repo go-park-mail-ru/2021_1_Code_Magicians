@@ -133,7 +133,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 		},
-		"Testing password change",
+		"Testing password change", // I don't know right now how to easily check if password changed
 	},
 	{
 		profileInputStruct{
@@ -159,6 +159,27 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
+			"/profile/edit",
+			"/profile/edit",
+			"PUT",
+			nil,
+			[]byte(`{"first_name": "new First name",` +
+				`"last_name": "new Last Name",` +
+				`"email": "new@example.com",` +
+				`"avatar": "avatars/2"}`,
+			),
+			HandleEditProfile,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			nil,
+		},
+		"Testing profile edit",
+	},
+	{
+		profileInputStruct{
 			"/profile/0",
 			"/profile/{id:[0-9]+}",
 			"GET",
@@ -170,11 +191,11 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
-				`"first_name":"TestFirstName",` +
-				`"last_name":"TestLastname",` +
-				`"email":"test@example.com",` +
-				`"avatar":"avatars/1"}`,
+			[]byte(`{"username":"TestUsername",` +
+				`"first_name":"new First name",` +
+				`"last_name":"new Last Name",` +
+				`"email":"new@example.com",` +
+				`"avatar":"avatars/2"}`,
 			),
 		},
 		"Testing profile output using profile id",
