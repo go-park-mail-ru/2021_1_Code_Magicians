@@ -20,17 +20,23 @@ func boardHandler(w http.ResponseWriter, r *http.Request) {
 func runServer(addr string) {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
-	r.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("POST")
-	r.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("POST")
+	authNeeded := r.NewRoute().Subrouter()
+	authNeeded.Use(auth.CheckAuthMiddleware)
+
+	noAuthNeeded := r.NewRoute().Subrouter()
+	noAuthNeeded.Use(auth.CheckNoAuthMiddleware)
+
+	noAuthNeeded.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
+	noAuthNeeded.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("POST")
+	authNeeded.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("POST")
 	r.HandleFunc("/auth/check", auth.HandleCheckUser).Methods("GET")
 
-	r.HandleFunc("/profile/password", profile.HandleChangePassword).Methods("PUT")
-	r.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
-	r.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
+	authNeeded.HandleFunc("/profile/password", profile.HandleChangePassword).Methods("PUT")
+	authNeeded.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
+	authNeeded.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
 	r.HandleFunc("/profile/{id:[0-9]+}", profile.HandleGetProfile).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
-	r.HandleFunc("/profile", profile.HandleGetProfile).Methods("GET")
+	authNeeded.HandleFunc("/profile", profile.HandleGetProfile).Methods("GET")
 
 	pins := &pins.PinsStorage{
 		Storage: pins.NewPinsSet(0),
