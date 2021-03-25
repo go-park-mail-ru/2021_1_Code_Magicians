@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func CheckAuthMiddleware(next http.Handler) http.Handler {
+func AuthMid(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, found := CheckCookies(r)
 		if !found {
@@ -15,7 +15,7 @@ func CheckAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func CheckNoAuthMiddleware(next http.Handler) http.Handler {
+func NoAuthMid(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, found := CheckCookies(r)
 		if found {

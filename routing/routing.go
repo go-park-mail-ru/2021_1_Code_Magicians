@@ -15,8 +15,8 @@ func boardHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO /pin and /pins handling
 }
 
-// PanicMiddleware logges error if handler errors
-func PanicMiddleware(next http.Handler) http.Handler {
+// PanicMid logges error if handler errors
+func PanicMid(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			err := recover()
@@ -31,25 +31,19 @@ func PanicMiddleware(next http.Handler) http.Handler {
 
 func CreateRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.Use(PanicMiddleware)
+	r.Use(PanicMid)
 
-	authNeeded := r.NewRoute().Subrouter()
-	authNeeded.Use(auth.CheckAuthMiddleware)
-
-	noAuthNeeded := r.NewRoute().Subrouter()
-	noAuthNeeded.Use(auth.CheckNoAuthMiddleware)
-
-	noAuthNeeded.HandleFunc("/auth/signup", auth.HandleCreateUser).Methods("POST")
-	noAuthNeeded.HandleFunc("/auth/login", auth.HandleLoginUser).Methods("POST")
-	authNeeded.HandleFunc("/auth/logout", auth.HandleLogoutUser).Methods("POST")
+	r.HandleFunc("/auth/signup", auth.NoAuthMid(auth.HandleCreateUser)).Methods("POST")
+	r.HandleFunc("/auth/login", auth.NoAuthMid(auth.HandleLoginUser)).Methods("POST")
+	r.HandleFunc("/auth/logout", auth.AuthMid(auth.HandleLogoutUser)).Methods("POST")
 	r.HandleFunc("/auth/check", auth.HandleCheckUser).Methods("GET")
 
-	authNeeded.HandleFunc("/profile/password", profile.HandleChangePassword).Methods("PUT")
-	authNeeded.HandleFunc("/profile/edit", profile.HandleEditProfile).Methods("PUT")
-	authNeeded.HandleFunc("/profile/delete", profile.HandleDeleteProfile).Methods("DELETE")
+	r.HandleFunc("/profile/password", auth.AuthMid(profile.HandleChangePassword)).Methods("PUT")
+	r.HandleFunc("/profile/edit", auth.AuthMid(profile.HandleEditProfile)).Methods("PUT")
+	r.HandleFunc("/profile/delete", auth.AuthMid(profile.HandleDeleteProfile)).Methods("DELETE")
 	r.HandleFunc("/profile/{id:[0-9]+}", profile.HandleGetProfile).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
-	authNeeded.HandleFunc("/profile", profile.HandleGetProfile).Methods("GET")
+	r.HandleFunc("/profile", auth.AuthMid(profile.HandleGetProfile)).Methods("GET")
 
 	pins := &pins.PinsStorage{
 		Storage: pins.NewPinsSet(0),
@@ -57,7 +51,7 @@ func CreateRouter() *mux.Router {
 
 	r.HandleFunc("/pin", pins.Storage.AddPin).Methods("POST")
 	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
-	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.DelPinByID).Methods("DELETE")
+	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.DelPinByID)).Methods("DELETE")
 
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
