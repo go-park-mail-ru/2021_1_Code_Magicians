@@ -10,15 +10,17 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
 
 type authInputStruct struct {
-	url      string
-	method   string
-	headers  map[string][]string
-	postBody []byte
-	authFunc func(w http.ResponseWriter, r *http.Request)
+	url        string
+	method     string
+	headers    map[string][]string
+	postBody   []byte
+	authFunc   func(w http.ResponseWriter, r *http.Request)
+	middleware func(next http.HandlerFunc) http.HandlerFunc
 }
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
@@ -82,6 +84,7 @@ var authTestSuccess = []struct {
 				`"password": "thisisapassword"}`,
 			),
 			HandleCreateUser,
+			NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -98,6 +101,7 @@ var authTestSuccess = []struct {
 			nil,
 			nil,
 			HandleLogoutUser,
+			AuthMid,
 		},
 
 		authOutputStruct{
@@ -114,6 +118,7 @@ var authTestSuccess = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
 			HandleLoginUser,
+			NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -130,6 +135,7 @@ var authTestSuccess = []struct {
 			nil,
 			nil,
 			HandleCheckUser,
+			nil,
 		},
 
 		authOutputStruct{
@@ -150,7 +156,13 @@ func TestAuthSuccess(t *testing.T) {
 			req := tt.in.toHTTPRequest(successCookies)
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
-			tt.in.authFunc(rw, req)
+			m := mux.NewRouter()
+			funcToHandle := tt.in.authFunc
+			if tt.in.middleware != nil { // We don't always need middleware
+				funcToHandle = tt.in.middleware(funcToHandle)
+			}
+			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
+			m.ServeHTTP(rw, req)
 			resp := rw.Result()
 
 			// if server returned cookies, we use them
@@ -196,6 +208,7 @@ var authTestFailure = []struct {
 				`"password": "thisisapassword"`,
 			),
 			HandleCreateUser,
+			NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -212,6 +225,7 @@ var authTestFailure = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername, password": "thisisapassword}}}`),
 			HandleLoginUser,
+			NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -228,6 +242,7 @@ var authTestFailure = []struct {
 			nil,
 			nil,
 			HandleLogoutUser,
+			AuthMid,
 		},
 
 		authOutputStruct{
@@ -244,6 +259,7 @@ var authTestFailure = []struct {
 			nil,
 			nil,
 			HandleCheckUser,
+			nil,
 		},
 
 		authOutputStruct{
@@ -264,7 +280,13 @@ func TestAuthFailure(t *testing.T) {
 			req := tt.in.toHTTPRequest(failureCookies)
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
-			tt.in.authFunc(rw, req)
+			m := mux.NewRouter()
+			funcToHandle := tt.in.authFunc
+			if tt.in.middleware != nil { // We don't always need middleware
+				funcToHandle = tt.in.middleware(funcToHandle)
+			}
+			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
+			m.ServeHTTP(rw, req)
 			resp := rw.Result()
 
 			// if server returned cookies, we use them

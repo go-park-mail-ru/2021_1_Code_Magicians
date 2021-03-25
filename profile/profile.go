@@ -14,11 +14,7 @@ import (
 func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, loggedIn := auth.CheckCookies(r)
-	if !loggedIn {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	cookieInfo, _ := auth.CheckCookies(r)
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -47,11 +43,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, loggedIn := auth.CheckCookies(r)
-	if !loggedIn {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	cookieInfo, _ := auth.CheckCookies(r)
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -91,11 +83,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, loggedIn := auth.CheckCookies(r)
-	if !loggedIn {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	cookieInfo, _ := auth.CheckCookies(r)
 
 	auth.HandleLogoutUser(w, r) // User is logged out before profile deletion, for safety reasons
 
