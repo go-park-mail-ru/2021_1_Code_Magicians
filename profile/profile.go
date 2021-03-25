@@ -14,7 +14,7 @@ import (
 func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, _ := auth.CheckCookies(r)
+	userID := r.Context().Value("userID").(int)
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -31,9 +31,9 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	auth.Users.Mu.Lock()
-	currentUser := auth.Users.Users[cookieInfo.UserID]
+	currentUser := auth.Users.Users[userID]
 	currentUser.Password = userInput.Password
-	auth.Users.Users[cookieInfo.UserID] = currentUser
+	auth.Users.Users[userID] = currentUser
 	auth.Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)
@@ -43,7 +43,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, _ := auth.CheckCookies(r)
+	userID := r.Context().Value("userID").(int)
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -60,7 +60,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	auth.Users.Mu.Lock()
-	currentUser := auth.Users.Users[cookieInfo.UserID]
+	currentUser := auth.Users.Users[userID]
 	if userInput.FirstName != "" {
 		currentUser.FirstName = userInput.FirstName
 	}
@@ -73,7 +73,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	if len(userInput.Avatar) > 0 {
 		currentUser.Avatar = userInput.Avatar
 	}
-	auth.Users.Users[cookieInfo.UserID] = currentUser
+	auth.Users.Users[userID] = currentUser
 	auth.Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)
@@ -83,12 +83,12 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	cookieInfo, _ := auth.CheckCookies(r)
+	userID := r.Context().Value("userID").(int)
 
 	auth.HandleLogoutUser(w, r) // User is logged out before profile deletion, for safety reasons
 
 	auth.Users.Mu.Lock()
-	delete(auth.Users.Users, cookieInfo.UserID)
+	delete(auth.Users.Users, userID)
 	auth.Users.Mu.Unlock()
 }
 
@@ -104,12 +104,12 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 		id, foundUsername = auth.FindUser(username)
 
 		if !passedUsername { // Username was also not passed
-			cookieInfo, found := auth.CheckCookies(r)
-			if !found {
+			userID := r.Context().Value("userID")
+			if userID == nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			id = cookieInfo.UserID
+			id = userID.(int)
 		} else if !foundUsername {
 			w.WriteHeader(http.StatusNotFound)
 			return
