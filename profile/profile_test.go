@@ -22,6 +22,7 @@ type profileInputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	profileFunc  func(w http.ResponseWriter, r *http.Request)
+	middleware   func(next http.HandlerFunc) http.HandlerFunc
 }
 
 // toHTTPRequest transforms profileInputStruct to http.Request, adding global cookies
@@ -87,6 +88,7 @@ var profileTestSuccess = []struct {
 				`"avatar": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
+			auth.NoAuthMid,
 		},
 
 		profileOutputStruct{
@@ -104,6 +106,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleGetProfile,
+			auth.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		profileOutputStruct{
@@ -126,6 +129,7 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"password":"New Password"}`),
 			HandleChangePassword,
+			auth.AuthMid,
 		},
 
 		profileOutputStruct{
@@ -143,6 +147,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleGetProfile,
+			nil,
 		},
 
 		profileOutputStruct{
@@ -169,6 +174,7 @@ var profileTestSuccess = []struct {
 				`"avatar": "avatars/2"}`,
 			),
 			HandleEditProfile,
+			auth.AuthMid,
 		},
 
 		profileOutputStruct{
@@ -186,6 +192,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleGetProfile,
+			nil,
 		},
 
 		profileOutputStruct{
@@ -208,6 +215,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleDeleteProfile,
+			auth.AuthMid,
 		},
 
 		profileOutputStruct{
@@ -229,7 +237,11 @@ func TestProfileSuccess(t *testing.T) {
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
 			m := mux.NewRouter()
-			m.HandleFunc(tt.in.urlForRouter, tt.in.profileFunc).Methods(tt.in.method)
+			funcToHandle := tt.in.profileFunc
+			if tt.in.middleware != nil { // We don't always need middleware
+				funcToHandle = tt.in.middleware(funcToHandle)
+			}
+			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
 			resp := rw.Result()
 
