@@ -147,12 +147,6 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, cookieFound := CheckCookies(r)
-	if cookieFound { // User is already logged in
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
 
 	if !exists {
@@ -181,16 +175,11 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser tries to log user out of current session
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	userCookieInfo, found := CheckCookies(r)
-	if !found {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	userCookie, _ := CheckCookies(r)
+	userCookie.cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
+	http.SetCookie(w, userCookie.cookie)
 
-	userCookieInfo.cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
-	http.SetCookie(w, userCookieInfo.cookie)
-
-	cookieValue := userCookieInfo.cookie.Value
+	cookieValue := userCookie.cookie.Value
 	sessions.mu.Lock()
 	delete(sessions.sessions, cookieValue)
 	sessions.mu.Unlock()
