@@ -100,6 +100,13 @@ func CheckCookies(r *http.Request) (*CookieInfo, bool) {
 		return nil, false
 	}
 
+	if userCookieInfo.cookie.Expires.Before(time.Now()) {
+		sessions.mu.Lock()
+		delete(sessions.sessions, cookie.Value)
+		sessions.mu.Unlock()
+		return nil, false
+	}
+
 	return &userCookieInfo, true
 }
 
