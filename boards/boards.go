@@ -1,14 +1,15 @@
-package pins
+package boards
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"sync"
-
-	"github.com/gorilla/mux"
 )
+
+
 
 type PinsStorage struct {
 	Storage *PinSet
@@ -173,3 +174,4 @@ func (pinSet *PinSet) getPins() ([]*Pin, error) {
 
 	return pinSet.userPins[pinSet.userId], nil
 }
+

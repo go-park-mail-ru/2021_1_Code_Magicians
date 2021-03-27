@@ -46,13 +46,13 @@ func CreateRouter() *mux.Router {
 	r.HandleFunc("/profile", auth.AuthMid(profile.HandleGetProfile)).Methods("GET")
 
 	pins := &pins.PinsStorage{
-		Storage: pins.NewPinsSet(0),
+		Storage: pins.NewPinsSet(),
 	}
 
-	r.HandleFunc("/pin", pins.Storage.AddPin).Methods("POST")
-	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
+	r.HandleFunc("/pin", auth.AuthMid(pins.Storage.AddPin)).Methods("POST")
+	r.HandleFunc("/pin/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
+	r.HandleFunc("/pin/{id:[0-9]+}", auth.AuthMid(pins.Storage.DelPinByID)).Methods("DELETE")
 	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.DelPinByID)).Methods("DELETE")
-
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
 	return r
