@@ -187,14 +187,14 @@ func TestUserPinSet_AddPin(t *testing.T) {
 			)
 			r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin/", body)
 			w := httptest.NewRecorder()
-			testPinSet.Storage.AddPin(w, r)
+			testPinSet.Storage.HandleAddPin(w, r)
 
 			body = strings.NewReader(
 				fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 			)
 			r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 			w = httptest.NewRecorder()
-			testPinSet.Storage.AddPin(w, r)
+			testPinSet.Storage.HandleAddPin(w, r)
 
 			resResponse := w.Result()
 			resBody, _ := io.ReadAll(resResponse.Body)
@@ -214,7 +214,7 @@ func TestUserPinSet_AddPinBadData(t *testing.T) {
 	)
 	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin/", body)
 	w := httptest.NewRecorder()
-	testPinSet.Storage.AddPin(w, r)
+	testPinSet.Storage.HandleAddPin(w, r)
 
 	resResponse := w.Result()
 
@@ -230,19 +230,19 @@ func TestUserPinSet_GetPinByID(t *testing.T) {
 	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 	w := httptest.NewRecorder()
 
-	testPinSet.Storage.AddPin(w, r)
+	testPinSet.Storage.HandleAddPin(w, r)
 	body = strings.NewReader(
 		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
 	)
 	r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
 	w = httptest.NewRecorder()
-	testPinSet.Storage.AddPin(w, r)
+	testPinSet.Storage.HandleAddPin(w, r)
 
 	r = httptest.NewRequest("GET", "http://127.0.0.1:8080/pins/0", nil)
 	w = httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "1"})
 
-	testPinSet.Storage.GetPinByID(w, r)
+	testPinSet.Storage.HandleGetPinByID(w, r)
 	resResponse := w.Result()
 	resBody, _ := io.ReadAll(resResponse.Body)
 	require.Equal(t, http.StatusOK, resResponse.StatusCode)
@@ -254,7 +254,7 @@ func TestUserPinSet_GetPinByIDError(t *testing.T) {
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "4"})
 
-	testPinSet.Storage.GetPinByID(w, r)
+	testPinSet.Storage.HandleGetPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusNotFound, resResponse.StatusCode)
@@ -264,7 +264,7 @@ func TestUserPinSet_DelPinByID(t *testing.T) {
 	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/0", nil)
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "0"})
-	testPinSet.Storage.DelPinByID(w, r)
+	testPinSet.Storage.HandleDelPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusOK, resResponse.StatusCode)
@@ -276,7 +276,7 @@ func TestUserPinSet_DelNoSuchPin(t *testing.T) {
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "0"})
 
-	testPinSet.Storage.DelPinByID(w, r)
+	testPinSet.Storage.HandleDelPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusNotFound, resResponse.StatusCode)
@@ -287,7 +287,7 @@ func TestUserPinSet_BadIdCase1(t *testing.T) {
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "badId"})
 
-	testPinSet.Storage.GetPinByID(w, r)
+	testPinSet.Storage.HandleGetPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusBadRequest, resResponse.StatusCode)
@@ -298,7 +298,7 @@ func TestUserPinSet_BadIdCase2(t *testing.T) {
 	w := httptest.NewRecorder()
 	r = mux.SetURLVars(r, map[string]string{"id": "badId"})
 
-	testPinSet.Storage.DelPinByID(w, r)
+	testPinSet.Storage.HandleDelPinByID(w, r)
 	resResponse := w.Result()
 
 	require.Equal(t, http.StatusBadRequest, resResponse.StatusCode)

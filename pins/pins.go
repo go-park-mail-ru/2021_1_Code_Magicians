@@ -38,7 +38,7 @@ type Pin struct {
 	Description string `json:"description"`
 }
 
-func (pinSet *PinSet) AddPin(w http.ResponseWriter, r *http.Request) {
+func (pinSet *PinSet) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	data, err := ioutil.ReadAll(r.Body)
@@ -84,7 +84,7 @@ func (pinSet *PinSet) AddPin(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(body))
 }
 
-func (pinSet *PinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
+func (pinSet *PinSet) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -129,7 +129,7 @@ func (pinSet *PinSet) DelPinByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (pinSet *PinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
+func (pinSet *PinSet) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 
