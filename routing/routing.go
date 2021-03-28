@@ -56,11 +56,11 @@ func CreateRouter() *mux.Router {
 	r.HandleFunc("/pin", auth.AuthMid(pins.Storage.HandleAddPin)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", pins.Storage.HandleGetPinByID).Methods("GET")
 	r.HandleFunc("/pin/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
-	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
+	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleGetPinsByBoardID)).Methods("GET")
 
 	r.HandleFunc("/board/", auth.AuthMid(boards.Storage.HandleAddBoard)).Methods("POST") // Will split later
-	r.HandleFunc("/board/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
-	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
+	r.HandleFunc("/board/{id:[0-9]+}", auth.AuthMid(boards.Storage.HandleDelBoardByID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", auth.AuthMid(boards.Storage.HandleGetBoardByID)).Methods("DELETE")
 
 	return r
 }

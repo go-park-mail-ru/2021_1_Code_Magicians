@@ -92,11 +92,6 @@ func (pinSet *PinSet) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if pinId > pinSet.allPins[len(pinSet.allPins) - 1].PinId {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	pinSet.userId = r.Context().Value("userID").(int)
 
 	pinsSet, err := pinSet.getPins()
@@ -126,6 +121,7 @@ func (pinSet *PinSet) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pinSet.mutex.Unlock()
+
 	w.WriteHeader(http.StatusNotFound)
 }
 
@@ -135,11 +131,6 @@ func (pinSet *PinSet) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if pinId > pinSet.allPins[len(pinSet.allPins) - 1].PinId {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -163,6 +154,38 @@ func (pinSet *PinSet) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
+func (pinSet *PinSet) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	boardId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	boardPins := make([]*Pin, 0, 0)
+
+	pinSet.mutex.RLock()
+
+	for _, pin := range pinSet.allPins {
+		if pin.BoardID == boardId {
+			inputPin := *pin
+			boardPins = append(boardPins, &inputPin)
+
+		}
+	}
+
+	pinSet.mutex.RUnlock()
+
+	body, err := json.Marshal(boardPins)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
