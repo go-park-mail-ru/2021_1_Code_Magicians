@@ -21,7 +21,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	userInput := new(auth.UserIO)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -50,7 +50,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	userInput := new(auth.UserIO)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

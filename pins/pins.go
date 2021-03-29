@@ -152,12 +152,8 @@ func (pinSet *UserPinSet) GetPinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = w.Write(body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }
 
 func (pinSet *UserPinSet) getPins() ([]*Pin, error) {

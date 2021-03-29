@@ -32,7 +32,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -148,7 +148,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	userInput := new(UserIO)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

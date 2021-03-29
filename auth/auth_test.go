@@ -212,7 +212,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			500,
+			400,
 			nil,
 			nil,
 		},
@@ -229,7 +229,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			500,
+			400,
 			nil,
 			nil,
 		},
