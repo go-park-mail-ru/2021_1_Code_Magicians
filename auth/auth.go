@@ -54,6 +54,9 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := Users.LastFreeUserID
+	if userInput.Avatar == "" {
+		userInput.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
+	}
 
 	Users.Users[id] = User{
 		Username:  userInput.Username,
