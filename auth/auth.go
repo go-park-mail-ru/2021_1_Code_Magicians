@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
-	"math/rand"
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -11,18 +14,45 @@ import (
 var Users UsersMap = UsersMap{Users: make(map[int]User), LastFreeUserID: 0}
 var sessions sessionMap = sessionMap{sessions: make(map[string]CookieInfo)}
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-// randSeq generates random string with length of n
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+// generateRandomBytes returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func generateRandomBytes(n int) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return nil, err
 	}
-	return string(b)
+
+	return b, nil
 }
 
-const cookieLength int = 30
+// generateRandomString returns a URL-safe, base64 encoded
+// securely generated random string.
+func generateRandomString(s int) (string, error) {
+	b, err := generateRandomBytes(s)
+	return base64.URLEncoding.EncodeToString(b), err
+}
+
+func generateCookie(length int, duration time.Duration) (*http.Cookie, error) {
+	sessionValue, err := generateRandomString(cookieLength) // cookie value - random string
+	if err != nil {
+		return nil, err
+	}
+
+	expiration := time.Now().Add(duration)
+	return &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionValue,
+		Expires:  expiration,
+		HttpOnly: true, // So that frontend won't have direct access to cookies
+		Path:     "/",  // Cookie should be usable on entire website
+	}, nil
+}
+
+const cookieLength int = 40
 const expirationTime time.Duration = 10 * time.Hour
 
 // HandleCreateUser creates user with parameters passed in JSON
@@ -70,19 +100,23 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	Users.Mu.Unlock()
 
-	sessionValue := randSeq(cookieLength) // cookie value - random string
-	expiration := time.Now().Add(expirationTime)
-	cookie := http.Cookie{
-		Name:     "session_id",
-		Value:    sessionValue,
-		Expires:  expiration,
-		HttpOnly: true, // So that frontend won't have direct access to cookies
-		Path:     "/",  // Cookie should be usable on entire website
+	cookie, err := generateCookie(cookieLength, expirationTime)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		// Removing user we just created
+		Users.Mu.Lock()
+		delete(Users.Users, id)
+		Users.Mu.Unlock()
+		return
 	}
-	http.SetCookie(w, &cookie)
+
+	http.SetCookie(w, cookie)
 
 	sessions.mu.Lock()
-	sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
+	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
+	fmt.Println(cookie.Value)
 	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
@@ -164,19 +198,17 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionValue := randSeq(cookieLength) // cookie value - random string
-	expiration := time.Now().Add(expirationTime)
-	cookie := http.Cookie{
-		Name:     "session_id",
-		Value:    sessionValue,
-		Expires:  expiration,
-		HttpOnly: true, // So that frontend won't have direct access to cookies
-		Path:     "/",  // Cookie should be usable on entire website
+	cookie, err := generateCookie(cookieLength, expirationTime)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	http.SetCookie(w, &cookie)
+
+	http.SetCookie(w, cookie)
 
 	sessions.mu.Lock()
-	sessions.sessions[sessionValue] = CookieInfo{id, &cookie}
+	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
 	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)
