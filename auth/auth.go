@@ -71,16 +71,13 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Users.Mu.Lock()
-
-	// Checking for username uniqueness
-	for _, user := range Users.Users {
-		if user.Username == userInput.Username {
-			Users.Mu.Unlock()
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
+	_, alreadyExists := FindUser(userInput.Username)
+	if alreadyExists {
+		w.WriteHeader(http.StatusConflict)
+		return
 	}
+
+	Users.Mu.Lock()
 
 	id := Users.LastFreeUserID
 	if userInput.Avatar == "" {

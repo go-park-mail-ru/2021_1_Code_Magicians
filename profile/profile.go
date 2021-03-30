@@ -54,13 +54,24 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userInput.Username != "" || userInput.Password != "" { // username is unchangeable, password is changed through a different function
+	if userInput.Password != "" { // username is unchangeable, password is changed through a different function
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	auth.Users.Mu.Lock()
-	currentUser := auth.Users.Users[userID]
+	currentUser := auth.Users.Users[userID] // currentUser is a copy which we can modify freely
+	auth.Users.Mu.Unlock()
+
+	if userInput.Username != "" {
+		_, alreadyExists := auth.FindUser(userInput.Username)
+		if alreadyExists {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+
+		currentUser.Username = userInput.Username
+	}
 	if userInput.FirstName != "" {
 		currentUser.FirstName = userInput.FirstName
 	}
@@ -73,6 +84,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	if len(userInput.Avatar) > 0 {
 		currentUser.Avatar = userInput.Avatar
 	}
+	auth.Users.Mu.Lock()
 	auth.Users.Users[userID] = currentUser
 	auth.Users.Mu.Unlock()
 
