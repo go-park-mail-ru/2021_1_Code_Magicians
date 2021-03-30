@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -116,7 +115,6 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	sessions.mu.Lock()
 	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
-	fmt.Println(cookie.Value)
 	sessions.mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)

@@ -82,10 +82,10 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername",` +
 				`"password": "thisisapassword",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
 				`"email": "test@example.com",` +
-				`"avatar": "avatars/1"}`,
+				`"avatarLink": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
 			auth.NoAuthMid,
@@ -113,10 +113,10 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
-				`"first_name":"TestFirstName",` +
-				`"last_name":"TestLastname",` +
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastname",` +
 				`"email":"test@example.com",` +
-				`"avatar":"avatars/1"}`,
+				`"avatarLink":"avatars/1"}`,
 			),
 		},
 		"Testing profile output",
@@ -154,10 +154,10 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
-				`"first_name":"TestFirstName",` +
-				`"last_name":"TestLastname",` +
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastname",` +
 				`"email":"test@example.com",` +
-				`"avatar":"avatars/1"}`,
+				`"avatarLink":"avatars/1"}`,
 			),
 		},
 		"Testing profile output using profile name",
@@ -168,10 +168,10 @@ var profileTestSuccess = []struct {
 			"/profile/edit",
 			"PUT",
 			nil,
-			[]byte(`{"first_name": "new First name",` +
-				`"last_name": "new Last Name",` +
+			[]byte(`{"firstName": "new First name",` +
+				`"lastName": "new Last Name",` +
 				`"email": "new@example.com",` +
-				`"avatar": "avatars/2"}`,
+				`"avatarLink": "avatars/2"}`,
 			),
 			HandleEditProfile,
 			auth.AuthMid,
@@ -199,10 +199,10 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` +
-				`"first_name":"new First name",` +
-				`"last_name":"new Last Name",` +
+				`"firstName":"new First name",` +
+				`"lastName":"new Last Name",` +
 				`"email":"new@example.com",` +
-				`"avatar":"avatars/2"}`,
+				`"avatarLink":"avatars/2"}`,
 			),
 		},
 		"Testing profile output using profile id",

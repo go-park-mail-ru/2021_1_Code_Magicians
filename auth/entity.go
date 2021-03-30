@@ -19,10 +19,10 @@ type User struct {
 type UserIO struct {
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
+	FirstName string `json:"firstName,omitempty"`
+	LastName  string `json:"lastName,omitempty"`
 	Email     string `json:"email,omitempty"`
-	Avatar    string `json:"avatar,omitempty"`
+	Avatar    string `json:"avatarLink,omitempty"`
 }
 
 // UsersMap is basically a database's fake

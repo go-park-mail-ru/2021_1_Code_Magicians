@@ -78,8 +78,8 @@ var authTestSuccess = []struct {
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
 				`"email": "test@example.com",` +
 				`"password": "thisisapassword"}`,
 			),
