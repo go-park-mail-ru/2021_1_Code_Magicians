@@ -15,6 +15,7 @@ func runServer(addr string) {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://52.59.228.167:8081"},
 		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 	})
 
 	handler := c.Handler(r)
