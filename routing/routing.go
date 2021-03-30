@@ -15,8 +15,8 @@ func boardHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO /pin and /pins handling
 }
 
-// PanicMid logges error if handler errors
-func PanicMid(next http.Handler) http.Handler {
+// panicMid logges error if handler errors
+func panicMid(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			err := recover()
@@ -29,9 +29,17 @@ func PanicMid(next http.Handler) http.Handler {
 	})
 }
 
+// jsonContentTypeMid adds "Content-type: application/json" to headers
+func jsonContentTypeMid(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func CreateRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.Use(PanicMid)
+	r.Use(panicMid)
 
 	r.HandleFunc("/auth/signup", auth.NoAuthMid(auth.HandleCreateUser)).Methods("POST")
 	r.HandleFunc("/auth/login", auth.NoAuthMid(auth.HandleLoginUser)).Methods("POST")
@@ -41,17 +49,17 @@ func CreateRouter() *mux.Router {
 	r.HandleFunc("/profile/password", auth.AuthMid(profile.HandleChangePassword)).Methods("PUT")
 	r.HandleFunc("/profile/edit", auth.AuthMid(profile.HandleEditProfile)).Methods("PUT")
 	r.HandleFunc("/profile/delete", auth.AuthMid(profile.HandleDeleteProfile)).Methods("DELETE")
-	r.HandleFunc("/profile/{id:[0-9]+}", profile.HandleGetProfile).Methods("GET") // Is preferred over next one
-	r.HandleFunc("/profile/{username}", profile.HandleGetProfile).Methods("GET")
-	r.HandleFunc("/profile", auth.AuthMid(profile.HandleGetProfile)).Methods("GET")
+	r.HandleFunc("/profile/{id:[0-9]+}", jsonContentTypeMid(profile.HandleGetProfile)).Methods("GET") // Is preferred over next one
+	r.HandleFunc("/profile/{username}", jsonContentTypeMid(profile.HandleGetProfile)).Methods("GET")
+	r.HandleFunc("/profile", auth.AuthMid(jsonContentTypeMid(profile.HandleGetProfile))).Methods("GET")
 
 	pins := &pins.PinsStorage{
 		Storage: pins.NewPinsSet(0),
 	}
 
 	r.HandleFunc("/pin", pins.Storage.AddPin).Methods("POST")
-	r.HandleFunc("/pins/{id:[0-9]+}", pins.Storage.GetPinByID).Methods("GET")
-	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.DelPinByID)).Methods("DELETE")
+	r.HandleFunc("/pins/{id:[0-9]+}", jsonContentTypeMid(pins.Storage.GetPinByID)).Methods("GET")
+	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(jsonContentTypeMid(pins.Storage.DelPinByID))).Methods("DELETE")
 
 	r.HandleFunc("/board/", boardHandler) // Will split later
 
