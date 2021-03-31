@@ -65,33 +65,37 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userInput.Username == "" || userInput.Password == "" ||
-		userInput.Email == "" {
+	if userInput.Username == nil || userInput.Password == nil ||
+		userInput.Email == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, alreadyExists := FindUser(userInput.Username)
+	var newUser User
+	userInput.FillNilsWithEmptyStr()
+	userInput.UpdateUser(&newUser)
+
+	if newUser.Username == "" || newUser.Password == "" ||
+		newUser.Email == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, alreadyExists := FindUser(newUser.Username)
 	if alreadyExists {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
+	if newUser.Avatar == "" {
+		newUser.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
+	}
+
 	Users.Mu.Lock()
 
 	id := Users.LastFreeUserID
-	if userInput.Avatar == "" {
-		userInput.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
-	}
 
-	Users.Users[id] = User{
-		Username:  userInput.Username,
-		Password:  userInput.Password,
-		FirstName: userInput.FirstName,
-		LastName:  userInput.LastName,
-		Email:     userInput.Email,
-		Avatar:    userInput.Avatar,
-	}
+	Users.Users[id] = newUser
 	Users.LastFreeUserID++
 
 	Users.Mu.Unlock()
@@ -181,12 +185,16 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userInput.Username == "" || userInput.Password == "" {
+	if userInput.Username == nil || userInput.Password == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if *userInput.Username == "" || *userInput.Password == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
+	id, exists := checkUserCredentials(*userInput.Username, *userInput.Password)
 
 	if !exists {
 		w.WriteHeader(http.StatusUnauthorized)
