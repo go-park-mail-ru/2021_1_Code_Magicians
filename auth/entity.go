@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"sync"
@@ -116,7 +117,7 @@ func (userInput *UserEditInput) Validate() (bool, error) {
 
 // UpdateFrom changes user fields with non-empty fields of userInput
 // By default it's assumed that userInput is validated
-func (user *User) UpdateFrom(userInput interface{}) {
+func (user *User) UpdateFrom(userInput interface{}) error {
 	switch userInput.(type) {
 	case *UserRegInput:
 		{
@@ -149,9 +150,11 @@ func (user *User) UpdateFrom(userInput interface{}) {
 				user.Avatar = userEditInput.Avatar
 			}
 		}
-	default: // Maybe we should raise panic here?
-		return
+	default:
+		return errors.New("auth.UpdateFrom: Unknown input type")
 	}
+
+	return nil
 }
 
 func (userOutput *UserOutput) FillFromUser(user *User) {
