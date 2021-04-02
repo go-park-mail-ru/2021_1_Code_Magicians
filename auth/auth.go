@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/asaskevich/govalidator"
 )
 
 // Users is a map of all existing users
@@ -58,25 +60,17 @@ const expirationTime time.Duration = 10 * time.Hour
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserIO)
+	userInput := new(UserRegInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if userInput.Username == nil || userInput.Password == nil ||
-		userInput.Email == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	var newUser User
-	userInput.FillNilsWithEmptyStr()
-	userInput.UpdateUser(&newUser)
-
-	if newUser.Username == "" || newUser.Password == "" ||
-		newUser.Email == "" {
+	newUser.UpdateFrom(&userInput)
+	valid, err := govalidator.ValidateStruct(newUser)
+	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

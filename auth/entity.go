@@ -2,8 +2,47 @@ package auth
 
 import (
 	"net/http"
+	"regexp"
 	"sync"
+
+	"github.com/asaskevich/govalidator"
 )
+
+const usernameRegexp = "^[a-zA-Z0-9 _]{2,42}$"
+const firstNameRegexp = "^[a-zA-Z ]{0,42}$"
+
+// init initiates custom validators for User struct
+func init() {
+	govalidator.CustomTypeTagMap.Set("filepath", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched = govalidator.IsUnixFilePath(i.(string))
+		}
+
+		return matched
+	})
+
+	govalidator.CustomTypeTagMap.Set("name", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched, _ = regexp.MatchString(firstNameRegexp, i.(string))
+		}
+
+		return matched
+	})
+
+	govalidator.CustomTypeTagMap.Set("username", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched, _ = regexp.MatchString(usernameRegexp, i.(string))
+		}
+
+		return matched
+	})
+}
 
 // User is, well, a struct depicting a user
 type User struct {
@@ -15,79 +54,102 @@ type User struct {
 	Avatar    string // path to avatar
 }
 
-// UserIO is used to parse JSON with users' data
-type UserIO struct {
-	Username  *string `json:"username,omitempty"`
-	Password  *string `json:"password,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	Email     *string `json:"email,omitempty"`
-	Avatar    *string `json:"avatarLink,omitempty"`
+// UserOutput is used to marshal JSON with users' data
+type UserOutput struct {
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
+	FirstName string `json:"firstName,omitempty"`
+	LastName  string `json:"lastName,omitempty"`
+	Email     string `json:"email,omitempty"`
+	Avatar    string `json:"avatarLink,omitempty"`
 }
 
-// FillNillsWithEmptyStr replaces nil pointers in userIO with pointers to empty string
-func (userIO *UserIO) FillNilsWithEmptyStr() {
-	if userIO.Username == nil {
-		userIO.Username = new(string)
-	}
-	if userIO.Password == nil {
-		userIO.Password = new(string)
-	}
-	if userIO.FirstName == nil {
-		userIO.FirstName = new(string)
-	}
-	if userIO.LastName == nil {
-		userIO.LastName = new(string)
-	}
-	if userIO.Email == nil {
-		userIO.Email = new(string)
-	}
-	if userIO.Avatar == nil {
-		userIO.Avatar = new(string)
+type UserRegInput struct {
+	Username string `json:"username",valid:"username"`
+	Password string `json:"password",valid:"stringlength(8|30)"`
+	Email    string `json:"email",valid:"email"`
+}
+
+type UserPassChangeInput struct {
+	Password string `json:"password",valid:"stringlength(8|30)"`
+}
+
+type UserEditInput struct {
+	Username  string `json:"username",valid:"username,optional"`
+	FirstName string `json:"firstName",valid:"name,optional"`
+	LastName  string `json:"lastName",valid:"name,optional"`
+	Email     string `json:"email",valid:"email,optional"`
+	Avatar    string `json:"avatarLink",valid:"filepath,optional"`
+}
+
+// Validate validates UserRegInput struct according to following rules:
+// Username - 2-42 alphanumeric, "_" or " " characters
+// Password - 8-30 characters
+// Email - standard email validity check
+// Username uniqueness is NOT checked
+func (userInput *UserRegInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// Validate validates UserPassChangeInput struct - Password is 8-30 characters
+func (userInput *UserPassChangeInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// Validate validates UserEditInput struct according to following rules:
+// Username - 2-42 alphanumeric, "_" or whitespace characters
+// LastName, FirstName - 0-42 alpha or whitespace characters
+// Email - standard email validity check
+// Avatar - some Unix file path
+// Username uniqueness or Avatar actual existance are NOT checked
+func (userInput *UserEditInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// UpdateFrom changes user fields with non-empty fields of userInput
+// By default it's assumed that userInput is validated
+func (user *User) UpdateFrom(userInput *interface{}) {
+	switch (*userInput).(type) {
+	case UserRegInput:
+		{
+			userRegInput := (*userInput).(UserRegInput)
+			user.Username = userRegInput.Username
+			user.Password = userRegInput.Password // TODO: hashing
+			user.Email = userRegInput.Email
+		}
+	case UserPassChangeInput:
+		user.Password = (*userInput).(UserPassChangeInput).Password // TODO: hashing
+	case UserEditInput:
+		{
+			userEditInput := (*userInput).(UserEditInput)
+			if userEditInput.Username != "" {
+				user.Username = userEditInput.Username
+			}
+			if userEditInput.FirstName != "" {
+				user.FirstName = userEditInput.FirstName
+			}
+			if userEditInput.LastName != "" {
+				user.LastName = userEditInput.LastName
+			}
+			if userEditInput.Email != "" {
+				user.Email = userEditInput.Email
+			}
+			if userEditInput.Avatar != "" {
+				user.Avatar = userEditInput.Avatar
+			}
+		}
+	default: // Maybe we should raise panic here?
+		return
 	}
 }
 
-// UpdateUser updates user with values from userIO
-func (userIO *UserIO) UpdateUser(user *User) {
-	if userIO.Username != nil {
-		user.Username = *userIO.Username
-	}
-	if userIO.Password != nil {
-		user.Password = *userIO.Password
-	}
-	if userIO.FirstName != nil {
-		user.FirstName = *userIO.FirstName
-	}
-	if userIO.LastName != nil {
-		user.LastName = *userIO.LastName
-	}
-	if userIO.Email != nil {
-		user.Email = *userIO.Email
-	}
-	if userIO.Avatar != nil {
-		user.Avatar = *userIO.Avatar
-	}
-}
-
-func (userIO *UserIO) FillFromUser(user *User) {
-	if user.Username != "" {
-		userIO.Username = &user.Username
-	}
-	if user.Password != "" {
-		userIO.Password = &user.Password
-	}
-	if user.FirstName != "" {
-		userIO.FirstName = &user.FirstName
-	}
-	if user.LastName != "" {
-		userIO.LastName = &user.LastName
-	}
-	if user.Email != "" {
-		userIO.Email = &user.Email
-	}
-	if user.Avatar != "" {
-		userIO.Avatar = &user.Avatar
-	}
+func (userOutput *UserOutput) FillFromUser(user *User) {
+	userOutput.Username = user.Username
+	userOutput.Password = user.Password
+	userOutput.FirstName = user.FirstName
+	userOutput.LastName = user.LastName
+	userOutput.Email = user.Email
+	userOutput.Avatar = user.Avatar
 }
 
 // UsersMap is basically a database's fake
