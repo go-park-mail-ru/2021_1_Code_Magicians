@@ -3,6 +3,7 @@ package profile
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"pinterest/auth"
 	"strconv"
@@ -65,7 +66,12 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	newUser := auth.Users.Users[userID] // newUser is a copy which we can modify freely
 	auth.Users.Mu.Unlock()
 
-	newUser.UpdateFrom(userInput)
+	err = newUser.UpdateFrom(userInput)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	_, alreadyExists := auth.FindUser(newUser.Username)
 	if alreadyExists {

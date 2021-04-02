@@ -72,7 +72,12 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var newUser User
-	newUser.UpdateFrom(userInput)
+	err = newUser.UpdateFrom(userInput)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	_, alreadyExists := FindUser(newUser.Username)
 	if alreadyExists {
