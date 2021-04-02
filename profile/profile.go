@@ -18,14 +18,15 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(auth.UserIO)
+	userInput := new(auth.UserPassChangeInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if userInput.Password == "" {
+	valid, err := userInput.Validate()
+	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -47,45 +48,33 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(auth.UserIO)
+	userInput := new(auth.UserEditInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if userInput.Password != "" { // username is unchangeable, password is changed through a different function
+	valid, err := userInput.Validate()
+	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	auth.Users.Mu.Lock()
-	currentUser := auth.Users.Users[userID] // currentUser is a copy which we can modify freely
+	newUser := auth.Users.Users[userID] // newUser is a copy which we can modify freely
 	auth.Users.Mu.Unlock()
 
-	if userInput.Username != "" {
-		_, alreadyExists := auth.FindUser(userInput.Username)
-		if alreadyExists {
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
+	newUser.UpdateFrom(userInput)
 
-		currentUser.Username = userInput.Username
+	_, alreadyExists := auth.FindUser(newUser.Username)
+	if alreadyExists {
+		w.WriteHeader(http.StatusConflict)
+		return
 	}
-	if userInput.FirstName != "" {
-		currentUser.FirstName = userInput.FirstName
-	}
-	if userInput.LastName != "" {
-		currentUser.LastName = userInput.LastName
-	}
-	if userInput.Email != "" {
-		currentUser.Email = userInput.Email
-	}
-	if len(userInput.Avatar) > 0 {
-		currentUser.Avatar = userInput.Avatar
-	}
+
 	auth.Users.Mu.Lock()
-	auth.Users.Users[userID] = currentUser
+	auth.Users.Users[userID] = newUser
 	auth.Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusOK)
@@ -132,14 +121,9 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	user := auth.Users.Users[id]
 	auth.Users.Mu.Unlock()
 
-	userOutput := auth.UserIO{
-		Username: user.Username,
-		// Password is ommitted on purpose
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		Avatar:    user.Avatar,
-	}
+	var userOutput auth.UserOutput
+	userOutput.FillFromUser(&user)
+	userOutput.Password = "" // Password is ommitted on purpose
 
 	responseBody, err := json.Marshal(userOutput)
 	if err != nil {
