@@ -82,9 +82,9 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername",` +
 				`"password": "thisisapassword",` +
+				`"email": "test@example.com",` +
 				`"firstName": "TestFirstName",` +
 				`"lastName": "TestLastname",` +
-				`"email": "test@example.com",` +
 				`"avatarLink": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
@@ -113,9 +113,9 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastname",` +
-				`"email":"test@example.com",` +
 				`"avatarLink":"avatars/1"}`,
 			),
 		},
@@ -154,9 +154,9 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastname",` +
-				`"email":"test@example.com",` +
 				`"avatarLink":"avatars/1"}`,
 			),
 		},
@@ -168,7 +168,8 @@ var profileTestSuccess = []struct {
 			"/profile/edit",
 			"PUT",
 			nil,
-			[]byte(`{"firstName": "new First name",` +
+			[]byte(`{"username": "new_User_Name",` +
+				`"firstName": "new First name",` +
 				`"lastName": "new Last Name",` +
 				`"email": "new@example.com",` +
 				`"avatarLink": "avatars/2"}`,
@@ -198,10 +199,10 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` +
+			[]byte(`{"username":"new_User_Name",` +
+				`"email":"new@example.com",` +
 				`"firstName":"new First name",` +
 				`"lastName":"new Last Name",` +
-				`"email":"new@example.com",` +
 				`"avatarLink":"avatars/2"}`,
 			),
 		},

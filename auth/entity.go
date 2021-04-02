@@ -58,28 +58,36 @@ type User struct {
 type UserOutput struct {
 	Username  string `json:"username,omitempty"`
 	Password  string `json:"password,omitempty"`
+	Email     string `json:"email,omitempty"`
 	FirstName string `json:"firstName,omitempty"`
 	LastName  string `json:"lastName,omitempty"`
-	Email     string `json:"email,omitempty"`
 	Avatar    string `json:"avatarLink,omitempty"`
 }
 
 type UserRegInput struct {
-	Username string `json:"username",valid:"username"`
-	Password string `json:"password",valid:"stringlength(8|30)"`
-	Email    string `json:"email",valid:"email"`
+	Username  string `json:"username" valid:"username"`
+	Password  string `json:"password" valid:"stringlength(8|30)"`
+	Email     string `json:"email" valid:"email"`
+	FirstName string `json:"firstName" valid:"name,optional"`
+	LastName  string `json:"lastName" valid:"name,optional"`
+	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
+}
+
+type UserLoginInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type UserPassChangeInput struct {
-	Password string `json:"password",valid:"stringlength(8|30)"`
+	Password string `json:"password" valid:"stringlength(8|30)"`
 }
 
 type UserEditInput struct {
-	Username  string `json:"username",valid:"username,optional"`
-	FirstName string `json:"firstName",valid:"name,optional"`
-	LastName  string `json:"lastName",valid:"name,optional"`
-	Email     string `json:"email",valid:"email,optional"`
-	Avatar    string `json:"avatarLink",valid:"filepath,optional"`
+	Username  string `json:"username" valid:"username,optional"`
+	Email     string `json:"email" valid:"email,optional"`
+	FirstName string `json:"firstName" valid:"name,optional"`
+	LastName  string `json:"lastName" valid:"name,optional"`
+	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
 }
 
 // Validate validates UserRegInput struct according to following rules:
@@ -108,20 +116,23 @@ func (userInput *UserEditInput) Validate() (bool, error) {
 
 // UpdateFrom changes user fields with non-empty fields of userInput
 // By default it's assumed that userInput is validated
-func (user *User) UpdateFrom(userInput *interface{}) {
-	switch (*userInput).(type) {
-	case UserRegInput:
+func (user *User) UpdateFrom(userInput interface{}) {
+	switch userInput.(type) {
+	case *UserRegInput:
 		{
-			userRegInput := (*userInput).(UserRegInput)
+			userRegInput := *userInput.(*UserRegInput)
 			user.Username = userRegInput.Username
 			user.Password = userRegInput.Password // TODO: hashing
 			user.Email = userRegInput.Email
+			user.FirstName = userRegInput.FirstName
+			user.LastName = userRegInput.LastName
+			user.Avatar = userRegInput.Avatar
 		}
-	case UserPassChangeInput:
-		user.Password = (*userInput).(UserPassChangeInput).Password // TODO: hashing
-	case UserEditInput:
+	case *UserPassChangeInput:
+		user.Password = userInput.(*UserPassChangeInput).Password // TODO: hashing
+	case *UserEditInput:
 		{
-			userEditInput := (*userInput).(UserEditInput)
+			userEditInput := *userInput.(*UserEditInput)
 			if userEditInput.Username != "" {
 				user.Username = userEditInput.Username
 			}

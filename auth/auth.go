@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/asaskevich/govalidator"
 )
 
 // Users is a map of all existing users
@@ -67,13 +65,14 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newUser User
-	newUser.UpdateFrom(&userInput)
-	valid, err := govalidator.ValidateStruct(newUser)
+	valid, err := userInput.Validate()
 	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	var newUser User
+	newUser.UpdateFrom(userInput)
 
 	_, alreadyExists := FindUser(newUser.Username)
 	if alreadyExists {
@@ -172,23 +171,14 @@ func checkUserCredentials(username string, password string) (int, bool) {
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserIO)
+	userInput := new(UserLoginInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if userInput.Username == nil || userInput.Password == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if *userInput.Username == "" || *userInput.Password == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, exists := checkUserCredentials(*userInput.Username, *userInput.Password)
+	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
 
 	if !exists {
 		w.WriteHeader(http.StatusUnauthorized)
