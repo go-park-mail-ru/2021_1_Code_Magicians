@@ -74,12 +74,12 @@ var authTestSuccess = []struct {
 }{
 	{
 		authInputStruct{
-			"/auth/create",
+			"/auth/signup",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
 				`"email": "test@example.com",` +
 				`"password": "thisisapassword"}`,
 			),
@@ -105,7 +105,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -122,7 +122,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -139,7 +139,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -212,7 +212,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			500,
+			400,
 			nil,
 			nil,
 		},
@@ -229,7 +229,7 @@ var authTestFailure = []struct {
 		},
 
 		authOutputStruct{
-			500,
+			400,
 			nil,
 			nil,
 		},

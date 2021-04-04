@@ -154,10 +154,14 @@ func (pinSet *PinSet) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
 func (pinSet *PinSet) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	boardId, err := strconv.Atoi(vars["id"])
@@ -186,7 +190,7 @@ func (pinSet *PinSet) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+  w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 

@@ -76,16 +76,16 @@ var profileTestSuccess = []struct {
 }{
 	{
 		profileInputStruct{
-			"/auth/create",
-			"/auth/create",
+			"/auth/signup",
+			"/auth/signup",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
 				`"password": "thisisapassword",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
 				`"email": "test@example.com",` +
-				`"avatar": "avatars/1"}`,
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
+				`"avatarLink": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
 			auth.NoAuthMid,
@@ -113,10 +113,10 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
-				`"first_name":"TestFirstName",` +
-				`"last_name":"TestLastname",` +
 				`"email":"test@example.com",` +
-				`"avatar":"avatars/1"}`,
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastname",` +
+				`"avatarLink":"avatars/1"}`,
 			),
 		},
 		"Testing profile output",
@@ -133,7 +133,7 @@ var profileTestSuccess = []struct {
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -154,10 +154,10 @@ var profileTestSuccess = []struct {
 			200,
 			nil,
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
-				`"first_name":"TestFirstName",` +
-				`"last_name":"TestLastname",` +
 				`"email":"test@example.com",` +
-				`"avatar":"avatars/1"}`,
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastname",` +
+				`"avatarLink":"avatars/1"}`,
 			),
 		},
 		"Testing profile output using profile name",
@@ -168,17 +168,18 @@ var profileTestSuccess = []struct {
 			"/profile/edit",
 			"PUT",
 			nil,
-			[]byte(`{"first_name": "new First name",` +
-				`"last_name": "new Last Name",` +
+			[]byte(`{"username": "new_User_Name",` +
+				`"firstName": "new First name",` +
+				`"lastName": "new Last Name",` +
 				`"email": "new@example.com",` +
-				`"avatar": "avatars/2"}`,
+				`"avatarLink": "avatars/2"}`,
 			),
 			HandleEditProfile,
 			auth.AuthMid,
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -198,11 +199,11 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` +
-				`"first_name":"new First name",` +
-				`"last_name":"new Last Name",` +
+			[]byte(`{"username":"new_User_Name",` +
 				`"email":"new@example.com",` +
-				`"avatar":"avatars/2"}`,
+				`"firstName":"new First name",` +
+				`"lastName":"new Last Name",` +
+				`"avatarLink":"avatars/2"}`,
 			),
 		},
 		"Testing profile output using profile id",
@@ -219,7 +220,7 @@ var profileTestSuccess = []struct {
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
