@@ -74,7 +74,7 @@ var authTestSuccess = []struct {
 }{
 	{
 		authInputStruct{
-			"/auth/create",
+			"/auth/signup",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +

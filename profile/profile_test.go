@@ -76,8 +76,8 @@ var profileTestSuccess = []struct {
 }{
 	{
 		profileInputStruct{
-			"/auth/create",
-			"/auth/create",
+			"/auth/signup",
+			"/auth/signup",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
