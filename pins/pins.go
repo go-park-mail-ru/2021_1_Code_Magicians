@@ -159,9 +159,6 @@ func (pinSet *PinSet) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(body)
-}
 func (pinSet *PinSet) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	boardId, err := strconv.Atoi(vars["id"])
