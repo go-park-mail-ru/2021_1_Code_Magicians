@@ -3,30 +3,29 @@ package pins
 import (
 	"bytes"
 	"fmt"
-	"io"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
+	"pinterest/auth"
 	"testing"
- . "pinterest/auth"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/require"
 )
 
-type authInputStruct struct {
-	url        string
-	method     string
-	headers    map[string][]string
-	postBody   []byte
-	authFunc   func(w http.ResponseWriter, r *http.Request)
-	middleware func(next http.HandlerFunc) http.HandlerFunc
+type InputStruct struct {
+	url          string
+	urlForRouter string
+	method       string
+	headers      map[string][]string
+	postBody     []byte // JSON
+	profileFunc  func(w http.ResponseWriter, r *http.Request)
+	middleware   func(next http.HandlerFunc) http.HandlerFunc
 }
 
-// toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
-func (input *authInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
-	reqURL, _ := url.Parse("https://localhost:8080" + input.url)
+// toHTTPRequest transforms InputStruct to http.Request, adding global cookies
+func (input *InputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
+	reqURL, _ := url.Parse("https://localhost:8080" + input.url) // Scheme (https://) is required for URL parsing
 	reqBody := bytes.NewBuffer(input.postBody)
 	request := &http.Request{
 		Method: input.method,
@@ -46,14 +45,14 @@ func (input *authInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Reques
 	return request
 }
 
-type authOutputStruct struct {
+type OutputStruct struct {
 	responseCode int
 	headers      map[string][]string
-	postBody     []byte
+	postBody     []byte // JSON
 }
 
-// fillFromResponse transforms http.Response to authOutputStruct
-func (output *authOutputStruct) fillFromResponse(response *http.Response) error {
+// fillFromResponse transforms http.Response to OutputStruct
+func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 	output.responseCode = response.StatusCode
 	output.headers = response.Header
 	if len(output.headers) == 0 {
@@ -67,95 +66,205 @@ func (output *authOutputStruct) fillFromResponse(response *http.Response) error 
 	return err
 }
 
-// These tests have to run in that order!!!
-type authTest struct {
-	in   authInputStruct
-	out  authOutputStruct
-	name string
-}
-
-
-var successCookies []*http.Cookie
-
-//func TestAuthSuccess(t *testing.T) {
-//	for _, tt := range authTest {
-//		tt := tt
-//		t.Run(tt.name, func(t *testing.T) {
-//			req := tt.in.toHTTPRequest(successCookies)
-//
-//			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
-//			m := mux.NewRouter()
-//			funcToHandle := tt.in.authFunc
-//			if tt.in.middleware != nil { // We don't always need middleware
-//				funcToHandle = tt.in.middleware(funcToHandle)
-//			}
-//			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
-//			m.ServeHTTP(rw, req)
-//			resp := rw.Result()
-//
-//			// if server returned cookies, we use them
-//			if len(resp.Cookies()) > 0 {
-//				successCookies = resp.Cookies()
-//			}
-//
-//			var result authOutputStruct
-//			result.fillFromResponse(resp)
-//
-//			require.Equal(t, tt.out.responseCode, result.responseCode,
-//				fmt.Sprintf("Expected: %d as response code\nbut got:  %d",
-//					tt.out.responseCode, result.responseCode))
-//			for key, val := range tt.out.headers {
-//				resultVal, ok := result.headers[key]
-//				require.True(t, !ok,
-//					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.headers, result.headers))
-//				require.Equal(t, val, resultVal,
-//					fmt.Sprintf("Expected value of header %s: %v is different from actual value: %v", key, val, resultVal))
-//			}
-//			require.Equal(t, tt.out.postBody, result.postBody,
-//				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
-//					tt.out.postBody, result.postBody))
-//		})
-//	}
-//}
-
 var testPinSet = PinsStorage{
 	Storage: NewPinsSet(),
 }
 
-func TestUserPinSet_AddPin(t *testing.T) {
-	authTest := authTest{
-		authInputStruct{
-			"/auth/create",
+var successCookies []*http.Cookie
+
+var pinTest = []struct {
+	in   InputStruct
+	out  OutputStruct
+	name string
+}{
+	{
+		InputStruct{
+			"/auth/signup",
+			"/auth/signup",
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername",` +
+				`"password": "thisisapassword",` +
 				`"first_name": "TestFirstName",` +
 				`"last_name": "TestLastname",` +
 				`"email": "test@example.com",` +
-				`"password": "thisisapassword"}`,
+				`"avatar": "avatars/1"}`,
 			),
-			HandleCreateUser,
-			NoAuthMid,
+			auth.HandleCreateUser,
+			auth.NoAuthMid,
 		},
 
-			authOutputStruct{
-				201,
-				nil,
-				nil,
-			},
-			"Testing user creation",
-	}
+		OutputStruct{
+			201,
+			nil,
+			nil,
+		},
+		"Testing profile creation",
+	},
+	{
+		InputStruct{
+			"/pin",
+			"/pin",
+			"POST",
+			nil,
+			[]byte(`{"boardID":0,` +
+				`"title":"exampletitle",` +
+				`"pinImage":"example/link",` +
+				`"description":"exampleDescription"}`),
+			testPinSet.Storage.HandleAddPin,
+			auth.AuthMid, // If user is not logged in, they can't access their profile
+		},
 
-	t.Run(authTest.name, func(t *testing.T) {
-			req := authTest.in.toHTTPRequest(successCookies)
+		OutputStruct{
+			201,
+			nil,
+			[]byte(`{"pin_id": 0}`,
+			),
+		},
+		"Testing add first pin",
+	},
+	{
+		InputStruct{
+			"/pin",
+			"/pin",
+			"POST",
+			nil,
+			[]byte(`{"boardID":0,` +
+				`"title":"exampletitle",` +
+				`"pinImage":"example/link",` +
+				`"description":"exampleDescription"}`),
+			testPinSet.Storage.HandleAddPin,
+			auth.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			201,
+			nil,
+			[]byte(`{"pin_id": 1}`,
+			),
+		},
+		"Testing add second pin",
+	},
+	{
+		InputStruct{
+			"/pin/1",
+			"/pin/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testPinSet.Storage.HandleGetPinByID,
+			auth.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte(`{"id":1,` +
+				`"boardID":0,` +
+				`"title":"exampletitle",` +
+				`"pinImage":"example/link",` +
+				`"description":"exampleDescription"}`,
+			),
+		},
+		"Testing get pin by id",
+	},
+	{
+		InputStruct{
+			"/pins/0",
+			"/pins/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testPinSet.Storage.HandleGetPinsByBoardID,
+			auth.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte(`[{"id":0,` +
+				`"boardID":0,` +
+				`"title":"exampletitle",` +
+				`"pinImage":"example/link",` +
+				`"description":"exampleDescription"},` +
+				`{"id":1,` +
+				`"boardID":0,` +
+				`"title":"exampletitle",` +
+				`"pinImage":"example/link",` +
+				`"description":"exampleDescription"}]`,
+			),
+		},
+		"Testing get pin by board id",
+	},
+	{
+		InputStruct{
+			"/pin/0",
+			"/pin/{id:[0-9]+}",
+			"DELETE",
+			nil,
+			nil,
+			testPinSet.Storage.HandleDelPinByID,
+			auth.AuthMid,
+		},
+
+		OutputStruct{
+			204,
+			nil,
+			nil,
+		},
+		"Testing delete pin", // I don't know right now how to easily check if password changed
+	},
+	{
+		InputStruct{
+			"/pins/3",
+			"/pin/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testPinSet.Storage.HandleGetPinByID,
+			auth.NoAuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			404,
+			nil,
+			[]byte("404 page not found\n"),
+		},
+		"Testing get not existent pin by id",
+	},
+	{
+		InputStruct{
+			"/pins/0",
+			"/pins/{id:[0-9]+}",
+			"DELETE",
+			nil,
+			nil,
+			testPinSet.Storage.HandleDelPinByID,
+			auth.AuthMid,
+		},
+
+		OutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing delete not existent pin", // I don't know right now how to easily check if password changed
+	},
+}
+
+func TestUserPins(t *testing.T) {
+	for _, tt := range pinTest {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			req := tt.in.toHTTPRequest(successCookies)
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
 			m := mux.NewRouter()
-			funcToHandle := authTest.in.authFunc
-			if authTest.in.middleware != nil { // We don't always need middleware
-				funcToHandle = authTest.in.middleware(funcToHandle)
+			funcToHandle := tt.in.profileFunc
+			if tt.in.middleware != nil { // We don't always need middleware
+				funcToHandle = tt.in.middleware(funcToHandle)
 			}
-			m.HandleFunc(authTest.in.url, funcToHandle).Methods(authTest.in.method)
+			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
 			resp := rw.Result()
 
@@ -164,142 +273,22 @@ func TestUserPinSet_AddPin(t *testing.T) {
 				successCookies = resp.Cookies()
 			}
 
-			var result authOutputStruct
+			var result OutputStruct
 			result.fillFromResponse(resp)
 
-			require.Equal(t, authTest.out.responseCode, result.responseCode,
+			require.Equal(t, tt.out.responseCode, result.responseCode,
 				fmt.Sprintf("Expected: %d as response code\nbut got:  %d",
-					authTest.out.responseCode, result.responseCode))
-			for key, val := range authTest.out.headers {
+					tt.out.responseCode, result.responseCode))
+			for key, val := range tt.out.headers {
 				resultVal, ok := result.headers[key]
 				require.True(t, !ok,
-					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, authTest.out.headers, result.headers))
+					fmt.Sprintf("Expected header %s is not found:\nExpected: %v\nbut got: %v", key, tt.out.headers, result.headers))
 				require.Equal(t, val, resultVal,
 					fmt.Sprintf("Expected value of header %s: %v is different from actual value: %v", key, val, resultVal))
 			}
-			require.Equal(t, authTest.out.postBody, result.postBody,
+			require.Equal(t, tt.out.postBody, result.postBody,
 				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
-					authTest.out.postBody, result.postBody))
-			boardID := 0
-
-			body := strings.NewReader(
-				fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
-			)
-			r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin/", body)
-			w := httptest.NewRecorder()
-			testPinSet.Storage.HandleAddPin(w, r)
-
-			body = strings.NewReader(
-				fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
-			)
-			r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
-			w = httptest.NewRecorder()
-			testPinSet.Storage.HandleAddPin(w, r)
-
-			resResponse := w.Result()
-			resBody, _ := io.ReadAll(resResponse.Body)
-
-			require.Equal(t, http.StatusCreated, resResponse.StatusCode)
-			//require.Equal(t, resResponse.Header.Get("Content-Type"), "text/plain; charset=utf-8")
-			require.Equal(t, string(resBody), "{\"pin_id\": 1}")
-			require.Equal(t, len(testPinSet.Storage.userPins[0]), 2)
+					tt.out.postBody, result.postBody))
 		})
-
-
-}
-
-func TestUserPinSet_AddPinBadData(t *testing.T) {
-	body := strings.NewReader(
-		fmt.Sprintf(`{"bad data"}`),
-	)
-	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin/", body)
-	w := httptest.NewRecorder()
-	testPinSet.Storage.HandleAddPin(w, r)
-
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusBadRequest, resResponse.StatusCode)
-}
-
-func TestUserPinSet_GetPinByID(t *testing.T) {
-	expectedResponse := `{"id":1,"boardID":0,"title":"exampletitle","pinImage":"example/link","description":"exampleDescription"}`
-	boardID := 0
-	body := strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
-	)
-	r := httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
-	w := httptest.NewRecorder()
-
-	testPinSet.Storage.HandleAddPin(w, r)
-	body = strings.NewReader(
-		fmt.Sprintf(`{"boardID": %d, "title": "exampletitle", "pinImage": "example/link", "description": "exampleDescription"}`, boardID),
-	)
-	r = httptest.NewRequest("POST", "http://127.0.0.1:8080/pin", body)
-	w = httptest.NewRecorder()
-	testPinSet.Storage.HandleAddPin(w, r)
-
-	r = httptest.NewRequest("GET", "http://127.0.0.1:8080/pins/0", nil)
-	w = httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "1"})
-
-	testPinSet.Storage.HandleGetPinByID(w, r)
-	resResponse := w.Result()
-	resBody, _ := io.ReadAll(resResponse.Body)
-	require.Equal(t, http.StatusOK, resResponse.StatusCode)
-	require.Equal(t, string(resBody), expectedResponse)
-}
-
-func TestUserPinSet_GetPinByIDError(t *testing.T) {
-	r := httptest.NewRequest("GET", "http://127.0.0.1:8080/pins/4", nil)
-	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "4"})
-
-	testPinSet.Storage.HandleGetPinByID(w, r)
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusNotFound, resResponse.StatusCode)
-}
-
-func TestUserPinSet_DelPinByID(t *testing.T) {
-	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/0", nil)
-	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "0"})
-	testPinSet.Storage.HandleDelPinByID(w, r)
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusOK, resResponse.StatusCode)
-	require.Equal(t, len(testPinSet.Storage.userPins[0]), 3)
-}
-
-func TestUserPinSet_DelNoSuchPin(t *testing.T) {
-	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/0", nil)
-	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "0"})
-
-	testPinSet.Storage.HandleDelPinByID(w, r)
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusNotFound, resResponse.StatusCode)
-}
-
-func TestUserPinSet_BadIdCase1(t *testing.T) {
-	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/1", nil)
-	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "badId"})
-
-	testPinSet.Storage.HandleGetPinByID(w, r)
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusBadRequest, resResponse.StatusCode)
-}
-
-func TestUserPinSet_BadIdCase2(t *testing.T) {
-	r := httptest.NewRequest("DELETE", "http://127.0.0.1:8080/pins/1", nil)
-	w := httptest.NewRecorder()
-	r = mux.SetURLVars(r, map[string]string{"id": "badId"})
-
-	testPinSet.Storage.HandleDelPinByID(w, r)
-	resResponse := w.Result()
-
-	require.Equal(t, http.StatusBadRequest, resResponse.StatusCode)
+	}
 }
