@@ -38,7 +38,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Users[userID] = currentUser
 	auth.Users.Mu.Unlock()
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleEditProfile edits profile of current user
@@ -83,7 +83,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Users[userID] = newUser
 	auth.Users.Mu.Unlock()
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleDeleteProfile deletes profile of current user
@@ -97,6 +97,8 @@ func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	auth.Users.Mu.Lock()
 	delete(auth.Users.Users, userID)
 	auth.Users.Mu.Unlock()
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleGetProfile returns specified profile

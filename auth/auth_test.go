@@ -105,7 +105,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -122,7 +122,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -139,7 +139,7 @@ var authTestSuccess = []struct {
 		},
 
 		authOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},

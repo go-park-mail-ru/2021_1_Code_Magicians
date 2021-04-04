@@ -133,7 +133,7 @@ var profileTestSuccess = []struct {
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -179,7 +179,7 @@ var profileTestSuccess = []struct {
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},
@@ -220,7 +220,7 @@ var profileTestSuccess = []struct {
 		},
 
 		profileOutputStruct{
-			200,
+			204,
 			nil,
 			nil,
 		},

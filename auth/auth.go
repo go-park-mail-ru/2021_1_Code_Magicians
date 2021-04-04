@@ -203,7 +203,7 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
 	sessions.mu.Unlock()
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 	return
 }
 
@@ -218,7 +218,7 @@ func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	delete(sessions.sessions, cookieValue)
 	sessions.mu.Unlock()
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 	return
 }
 
@@ -230,5 +230,5 @@ func HandleCheckUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
