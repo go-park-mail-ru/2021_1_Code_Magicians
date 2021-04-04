@@ -6,6 +6,7 @@ import (
 	"pinterest/auth"
 	"pinterest/pins"
 	"pinterest/profile"
+	"pinterest/boards"
 
 	"github.com/gorilla/mux"
 )
@@ -53,15 +54,22 @@ func CreateRouter() *mux.Router {
 	r.HandleFunc("/profile/{username}", jsonContentTypeMid(profile.HandleGetProfile)).Methods("GET")
 	r.HandleFunc("/profile", auth.AuthMid(jsonContentTypeMid(profile.HandleGetProfile))).Methods("GET")
 
-	pins := &pins.PinsStorage{
-		Storage: pins.NewPinsSet(0),
+	pins := &pins.PinsStorage {
+		Storage: pins.NewPinsSet(),
+	}
+	boards := &boards.BoardsStorage {
+		Storage: boards.NewBoardSet(),
 	}
 
-	r.HandleFunc("/pin", pins.Storage.AddPin).Methods("POST")
-	r.HandleFunc("/pins/{id:[0-9]+}", jsonContentTypeMid(pins.Storage.GetPinByID)).Methods("GET")
-	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(jsonContentTypeMid(pins.Storage.DelPinByID))).Methods("DELETE")
+	r.HandleFunc("/pin", auth.AuthMid(pins.Storage.HandleAddPin)).Methods("POST")
+	r.HandleFunc("/pin/{id:[0-9]+}", pins.Storage.HandleGetPinByID).Methods("GET")
+	r.HandleFunc("/pin/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
+	r.HandleFunc("/pins/{id:[0-9]+}", auth.AuthMid(pins.Storage.HandleGetPinsByBoardID)).Methods("GET")
 
-	r.HandleFunc("/board/", boardHandler) // Will split later
+
+	r.HandleFunc("/board/", auth.AuthMid(boards.Storage.HandleAddBoard)).Methods("POST") // Will split later
+	r.HandleFunc("/board/{id:[0-9]+}", auth.AuthMid(boards.Storage.HandleDelBoardByID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", auth.AuthMid(boards.Storage.HandleGetBoardByID)).Methods("DELETE")
 
 	return r
 }
