@@ -73,10 +73,12 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, alreadyExists := auth.FindUser(newUser.Username)
-	if alreadyExists {
-		w.WriteHeader(http.StatusConflict)
-		return
+	if userInput.Username != "" {
+		_, alreadyExists := auth.FindUser(newUser.Username)
+		if alreadyExists {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
 	}
 
 	auth.Users.Mu.Lock()
