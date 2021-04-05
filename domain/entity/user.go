@@ -1,4 +1,4 @@
-package auth
+package entity
 
 import (
 	"errors"
@@ -53,6 +53,7 @@ type User struct {
 	LastName  string
 	Email     string
 	Avatar    string // path to avatar
+	Salt      string
 }
 
 // UserOutput is used to marshal JSON with users' data
@@ -176,10 +177,10 @@ type UsersMap struct {
 // CookieInfo contains information about a cookie: which user it belongs to and cookie itself
 type CookieInfo struct {
 	UserID int
-	cookie *http.Cookie
+	Cookie *http.Cookie
 }
 
-type sessionMap struct {
-	sessions map[string]CookieInfo // key is cookie value, for easier lookup
-	mu       sync.Mutex
+type SessionMap struct {
+	Sessions map[string]CookieInfo // key is cookie value, for easier lookup
+	Mu       sync.Mutex
 }

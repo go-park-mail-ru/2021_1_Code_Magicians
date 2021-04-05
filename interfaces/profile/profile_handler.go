@@ -5,7 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"pinterest/auth"
+	"pinterest/domain/entity"
+	"pinterest/interfaces/auth"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -19,7 +20,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(auth.UserPassChangeInput)
+	userInput := new(entity.UserPassChangeInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -49,7 +50,7 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
-	userInput := new(auth.UserEditInput)
+	userInput := new(entity.UserEditInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -131,7 +132,7 @@ func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	user := auth.Users.Users[id]
 	auth.Users.Mu.Unlock()
 
-	var userOutput auth.UserOutput
+	var userOutput entity.UserOutput
 	userOutput.FillFromUser(&user)
 	userOutput.Password = "" // Password is ommitted on purpose
 

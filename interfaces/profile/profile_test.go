@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"pinterest/auth"
+	"pinterest/interfaces/auth"
 	"testing"
 
 	"net/http"
@@ -13,6 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
+
+	"pinterest/interfaces/middleware"
 )
 
 type profileInputStruct struct {
@@ -88,7 +90,7 @@ var profileTestSuccess = []struct {
 				`"avatarLink": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
-			auth.NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		profileOutputStruct{
@@ -106,7 +108,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleGetProfile,
-			auth.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		profileOutputStruct{
@@ -129,7 +131,7 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"password":"New Password"}`),
 			HandleChangePassword,
-			auth.AuthMid,
+			middleware.AuthMid,
 		},
 
 		profileOutputStruct{
@@ -175,7 +177,7 @@ var profileTestSuccess = []struct {
 				`"avatarLink": "avatars/2"}`,
 			),
 			HandleEditProfile,
-			auth.AuthMid,
+			middleware.AuthMid,
 		},
 
 		profileOutputStruct{
@@ -216,7 +218,7 @@ var profileTestSuccess = []struct {
 			nil,
 			nil,
 			HandleDeleteProfile,
-			auth.AuthMid,
+			middleware.AuthMid,
 		},
 
 		profileOutputStruct{

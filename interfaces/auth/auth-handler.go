@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"pinterest/domain/entity"
 	"time"
 )
 
 // Users is a map of all existing users
-var Users UsersMap = UsersMap{Users: make(map[int]User), LastFreeUserID: 0}
-var sessions sessionMap = sessionMap{sessions: make(map[string]CookieInfo)}
+var Users entity.UsersMap = entity.UsersMap{Users: make(map[int]entity.User), LastFreeUserID: 0}
+var sessions entity.SessionMap = entity.SessionMap{Sessions: make(map[string]entity.CookieInfo)}
 
 // generateRandomBytes returns securely generated random bytes.
 // It will return an error if the system's secure random
@@ -58,7 +59,7 @@ const expirationTime time.Duration = 10 * time.Hour
 func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserRegInput)
+	userInput := new(entity.UserRegInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -71,7 +72,7 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newUser User
+	var newUser entity.User
 	err = newUser.UpdateFrom(userInput)
 	if err != nil {
 		log.Println(err)
@@ -112,32 +113,32 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	sessions.mu.Lock()
-	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
-	sessions.mu.Unlock()
+	sessions.Mu.Lock()
+	sessions.Sessions[cookie.Value] = entity.CookieInfo{id, cookie}
+	sessions.Mu.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 }
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func CheckCookies(r *http.Request) (*CookieInfo, bool) {
+func CheckCookies(r *http.Request) (*entity.CookieInfo, bool) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie {
 		return nil, false
 	}
 
-	sessions.mu.Lock()
-	userCookieInfo, ok := sessions.sessions[cookie.Value]
-	sessions.mu.Unlock()
+	sessions.Mu.Lock()
+	userCookieInfo, ok := sessions.Sessions[cookie.Value]
+	sessions.Mu.Unlock()
 
 	if !ok { // cookie was not found
 		return nil, false
 	}
 
-	if userCookieInfo.cookie.Expires.Before(time.Now()) {
-		sessions.mu.Lock()
-		delete(sessions.sessions, cookie.Value)
-		sessions.mu.Unlock()
+	if userCookieInfo.Cookie.Expires.Before(time.Now()) {
+		sessions.Mu.Lock()
+		delete(sessions.Sessions, cookie.Value)
+		sessions.Mu.Unlock()
 		return nil, false
 	}
 
@@ -176,7 +177,7 @@ func checkUserCredentials(username string, password string) (int, bool) {
 func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserLoginInput)
+	userInput := new(entity.UserLoginInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -199,9 +200,9 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
-	sessions.mu.Lock()
-	sessions.sessions[cookie.Value] = CookieInfo{id, cookie}
-	sessions.mu.Unlock()
+	sessions.Mu.Lock()
+	sessions.Sessions[cookie.Value] = entity.CookieInfo{id, cookie}
+	sessions.Mu.Unlock()
 
 	w.WriteHeader(http.StatusNoContent)
 	return
@@ -210,13 +211,13 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 // HandleLogoutUser tries to log user out of current session
 func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookie, _ := CheckCookies(r)
-	userCookie.cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
-	http.SetCookie(w, userCookie.cookie)
+	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
+	http.SetCookie(w, userCookie.Cookie)
 
-	cookieValue := userCookie.cookie.Value
-	sessions.mu.Lock()
-	delete(sessions.sessions, cookieValue)
-	sessions.mu.Unlock()
+	cookieValue := userCookie.Cookie.Value
+	sessions.Mu.Lock()
+	delete(sessions.Sessions, cookieValue)
+	sessions.Mu.Unlock()
 
 	w.WriteHeader(http.StatusNoContent)
 	return

@@ -1,0 +1,1 @@
+This layer contains interfaces for DB handling

@@ -1,16 +1,19 @@
-package pins
+package pin
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"pinterest/auth"
+	"pinterest/domain/entity"
+	"pinterest/interfaces/auth"
+	"pinterest/interfaces/middleware"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 )
 
 type InputStruct struct {
@@ -66,8 +69,8 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 	return err
 }
 
-var testPinSet = PinsStorage{
-	Storage: NewPinsSet(),
+var testPinSet = entity.PinsStorage{
+	Storage: entity.NewPinsSet(),
 }
 
 var successCookies []*http.Cookie
@@ -91,7 +94,7 @@ var pinTest = []struct {
 				`"avatar": "avatars/1"}`,
 			),
 			auth.HandleCreateUser,
-			auth.NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		OutputStruct{
@@ -112,14 +115,13 @@ var pinTest = []struct {
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
 			testPinSet.Storage.HandleAddPin,
-			auth.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 0}`,
-			),
+			[]byte(`{"pin_id": 0}`),
 		},
 		"Testing add first pin",
 	},
@@ -134,14 +136,13 @@ var pinTest = []struct {
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
 			testPinSet.Storage.HandleAddPin,
-			auth.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 1}`,
-			),
+			[]byte(`{"pin_id": 1}`),
 		},
 		"Testing add second pin",
 	},
@@ -153,7 +154,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 			testPinSet.Storage.HandleGetPinByID,
-			auth.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
@@ -176,7 +177,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 			testPinSet.Storage.HandleGetPinsByBoardID,
-			auth.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
@@ -204,7 +205,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 			testPinSet.Storage.HandleDelPinByID,
-			auth.AuthMid,
+			middleware.AuthMid,
 		},
 
 		OutputStruct{
@@ -222,7 +223,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 			testPinSet.Storage.HandleGetPinByID,
-			auth.NoAuthMid, // If user is not logged in, they can't access their profile
+			middleware.NoAuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
@@ -240,7 +241,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 			testPinSet.Storage.HandleDelPinByID,
-			auth.AuthMid,
+			middleware.AuthMid,
 		},
 
 		OutputStruct{

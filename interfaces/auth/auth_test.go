@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"pinterest/interfaces/middleware"
+
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
@@ -84,7 +86,7 @@ var authTestSuccess = []struct {
 				`"password": "thisisapassword"}`,
 			),
 			HandleCreateUser,
-			NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -101,7 +103,7 @@ var authTestSuccess = []struct {
 			nil,
 			nil,
 			HandleLogoutUser,
-			AuthMid,
+			middleware.AuthMid,
 		},
 
 		authOutputStruct{
@@ -118,7 +120,7 @@ var authTestSuccess = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
 			HandleLoginUser,
-			NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -208,7 +210,7 @@ var authTestFailure = []struct {
 				`"password": "thisisapassword"`,
 			),
 			HandleCreateUser,
-			NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -225,7 +227,7 @@ var authTestFailure = []struct {
 			nil,
 			[]byte(`{"username": "TestUsername, password": "thisisapassword}}}`),
 			HandleLoginUser,
-			NoAuthMid,
+			middleware.NoAuthMid,
 		},
 
 		authOutputStruct{
@@ -242,7 +244,7 @@ var authTestFailure = []struct {
 			nil,
 			nil,
 			HandleLogoutUser,
-			AuthMid,
+			middleware.AuthMid,
 		},
 
 		authOutputStruct{
