@@ -47,6 +47,7 @@ func init() {
 
 // User is, well, a struct depicting a user
 type User struct {
+	UserID    int
 	Username  string
 	Password  string // TODO: hashing
 	FirstName string

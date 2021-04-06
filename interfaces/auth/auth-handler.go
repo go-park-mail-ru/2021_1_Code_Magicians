@@ -6,13 +6,18 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	application "pinterest/applicaton"
 	"pinterest/domain/entity"
+	"pinterest/interfaces/middleware"
 	"time"
 )
 
-// Users is a map of all existing users
-var Users entity.UsersMap = entity.UsersMap{Users: make(map[int]entity.User), LastFreeUserID: 0}
-var sessions entity.SessionMap = entity.SessionMap{Sessions: make(map[string]entity.CookieInfo)}
+type AuthInfo struct {
+	UserApp      application.UserAppInterface
+	CookieApp    application.CookieAppInterface
+	CookieLength int
+	Duration     time.Duration
+}
 
 // generateRandomBytes returns securely generated random bytes.
 // It will return an error if the system's secure random
@@ -36,27 +41,24 @@ func generateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
-func generateCookie(length int, duration time.Duration) (*http.Cookie, error) {
-	sessionValue, err := generateRandomString(cookieLength) // cookie value - random string
+func (info *AuthInfo) generateCookie() (*http.Cookie, error) {
+	sessionValue, err := generateRandomString(info.CookieLength) // cookie value - random string
 	if err != nil {
 		return nil, err
 	}
 
-	expiration := time.Now().Add(duration)
+	expirationTime := time.Now().Add(info.Duration)
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionValue,
-		Expires:  expiration,
+		Expires:  expirationTime,
 		HttpOnly: true, // So that frontend won't have direct access to cookies
 		Path:     "/",  // Cookie should be usable on entire website
 	}, nil
 }
 
-const cookieLength int = 40
-const expirationTime time.Duration = 10 * time.Hour
-
 // HandleCreateUser creates user with parameters passed in JSON
-func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
+func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userInput := new(entity.UserRegInput)
@@ -80,8 +82,8 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, alreadyExists := FindUser(newUser.Username)
-	if alreadyExists {
+	user, _ := info.UserApp.GetUserByUsername(newUser.Username)
+	if user != nil {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -90,91 +92,37 @@ func HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		newUser.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
 	}
 
-	Users.Mu.Lock()
+	newUser.UserID, err = info.UserApp.SaveUser(&newUser)
+	if err != nil {
+		if err.Error() == "Username or email is already taken" {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	id := Users.LastFreeUserID
-
-	Users.Users[id] = newUser
-	Users.LastFreeUserID++
-
-	Users.Mu.Unlock()
-
-	cookie, err := generateCookie(cookieLength, expirationTime)
+	cookie, err := info.generateCookie()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		// Removing user we just created
-		Users.Mu.Lock()
-		delete(Users.Users, id)
-		Users.Mu.Unlock()
+		// TODO: delete user
+		return
+	}
+
+	err = info.CookieApp.AddCookie(&entity.CookieInfo{newUser.UserID, cookie})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	http.SetCookie(w, cookie)
-
-	sessions.Mu.Lock()
-	sessions.Sessions[cookie.Value] = entity.CookieInfo{id, cookie}
-	sessions.Mu.Unlock()
-
 	w.WriteHeader(http.StatusCreated)
 }
 
-// CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func CheckCookies(r *http.Request) (*entity.CookieInfo, bool) {
-	cookie, err := r.Cookie("session_id")
-	if err == http.ErrNoCookie {
-		return nil, false
-	}
-
-	sessions.Mu.Lock()
-	userCookieInfo, ok := sessions.Sessions[cookie.Value]
-	sessions.Mu.Unlock()
-
-	if !ok { // cookie was not found
-		return nil, false
-	}
-
-	if userCookieInfo.Cookie.Expires.Before(time.Now()) {
-		sessions.Mu.Lock()
-		delete(sessions.Sessions, cookie.Value)
-		sessions.Mu.Unlock()
-		return nil, false
-	}
-
-	return &userCookieInfo, true
-}
-
-// FindUser tries to find user with passed username in Users map
-func FindUser(username string) (int, bool) {
-	Users.Mu.Lock()
-	defer Users.Mu.Unlock()
-	for id, user := range Users.Users {
-		if user.Username == username {
-			return id, true
-		}
-	}
-	return -1, false
-}
-
-// checkUserCredentials returns user's id and true if user credentials match, -1 and false otherwise
-func checkUserCredentials(username string, password string) (int, bool) {
-	id, found := FindUser(username)
-	if !found {
-		return -1, false
-	}
-
-	Users.Mu.Lock()
-	defer Users.Mu.Unlock()
-	if Users.Users[id].Password == password {
-		return id, true
-	}
-
-	return -1, false
-}
-
 // HandleLoginUser logs user in using provided username and password
-func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
+func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userInput := new(entity.UserLoginInput)
@@ -184,48 +132,58 @@ func HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, exists := checkUserCredentials(userInput.Username, userInput.Password)
+	id, err := info.UserApp.CheckUserCredentials(userInput.Username, userInput.Password)
 
-	if !exists {
-		w.WriteHeader(http.StatusUnauthorized)
+	if err != nil {
+		switch err.Error() {
+		case "Password does not match":
+			w.WriteHeader(http.StatusUnauthorized)
+		case "No user found with such username":
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
-	cookie, err := generateCookie(cookieLength, expirationTime)
+	cookie, err := info.generateCookie()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	err = info.CookieApp.AddCookie(&entity.CookieInfo{id, cookie})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	http.SetCookie(w, cookie)
-
-	sessions.Mu.Lock()
-	sessions.Sessions[cookie.Value] = entity.CookieInfo{id, cookie}
-	sessions.Mu.Unlock()
-
 	w.WriteHeader(http.StatusNoContent)
 	return
 }
 
 // HandleLogoutUser tries to log user out of current session
-func HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	userCookie, _ := CheckCookies(r)
+func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
+	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+
+	err := info.CookieApp.RemoveCookie(userCookie)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
 	http.SetCookie(w, userCookie.Cookie)
-
-	cookieValue := userCookie.Cookie.Value
-	sessions.Mu.Lock()
-	delete(sessions.Sessions, cookieValue)
-	sessions.Mu.Unlock()
 
 	w.WriteHeader(http.StatusNoContent)
 	return
 }
 
 // HandleCheckUser checks if current user is logged in
-func HandleCheckUser(w http.ResponseWriter, r *http.Request) {
-	_, found := CheckCookies(r)
+func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
+	_, found := middleware.CheckCookies(r, info.CookieApp)
 	if !found {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

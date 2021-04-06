@@ -4,27 +4,28 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"pinterest/interfaces/auth"
+	application "pinterest/applicaton"
+	"pinterest/domain/entity"
 )
 
-func AuthMid(next http.HandlerFunc) http.HandlerFunc {
+func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, found := auth.CheckCookies(r)
+		cookie, found := CheckCookies(r, cookieApp)
 		if !found {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "userID", cookie.UserID)
+		ctx := context.WithValue(r.Context(), "cookieInfo", cookie)
 		r = r.Clone(ctx)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func NoAuthMid(next http.HandlerFunc) http.HandlerFunc {
+func NoAuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, found := auth.CheckCookies(r)
+		_, found := CheckCookies(r, cookieApp)
 		if found {
 			w.WriteHeader(http.StatusForbidden)
 			return
@@ -45,6 +46,18 @@ func PanicMid(next http.Handler) http.Handler {
 		}()
 		next.ServeHTTP(w, r)
 	})
+}
+
+var sessions entity.SessionMap = entity.SessionMap{Sessions: make(map[string]entity.CookieInfo)}
+
+// CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
+func CheckCookies(r *http.Request, cookieApp application.CookieAppInterface) (*entity.CookieInfo, bool) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie {
+		return nil, false
+	}
+
+	return cookieApp.CheckCookie(cookie)
 }
 
 // JsonContentTypeMid adds "Content-type: application/json" to headers

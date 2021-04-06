@@ -2,17 +2,25 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
+	"time"
 
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 
+	application "pinterest/applicaton"
 	"pinterest/interfaces/middleware"
 
+	"pinterest/infrastructure/persistence"
+
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +30,7 @@ type authInputStruct struct {
 	headers    map[string][]string
 	postBody   []byte
 	authFunc   func(w http.ResponseWriter, r *http.Request)
-	middleware func(next http.HandlerFunc) http.HandlerFunc
+	middleware func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
@@ -68,6 +76,8 @@ func (output *authOutputStruct) fillFromResponse(response *http.Response) error 
 	return err
 }
 
+var testInfo AuthInfo
+
 // These tests have to run in that order!!!
 var authTestSuccess = []struct {
 	in   authInputStruct
@@ -85,7 +95,7 @@ var authTestSuccess = []struct {
 				`"email": "test@example.com",` +
 				`"password": "thisisapassword"}`,
 			),
-			HandleCreateUser,
+			testInfo.HandleCreateUser,
 			middleware.NoAuthMid,
 		},
 
@@ -102,7 +112,7 @@ var authTestSuccess = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleLogoutUser,
+			testInfo.HandleLogoutUser,
 			middleware.AuthMid,
 		},
 
@@ -119,7 +129,7 @@ var authTestSuccess = []struct {
 			"GET",
 			nil,
 			[]byte(`{"username": "TestUsername","password": "thisisapassword"}`),
-			HandleLoginUser,
+			testInfo.HandleLoginUser,
 			middleware.NoAuthMid,
 		},
 
@@ -136,7 +146,7 @@ var authTestSuccess = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleCheckUser,
+			testInfo.HandleCheckUser,
 			nil,
 		},
 
@@ -151,7 +161,22 @@ var authTestSuccess = []struct {
 
 var successCookies []*http.Cookie
 
+func init() { // DELETE LATER, WHEN MOCKING IS DONE!!!
+	godotenv.Load("../../.env")
+}
 func TestAuthSuccess(t *testing.T) {
+	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
+		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+	conn, _ := pgx.Connect(context.Background(), connectionString)
+	defer conn.Close(context.Background())
+	defer conn.Exec(context.Background(), "TRUNCATE TABLE Users CASCADE")
+	repo := persistence.NewUserRepository(conn)
+	testInfo = AuthInfo{
+		UserApp:      application.NewUserApp(repo), // TODO: mocking
+		CookieApp:    application.NewCookieApp(),
+		CookieLength: 40,
+		Duration:     10 * time.Hour,
+	}
 	for _, tt := range authTestSuccess {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -161,7 +186,7 @@ func TestAuthSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle)
+				funcToHandle = tt.in.middleware(funcToHandle, testInfo.CookieApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
@@ -209,7 +234,7 @@ var authTestFailure = []struct {
 				`"email": "test@example.com",` +
 				`"password": "thisisapassword"`,
 			),
-			HandleCreateUser,
+			testInfo.HandleCreateUser,
 			middleware.NoAuthMid,
 		},
 
@@ -226,7 +251,7 @@ var authTestFailure = []struct {
 			"POST",
 			nil,
 			[]byte(`{"username": "TestUsername, password": "thisisapassword}}}`),
-			HandleLoginUser,
+			testInfo.HandleLoginUser,
 			middleware.NoAuthMid,
 		},
 
@@ -243,7 +268,7 @@ var authTestFailure = []struct {
 			"POST",
 			nil,
 			nil,
-			HandleLogoutUser,
+			testInfo.HandleLogoutUser,
 			middleware.AuthMid,
 		},
 
@@ -260,7 +285,7 @@ var authTestFailure = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleCheckUser,
+			testInfo.HandleCheckUser,
 			nil,
 		},
 
@@ -276,6 +301,17 @@ var authTestFailure = []struct {
 var failureCookies []*http.Cookie
 
 func TestAuthFailure(t *testing.T) {
+	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
+		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+	conn, _ := pgx.Connect(context.Background(), connectionString)
+	defer conn.Close(context.Background())
+	repo := persistence.NewUserRepository(conn)
+	testInfo = AuthInfo{
+		UserApp:      application.NewUserApp(repo), // TODO: mocking
+		CookieApp:    application.NewCookieApp(),
+		CookieLength: 40,
+		Duration:     10 * time.Hour,
+	}
 	for _, tt := range authTestFailure {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -285,7 +321,7 @@ func TestAuthFailure(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle)
+				funcToHandle = tt.in.middleware(funcToHandle, testInfo.CookieApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
