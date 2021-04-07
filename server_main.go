@@ -1,16 +1,34 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"pinterest/routing"
+	"os"
+	"pinterest/interfaces/routing"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
 func runServer(addr string) {
-	r := routing.CreateRouter()
+	godotenv.Load(".env")
+	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
+		os.Getenv("LOCAL_DB_USER"), os.Getenv("LOCAL_DB_PASSWORD"), os.Getenv("LOCAL_DB_HOST"),
+		os.Getenv("LOCAL_DB_PORT"), os.Getenv("LOCAL_DB_NAME"))
+	fmt.Println(connectionString)
+	conn, err := pgx.Connect(context.Background(), connectionString)
+	if err != nil {
+		log.Println(err)
+		fmt.Println("Could not connect to database. Closing...")
+		return
+	}
+
+	defer conn.Close(context.Background())
+	fmt.Println("Successfully connected to database")
+	r := routing.CreateRouter(conn)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://52.59.228.167:8081"},
