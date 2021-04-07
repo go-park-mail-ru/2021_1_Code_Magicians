@@ -94,7 +94,7 @@ var profileTestSuccess = []struct {
 				`"password": "thisisapassword",` +
 				`"email": "test@example.com",` +
 				`"firstName": "TestFirstName",` +
-				`"lastName": "TestLastname",` +
+				`"lastName": "TestLastName",` +
 				`"avatarLink": "avatars/1"}`,
 			),
 			testAuthInfo.HandleCreateUser,
@@ -125,7 +125,7 @@ var profileTestSuccess = []struct {
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
 				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
-				`"lastName":"TestLastname",` +
+				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1"}`,
 			),
 		},
@@ -166,7 +166,7 @@ var profileTestSuccess = []struct {
 			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
 				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
-				`"lastName":"TestLastname",` +
+				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1"}`,
 			),
 		},
@@ -244,6 +244,7 @@ func TestProfileSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
 		UserID:    0,
 		Username:  "TestUsername",
@@ -251,13 +252,35 @@ func TestProfileSuccess(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    "/assets/img/default-avatar.jpg",
+		Avatar:    "avatars/1",
 		Salt:      "",
 	}
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1)
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
 	mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1)
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)
+
+	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
+
+	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+
+	expectedUser.Password = "New Password"
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
+
+	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
+	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+
+	expecteduser := entity.User{
+		UserID:    0,
+		Username:  "new_User_Name",
+		Password:  "New Password",
+		FirstName: "new First name",
+		LastName:  "new Last Name",
+		Email:     "new@example.com",
+		Avatar:    "avatars/2",
+		Salt:      "",
+	}
+	mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
+
+	mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
 
 	userApp := application.NewUserApp(mockDoer)
 	cookieApp := application.NewCookieApp()
@@ -307,7 +330,7 @@ func TestProfileSuccess(t *testing.T) {
 			}
 			require.Equal(t, tt.out.postBody, result.postBody,
 				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
-					tt.out.postBody, result.postBody))
+					string(tt.out.postBody), string(result.postBody)))
 		})
 	}
 }

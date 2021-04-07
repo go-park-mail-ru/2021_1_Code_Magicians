@@ -6,6 +6,7 @@ import (
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	mid "pinterest/interfaces/middleware"
+	"pinterest/interfaces/profile"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -29,17 +30,22 @@ func CreateRouter(conn *pgx.Conn) *mux.Router {
 		Duration:     10 * time.Hour,
 	}
 
+	profileInfo := profile.ProfileInfo{
+		UserApp:   authInfo.UserApp,
+		CookieApp: authInfo.CookieApp,
+	}
+
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authInfo.CookieApp)).Methods("POST")
 	r.HandleFunc("/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, authInfo.CookieApp)).Methods("POST")
 	r.HandleFunc("/auth/check", authInfo.HandleCheckUser).Methods("GET")
 
-	// r.HandleFunc("/profile/password", mid.AuthMid(profile.HandleChangePassword)).Methods("PUT")
-	// r.HandleFunc("/profile/edit", mid.AuthMid(profile.HandleEditProfile)).Methods("PUT")
-	// r.HandleFunc("/profile/delete", mid.AuthMid(profile.HandleDeleteProfile)).Methods("DELETE")
-	// r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profile.HandleGetProfile)).Methods("GET") // Is preferred over next one
-	// r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profile.HandleGetProfile)).Methods("GET")
-	// r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profile.HandleGetProfile))).Methods("GET")
+	r.HandleFunc("/profile/password", mid.AuthMid(profileInfo.HandleChangePassword, profileInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/edit", mid.AuthMid(profileInfo.HandleEditProfile, profileInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/delete", mid.AuthMid(profileInfo.HandleDeleteProfile, profileInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET") // Is preferred over next one
+	r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET")
+	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), profileInfo.CookieApp)).Methods("GET")
 
 	// pins := &pins.PinsStorage{
 	// 	Storage: pin.NewPinsSet(),

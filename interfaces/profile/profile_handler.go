@@ -22,7 +22,7 @@ type ProfileInfo struct {
 func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userID := r.Context().Value("userID").(int)
+	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -48,6 +48,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 	user.Password = userInput.Password
 	err = profileInfo.UserApp.SaveUser(user)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -59,7 +60,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userID := r.Context().Value("userID").(int)
+	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -95,6 +96,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 		case "Username or email is already taken":
 			w.WriteHeader(http.StatusConflict)
 		default:
+			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
@@ -110,6 +112,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 	err := profileInfo.CookieApp.RemoveCookie(userCookie)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -119,6 +122,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 	err = profileInfo.UserApp.DeleteUser(userCookie.UserID)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -128,48 +132,64 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 // HandleGetProfile returns specified profile
 func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.Request) {
+	user := new(entity.User)
+	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars["id"]
-	id, _ := strconv.Atoi(idStr)
-
-	// TODO: REWORK THAT
-	if !passedID { // Id was not passed
-		username, passedUsername := vars["username"]
-		switch passedUsername {
-		case true:
-			{
-				user, err := profileInfo.UserApp.GetUserByUsername(username)
-				if err != nil {
-					switch err.Error() {
-					case "No user found with such username":
-						w.WriteHeader(http.StatusNotFound)
-					default:
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}
-				id = user.UserID
-			}
-
-		case false: // Username was also not passed
-			{
-				userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
-				if userCookie == nil {
-					w.WriteHeader(http.StatusBadRequest)
+	switch passedID {
+	case true:
+		{
+			id, _ := strconv.Atoi(idStr)
+			user, err = profileInfo.UserApp.GetUser(id)
+			if err != nil {
+				if err.Error() == "No user found with such id" {
+					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				id = userCookie.UserID
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
-	}
+	case false:
+		{
+			username, passedUsername := vars["username"]
+			switch passedUsername {
+			case true:
+				{
+					user, err = profileInfo.UserApp.GetUserByUsername(username)
+					if err != nil {
+						if err.Error() == "No user found with such username" {
+							w.WriteHeader(http.StatusNotFound)
+							return
+						}
+						log.Println(err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+				}
 
-	user, err := profileInfo.UserApp.GetUser(id)
-	if err != nil {
-		if err.Error() == "No user found with such id" {
-			w.WriteHeader(http.StatusNotFound)
-			return
+			case false: // Username was also not passed
+				{
+					userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+					if userCookie == nil {
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
+
+					user, err = profileInfo.UserApp.GetUser(userCookie.UserID)
+					if err != nil {
+						if err.Error() == "No user found with such id" {
+							w.WriteHeader(http.StatusNotFound)
+							return
+						}
+						log.Println(err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+				}
+			}
 		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	var userOutput entity.UserOutput
