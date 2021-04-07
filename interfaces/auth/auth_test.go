@@ -174,7 +174,7 @@ func TestAuthSuccess(t *testing.T) {
 		Salt:      "",
 	}
 	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1)
-	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockDoer.EXPECT().CreateUser(&expectedUser).Return(expectedUser.UserID, nil).Times(1)
 	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)
 
 	testInfo = AuthInfo{

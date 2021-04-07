@@ -5,15 +5,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"pinterest/application"
 	"pinterest/domain/entity"
-	"pinterest/interfaces/auth"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
+type ProfileInfo struct {
+	UserApp   application.UserAppInterface
+	CookieApp application.CookieAppInterface
+}
+
 //HandleChangePassword changes profilefor user specified in request
-func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
+func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userID := r.Context().Value("userID").(int)
@@ -33,17 +39,24 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.Users.Mu.Lock()
-	currentUser := auth.Users.Users[userID]
-	currentUser.Password = userInput.Password
-	auth.Users.Users[userID] = currentUser
-	auth.Users.Mu.Unlock()
+	user, err := profileInfo.UserApp.GetUser(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError) // Or maybe other error?
+		return
+	}
+
+	user.Password = userInput.Password
+	err = profileInfo.UserApp.SaveUser(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleEditProfile edits profile of current user
-func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
+func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	userID := r.Context().Value("userID").(int)
@@ -63,9 +76,11 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth.Users.Mu.Lock()
-	newUser := auth.Users.Users[userID] // newUser is a copy which we can modify freely
-	auth.Users.Mu.Unlock()
+	newUser, err := profileInfo.UserApp.GetUser(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	err = newUser.UpdateFrom(userInput)
 	if err != nil {
@@ -74,66 +89,91 @@ func HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userInput.Username != "" {
-		_, alreadyExists := auth.FindUser(newUser.Username)
-		if alreadyExists {
+	err = profileInfo.UserApp.SaveUser(newUser)
+	if err != nil {
+		switch err.Error() {
+		case "Username or email is already taken":
 			w.WriteHeader(http.StatusConflict)
-			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
-
-	auth.Users.Mu.Lock()
-	auth.Users.Users[userID] = newUser
-	auth.Users.Mu.Unlock()
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleDeleteProfile deletes profile of current user
-func HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
+func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userID := r.Context().Value("userID").(int)
+	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
 
-	auth.HandleLogoutUser(w, r) // User is logged out before profile deletion, for safety reasons
+	err := profileInfo.CookieApp.RemoveCookie(userCookie)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	auth.Users.Mu.Lock()
-	delete(auth.Users.Users, userID)
-	auth.Users.Mu.Unlock()
+	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
+	http.SetCookie(w, userCookie.Cookie)
+
+	err = profileInfo.UserApp.DeleteUser(userCookie.UserID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // HandleGetProfile returns specified profile
-func HandleGetProfile(w http.ResponseWriter, r *http.Request) {
+func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr, passedID := vars["id"]
 	id, _ := strconv.Atoi(idStr)
 
+	// TODO: REWORK THAT
 	if !passedID { // Id was not passed
 		username, passedUsername := vars["username"]
-		var foundUsername bool
-		id, foundUsername = auth.FindUser(username)
-
-		if !passedUsername { // Username was also not passed
-			userID := r.Context().Value("userID")
-			if userID == nil {
-				w.WriteHeader(http.StatusBadRequest)
-				return
+		switch passedUsername {
+		case true:
+			{
+				user, err := profileInfo.UserApp.GetUserByUsername(username)
+				if err != nil {
+					switch err.Error() {
+					case "No user found with such username":
+						w.WriteHeader(http.StatusNotFound)
+					default:
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				}
+				id = user.UserID
 			}
-			id = userID.(int)
-		} else if !foundUsername {
-			w.WriteHeader(http.StatusNotFound)
-			return
+
+		case false: // Username was also not passed
+			{
+				userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+				if userCookie == nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				id = userCookie.UserID
+			}
 		}
 	}
 
-	auth.Users.Mu.Lock()
-	user := auth.Users.Users[id]
-	auth.Users.Mu.Unlock()
+	user, err := profileInfo.UserApp.GetUser(id)
+	if err != nil {
+		if err.Error() == "No user found with such id" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	var userOutput entity.UserOutput
-	userOutput.FillFromUser(&user)
+	userOutput.FillFromUser(user)
 	userOutput.Password = "" // Password is ommitted on purpose
 
 	responseBody, err := json.Marshal(userOutput)

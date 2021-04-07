@@ -92,7 +92,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		newUser.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
 	}
 
-	newUser.UserID, err = info.UserApp.SaveUser(&newUser)
+	newUser.UserID, err = info.UserApp.CreateUser(&newUser)
 	if err != nil {
 		if err.Error() == "Username or email is already taken" {
 			w.WriteHeader(http.StatusConflict)

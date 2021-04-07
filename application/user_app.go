@@ -15,7 +15,8 @@ func NewUserApp(us repository.UserRepository) *UserApp {
 }
 
 type UserAppInterface interface {
-	SaveUser(*entity.User) (int, error) // Returns saved user's ID
+	CreateUser(*entity.User) (int, error) // Returns created user's ID
+	SaveUser(*entity.User) error
 	DeleteUser(int) error
 	GetUser(int) (*entity.User, error) // Get user by his ID
 	GetUsers() ([]entity.User, error)  // Get all users
@@ -23,7 +24,11 @@ type UserAppInterface interface {
 	CheckUserCredentials(string, string) (int, error) // Check if passed username and password are correct
 }
 
-func (u *UserApp) SaveUser(user *entity.User) (int, error) {
+func (u *UserApp) CreateUser(user *entity.User) (int, error) {
+	return u.us.CreateUser(user)
+}
+
+func (u *UserApp) SaveUser(user *entity.User) error {
 	return u.us.SaveUser(user)
 }
 

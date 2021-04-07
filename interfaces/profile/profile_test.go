@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"pinterest/application"
+	"pinterest/domain/entity"
+	"pinterest/infrastructure/mock_repository"
 	"pinterest/interfaces/auth"
 	"testing"
+	"time"
 
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
@@ -24,7 +29,7 @@ type profileInputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	profileFunc  func(w http.ResponseWriter, r *http.Request)
-	middleware   func(next http.HandlerFunc) http.HandlerFunc
+	middleware   func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms profileInputStruct to http.Request, adding global cookies
@@ -70,6 +75,9 @@ func (output *profileOutputStruct) fillFromResponse(response *http.Response) err
 	return err
 }
 
+var testProfileInfo ProfileInfo
+var testAuthInfo auth.AuthInfo
+
 // These tests have to run in that order!!!
 var profileTestSuccess = []struct {
 	in   profileInputStruct
@@ -89,7 +97,7 @@ var profileTestSuccess = []struct {
 				`"lastName": "TestLastname",` +
 				`"avatarLink": "avatars/1"}`,
 			),
-			auth.HandleCreateUser,
+			testAuthInfo.HandleCreateUser,
 			middleware.NoAuthMid,
 		},
 
@@ -107,7 +115,7 @@ var profileTestSuccess = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleGetProfile,
+			testProfileInfo.HandleGetProfile,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -130,7 +138,7 @@ var profileTestSuccess = []struct {
 			"PUT",
 			nil,
 			[]byte(`{"password":"New Password"}`),
-			HandleChangePassword,
+			testProfileInfo.HandleChangePassword,
 			middleware.AuthMid,
 		},
 
@@ -148,7 +156,7 @@ var profileTestSuccess = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleGetProfile,
+			testProfileInfo.HandleGetProfile,
 			nil,
 		},
 
@@ -176,7 +184,7 @@ var profileTestSuccess = []struct {
 				`"email": "new@example.com",` +
 				`"avatarLink": "avatars/2"}`,
 			),
-			HandleEditProfile,
+			testProfileInfo.HandleEditProfile,
 			middleware.AuthMid,
 		},
 
@@ -194,7 +202,7 @@ var profileTestSuccess = []struct {
 			"GET",
 			nil,
 			nil,
-			HandleGetProfile,
+			testProfileInfo.HandleGetProfile,
 			nil,
 		},
 
@@ -217,7 +225,7 @@ var profileTestSuccess = []struct {
 			"DELETE",
 			nil,
 			nil,
-			HandleDeleteProfile,
+			testProfileInfo.HandleDeleteProfile,
 			middleware.AuthMid,
 		},
 
@@ -233,6 +241,37 @@ var profileTestSuccess = []struct {
 var successCookies []*http.Cookie
 
 func TestProfileSuccess(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	expectedUser := entity.User{
+		UserID:    0,
+		Username:  "TestUsername",
+		Password:  "thisisapassword",
+		FirstName: "TestFirstName",
+		LastName:  "TestLastName",
+		Email:     "test@example.com",
+		Avatar:    "/assets/img/default-avatar.jpg",
+		Salt:      "",
+	}
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1)
+	mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1)
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)
+
+	userApp := application.NewUserApp(mockDoer)
+	cookieApp := application.NewCookieApp()
+
+	testAuthInfo = auth.AuthInfo{
+		UserApp:      userApp,
+		CookieApp:    cookieApp,
+		CookieLength: 40,
+		Duration:     10 * time.Hour,
+	}
+	testProfileInfo = ProfileInfo{
+		UserApp:   userApp,
+		CookieApp: cookieApp,
+	}
 	for _, tt := range profileTestSuccess {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -242,7 +281,7 @@ func TestProfileSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle)
+				funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
