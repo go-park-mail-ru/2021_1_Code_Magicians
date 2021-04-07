@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	application "pinterest/applicaton"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 

@@ -18,7 +18,6 @@ func runServer(addr string) {
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv("LOCAL_DB_USER"), os.Getenv("LOCAL_DB_PASSWORD"), os.Getenv("LOCAL_DB_HOST"),
 		os.Getenv("LOCAL_DB_PORT"), os.Getenv("LOCAL_DB_NAME"))
-	fmt.Println(connectionString)
 	conn, err := pgx.Connect(context.Background(), connectionString)
 	if err != nil {
 		log.Println(err)

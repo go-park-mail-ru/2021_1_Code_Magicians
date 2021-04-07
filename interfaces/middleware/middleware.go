@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	application "pinterest/applicaton"
+	"pinterest/application"
 	"pinterest/domain/entity"
 )
 

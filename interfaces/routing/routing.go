@@ -2,7 +2,7 @@ package routing
 
 import (
 	"net/http"
-	application "pinterest/applicaton"
+	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	mid "pinterest/interfaces/middleware"
