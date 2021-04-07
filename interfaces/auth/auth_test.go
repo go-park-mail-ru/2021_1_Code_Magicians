@@ -2,10 +2,8 @@ package auth
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -14,13 +12,13 @@ import (
 	"net/url"
 
 	application "pinterest/applicaton"
+	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 
-	"pinterest/infrastructure/persistence"
+	"pinterest/infrastructure/mock_repository"
 
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -161,18 +159,35 @@ var authTestSuccess = []struct {
 
 var successCookies []*http.Cookie
 
-func init() { // DELETE LATER, WHEN MOCKING IS DONE!!!
-	godotenv.Load("../../.env")
-}
+// func init() { // DELETE LATER, WHEN MOCKING IS DONE!!!
+// 	godotenv.Load("../../.env")
+// }
 func TestAuthSuccess(t *testing.T) {
-	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
-	conn, _ := pgx.Connect(context.Background(), connectionString)
-	defer conn.Close(context.Background())
-	defer conn.Exec(context.Background(), "TRUNCATE TABLE Users CASCADE")
-	repo := persistence.NewUserRepository(conn)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	expectedUser := entity.User{
+		UserID:    0,
+		Username:  "TestUsername",
+		Password:  "thisisapassword",
+		FirstName: "TestFirstName",
+		LastName:  "TestLastName",
+		Email:     "test@example.com",
+		Avatar:    "/assets/img/default-avatar.jpg",
+		Salt:      "",
+	}
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1)
+	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)
+	// connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
+	// 	os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+	// conn, _ := pgx.Connect(context.Background(), connectionString)
+	// defer conn.Close(context.Background())
+	// defer conn.Exec(context.Background(), "TRUNCATE TABLE Users CASCADE")
+	// repo := persistence.NewUserRepository(conn)
 	testInfo = AuthInfo{
-		UserApp:      application.NewUserApp(repo), // TODO: mocking
+		UserApp:      application.NewUserApp(mockDoer),
 		CookieApp:    application.NewCookieApp(),
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
@@ -301,13 +316,12 @@ var authTestFailure = []struct {
 var failureCookies []*http.Cookie
 
 func TestAuthFailure(t *testing.T) {
-	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
-	conn, _ := pgx.Connect(context.Background(), connectionString)
-	defer conn.Close(context.Background())
-	repo := persistence.NewUserRepository(conn)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
 	testInfo = AuthInfo{
-		UserApp:      application.NewUserApp(repo), // TODO: mocking
+		UserApp:      application.NewUserApp(mockDoer),
 		CookieApp:    application.NewCookieApp(),
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
