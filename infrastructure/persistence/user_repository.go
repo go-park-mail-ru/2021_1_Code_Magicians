@@ -39,7 +39,7 @@ func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
 }
 
 const saveUserQuery string = "UPDATE Users\n" +
-	"SET username=$1, passwordhash=$2, salt=$3, email=$4, first_name=$5, last_name=$6, avatar=7)\n" +
+	"SET username=$1, passwordhash=$2, salt=$3, email=$4, first_name=$5, last_name=$6, avatar=$7\n" +
 	"WHERE userID=$8"
 
 func (r *UserRepo) SaveUser(user *entity.User) error {
@@ -52,20 +52,19 @@ func (r *UserRepo) SaveUser(user *entity.User) error {
 		}
 
 		// Other errors
-		// log.Println(err)
 		return err
 	}
 	return nil
 }
 
-const deleteUserQuery string = "DELETE FROM Users WHERE id=$1"
+const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 
 func (r *UserRepo) DeleteUser(userID int) error {
-	_, err := r.db.Exec(context.Background(), deleteUserQuery)
+	_, err := r.db.Exec(context.Background(), deleteUserQuery, userID)
 	return err
 }
 
-const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar FROM Users WHERE id=$1"
+const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar FROM Users WHERE userID=$1"
 
 func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 	user := entity.User{UserID: userID}
@@ -76,7 +75,6 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 			return nil, fmt.Errorf("No user found with such id")
 		}
 		// Other errors
-		// log.Println(err)
 		return nil, err
 	}
 	return &user, nil
@@ -93,7 +91,6 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 		}
 
 		// Other errors
-		// log.Println(err)
 		return nil, err
 	}
 
@@ -121,7 +118,6 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 		}
 
 		// Other errors
-		// log.Println(err)
 		return nil, err
 	}
 	return &user, nil
