@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -18,44 +16,6 @@ type AuthInfo struct {
 	CookieApp    application.CookieAppInterface
 	CookieLength int
 	Duration     time.Duration
-}
-
-// generateRandomBytes returns securely generated random bytes.
-// It will return an error if the system's secure random
-// number generator fails to function correctly, in which
-// case the caller should not continue.
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-
-// generateRandomString returns a URL-safe, base64 encoded
-// securely generated random string.
-func generateRandomString(s int) (string, error) {
-	b, err := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
-}
-
-func (info *AuthInfo) generateCookie() (*http.Cookie, error) {
-	sessionValue, err := generateRandomString(info.CookieLength) // cookie value - random string
-	if err != nil {
-		return nil, err
-	}
-
-	expirationTime := time.Now().Add(info.Duration)
-	return &http.Cookie{
-		Name:     "session_id",
-		Value:    sessionValue,
-		Expires:  expirationTime,
-		HttpOnly: true, // So that frontend won't have direct access to cookies
-		Path:     "/",  // Cookie should be usable on entire website
-	}, nil
 }
 
 // HandleCreateUser creates user with parameters passed in JSON
@@ -103,7 +63,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.generateCookie()
+	cookie, err := info.CookieApp.GenerateCookie(info.CookieLength, info.Duration)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -147,7 +107,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.generateCookie()
+	cookie, err := info.CookieApp.GenerateCookie(info.CookieLength, info.Duration)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

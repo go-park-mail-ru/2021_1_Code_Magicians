@@ -5,6 +5,7 @@
 package mock_application
 
 import (
+	io "io"
 	application "pinterest/application"
 	entity "pinterest/domain/entity"
 	reflect "reflect"
@@ -136,4 +137,18 @@ func (m *MockUserAppInterface) SaveUser(arg0 *entity.User) error {
 func (mr *MockUserAppInterfaceMockRecorder) SaveUser(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUser", reflect.TypeOf((*MockUserAppInterface)(nil).SaveUser), arg0)
+}
+
+// UpdateAvatar mocks base method.
+func (m *MockUserAppInterface) UpdateAvatar(arg0 int, arg1 io.Reader, arg2 application.S3AppInterface) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAvatar", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAvatar indicates an expected call of UpdateAvatar.
+func (mr *MockUserAppInterfaceMockRecorder) UpdateAvatar(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockUserAppInterface)(nil).UpdateAvatar), arg0, arg1, arg2)
 }

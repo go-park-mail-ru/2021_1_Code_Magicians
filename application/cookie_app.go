@@ -1,6 +1,8 @@
 package application
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"net/http"
 	"pinterest/domain/entity"
 	"sync"
@@ -17,9 +19,48 @@ func NewCookieApp() *CookieApp {
 }
 
 type CookieAppInterface interface {
+	GenerateCookie(int, time.Duration) (*http.Cookie, error)
 	AddCookie(*entity.CookieInfo) error
 	CheckCookie(*http.Cookie) (*entity.CookieInfo, bool)
 	RemoveCookie(*entity.CookieInfo) error
+}
+
+// generateRandomBytes returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func generateRandomBytes(n int) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+// generateRandomString returns a URL-safe, base64 encoded
+// securely generated random string.
+func GenerateRandomString(s int) (string, error) {
+	b, err := generateRandomBytes(s)
+	return base64.URLEncoding.EncodeToString(b), err
+}
+
+func (c *CookieApp) GenerateCookie(cookieLength int, duration time.Duration) (*http.Cookie, error) {
+	sessionValue, err := GenerateRandomString(cookieLength) // cookie value - random string
+	if err != nil {
+		return nil, err
+	}
+
+	expirationTime := time.Now().Add(duration)
+	return &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionValue,
+		Expires:  expirationTime,
+		HttpOnly: true, // So that frontend won't have direct access to cookies
+		Path:     "/",  // Cookie should be usable on entire website
+	}, nil
 }
 
 func (c *CookieApp) AddCookie(cookieInfo *entity.CookieInfo) error {

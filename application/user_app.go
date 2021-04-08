@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
 )
@@ -15,13 +16,14 @@ func NewUserApp(us repository.UserRepository) *UserApp {
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error)             // Create user, returns created user's ID
-	SaveUser(*entity.User) error                      // Save changed user to database
-	DeleteUser(int, S3AppInterface) error             // Delete user with passed userID from database
-	GetUser(int) (*entity.User, error)                // Get user by his ID
-	GetUsers() ([]entity.User, error)                 // Get all users
-	GetUserByUsername(string) (*entity.User, error)   // Get user by his username
-	CheckUserCredentials(string, string) (int, error) // Check if passed username and password are correct
+	CreateUser(*entity.User) (int, error)              // Create user, returns created user's ID
+	SaveUser(*entity.User) error                       // Save changed user to database
+	DeleteUser(int, S3AppInterface) error              // Delete user with passed userID from database
+	GetUser(int) (*entity.User, error)                 // Get user by his ID
+	GetUsers() ([]entity.User, error)                  // Get all users
+	GetUserByUsername(string) (*entity.User, error)    // Get user by his username
+	CheckUserCredentials(string, string) (int, error)  // Check if passed username and password are correct
+	UpdateAvatar(int, io.Reader, S3AppInterface) error // Replace user's avatar with one passed as second parameter
 }
 
 // CreateUser add new user to database with passed fields
@@ -87,4 +89,41 @@ func (u *UserApp) CheckUserCredentials(username string, password string) (int, e
 	}
 
 	return user.UserID, nil
+}
+
+func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface) error {
+	user, err := u.GetUser(userID)
+	if err != nil {
+		return fmt.Errorf("Could not find user in database")
+	}
+
+	filenamePrefix, err := GenerateRandomString(40) // generating random image
+	if err != nil {
+		return fmt.Errorf("Could not generate filename")
+	}
+
+	newAvatarPath := "avatars/" + filenamePrefix + ".jpg" // TODO: avatars folder sharding by date
+	err = s3App.UploadFile(file, newAvatarPath)
+	if err != nil {
+		return fmt.Errorf("File upload failed")
+	}
+
+	oldAvatarPath := user.Avatar
+	user.Avatar = newAvatarPath
+	err = u.SaveUser(user)
+	if err != nil {
+		s3App.DeleteFile(newAvatarPath)
+		return fmt.Errorf("User saving failed")
+	}
+
+	if oldAvatarPath != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
+		err = s3App.DeleteFile(oldAvatarPath)
+
+		if err != nil {
+			s3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
+			return fmt.Errorf("Old avatar deletion failed")
+		}
+	}
+
+	return nil
 }

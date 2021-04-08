@@ -218,14 +218,13 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	if bodySize > int64(maxPostAvatarBodySize) { // Avatar is too large
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	r.ParseMultipartForm(bodySize)
-	file, handler, err := r.FormFile("avatarImage")
+	file, _, err := r.FormFile("avatarImage")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -233,34 +232,9 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 
 	defer file.Close()
 
-	newAvatarPath := "avatars/" + handler.Filename // TODO: avatars folder sharding by date, random prefix generato
-
-	err = profileInfo.S3App.UploadFile(file, newAvatarPath)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	user, err := profileInfo.UserApp.GetUser(userID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	err = profileInfo.UserApp.UpdateAvatar(userID, file, profileInfo.S3App)
 
-	if user.Avatar != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
-		err = profileInfo.S3App.DeleteFile(user.Avatar)
-
-		if err != nil {
-			profileInfo.S3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
-	user.Avatar = newAvatarPath
-	err = profileInfo.UserApp.SaveUser(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
