@@ -21,6 +21,8 @@ const createUserQuery string = "INSERT INTO Users (username, passwordhash, salt,
 	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING userID"
 
+// CreateUser add new user to database with passed fields
+// It returns user's assigned ID and nil on success, any number and error on failure
 func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
 	row := r.db.QueryRow(context.Background(), createUserQuery, user.Username, user.Password, user.Salt, user.Email, user.FirstName, user.LastName, user.Avatar)
 	newUserID := 0
@@ -42,6 +44,8 @@ const saveUserQuery string = "UPDATE Users\n" +
 	"SET username=$1, passwordhash=$2, salt=$3, email=$4, first_name=$5, last_name=$6, avatar=$7\n" +
 	"WHERE userID=$8"
 
+// SaveUser saves user to database with passed fields
+// It returns nil on success and error on failure
 func (r *UserRepo) SaveUser(user *entity.User) error {
 	_, err := r.db.Exec(context.Background(), saveUserQuery, user.Username, user.Password, user.Salt, user.Email,
 		user.FirstName, user.LastName, user.Avatar, user.UserID)
@@ -59,6 +63,8 @@ func (r *UserRepo) SaveUser(user *entity.User) error {
 
 const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 
+// SaveUser deletes user with passed ID
+// It returns nil on success and error on failure
 func (r *UserRepo) DeleteUser(userID int) error {
 	_, err := r.db.Exec(context.Background(), deleteUserQuery, userID)
 	return err
@@ -66,6 +72,8 @@ func (r *UserRepo) DeleteUser(userID int) error {
 
 const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar FROM Users WHERE userID=$1"
 
+// GetUser fetches user with passed ID from database
+// It returns that user, nil on success and nil, error on failure
 func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 	user := entity.User{UserID: userID}
 	row := r.db.QueryRow(context.Background(), getUserQuery, userID)
@@ -82,6 +90,8 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 
 const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar FROM Users"
 
+// GetUsers fetches all users from database
+// It returns slice of all users, nil on success and nil, error on failure
 func (r *UserRepo) GetUsers() ([]entity.User, error) {
 	users := make([]entity.User, 0)
 	rows, err := r.db.Query(context.Background(), getUserQuery)
@@ -108,6 +118,8 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email, first_name, last_name, avatar\n" +
 	"FROM Users WHERE username=$1"
 
+// GetUserByUsername fetches user with passed username from database
+// It returns that user, nil on success and nil, error on failure
 func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	user := entity.User{Username: username}
 	row := r.db.QueryRow(context.Background(), getUserByUsernameQuery, username)

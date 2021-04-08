@@ -13,12 +13,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
 	UserApp   application.UserAppInterface
 	CookieApp application.CookieAppInterface
 }
 
-//HandleChangePassword changes profilefor user specified in request
+//HandleChangePassword changes password of current user
 func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -41,7 +42,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 
 	user, err := profileInfo.UserApp.GetUser(userID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError) // Or maybe other error?
+		w.WriteHeader(http.StatusInternalServerError) // TODO: error handling
 		return
 	}
 
@@ -104,7 +105,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// HandleDeleteProfile deletes profile of current user
+// HandleDeleteProfile deletes profile of current user, logging them out automatically
 func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -151,7 +152,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				return
 			}
 		}
-	case false:
+	case false: // ID was not passed
 		{
 			username, passedUsername := vars["username"]
 			switch passedUsername {
@@ -206,4 +207,8 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseBody)
 	return
+}
+
+// HandlePostAvatar takes avatar from request and assigns it to current user
+func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
 }

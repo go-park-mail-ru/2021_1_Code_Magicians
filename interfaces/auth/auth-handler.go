@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
 	UserApp      application.UserAppInterface
 	CookieApp    application.CookieAppInterface
@@ -164,7 +165,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// HandleLogoutUser tries to log user out of current session
+// HandleLogoutUser logs current user out of their session
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
 

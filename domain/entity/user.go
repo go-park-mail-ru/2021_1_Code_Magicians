@@ -67,6 +67,7 @@ type UserOutput struct {
 	Avatar    string `json:"avatarLink,omitempty"`
 }
 
+// UserRegInput is used when parsing JSON in auth/signup handler
 type UserRegInput struct {
 	Username  string `json:"username" valid:"username"`
 	Password  string `json:"password" valid:"stringlength(8|30)"`
@@ -76,15 +77,18 @@ type UserRegInput struct {
 	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
 }
 
+// UserLoginInput is used when parsing JSON in auth/login handler
 type UserLoginInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+// UserPassChangeInput is used when parsing JSON in profile/password handler
 type UserPassChangeInput struct {
 	Password string `json:"password" valid:"stringlength(8|30)"`
 }
 
+// UserEditInput is used when parsing JSON in profile/edit handler
 type UserEditInput struct {
 	Username  string `json:"username" valid:"username,optional"`
 	Email     string `json:"email" valid:"email,optional"`
@@ -168,12 +172,12 @@ func (userOutput *UserOutput) FillFromUser(user *User) {
 	userOutput.Avatar = user.Avatar
 }
 
-// UsersMap is basically a database's fake
-type UsersMap struct {
-	Users          map[int]User
-	LastFreeUserID int
-	Mu             sync.Mutex
-}
+// // UsersMap is basically a database's fake
+// type UsersMap struct {
+// 	Users          map[int]User
+// 	LastFreeUserID int
+// 	Mu             sync.Mutex
+// }
 
 // CookieInfo contains information about a cookie: which user it belongs to and cookie itself
 type CookieInfo struct {
@@ -181,6 +185,7 @@ type CookieInfo struct {
 	Cookie *http.Cookie
 }
 
+// SessionMap is used to keep track of users currently logged in
 type SessionMap struct {
 	Sessions map[string]CookieInfo // key is cookie value, for easier lookup
 	Mu       sync.Mutex

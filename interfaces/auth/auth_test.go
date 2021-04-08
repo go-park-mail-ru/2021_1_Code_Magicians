@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// authInputStruct stores information which will be parsed into request
 type authInputStruct struct {
 	url        string
 	method     string
@@ -53,6 +54,7 @@ func (input *authInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Reques
 	return request
 }
 
+// authOutputStruct stores information which will be parsed into request
 type authOutputStruct struct {
 	responseCode int
 	headers      map[string][]string
@@ -163,6 +165,7 @@ func TestAuthSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+
 	expectedUser := entity.User{
 		UserID:    0,
 		Username:  "TestUsername",
@@ -309,8 +312,9 @@ var failureCookies []*http.Cookie
 func TestAuthFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-
 	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	// No functions in this test actually make request to the database
+
 	testInfo = AuthInfo{
 		UserApp:      application.NewUserApp(mockDoer),
 		CookieApp:    application.NewCookieApp(),

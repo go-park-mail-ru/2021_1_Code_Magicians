@@ -22,6 +22,7 @@ import (
 	"pinterest/interfaces/middleware"
 )
 
+// profileInputStruct stores information which will be parsed into request
 type profileInputStruct struct {
 	url          string
 	urlForRouter string
@@ -54,6 +55,7 @@ func (input *profileInputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Req
 	return request
 }
 
+// profileOutputStruct stores information parsed from response
 type profileOutputStruct struct {
 	responseCode int
 	headers      map[string][]string
@@ -163,7 +165,7 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+			[]byte(`{"username":"TestUsername",` +
 				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
@@ -244,6 +246,7 @@ func TestProfileSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
 		UserID:    0,
