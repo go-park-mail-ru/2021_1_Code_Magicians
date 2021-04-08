@@ -8,7 +8,6 @@ type InitialBoard struct {
 }
 
 func NewBoardSet() *BoardSet {
-
 	return &BoardSet{
 		mutex:              sync.RWMutex{},
 		userBoards:         map[int][]*Board{},
