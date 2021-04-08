@@ -10,10 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gorilla/mux"
 )
 
@@ -21,6 +17,7 @@ import (
 type ProfileInfo struct {
 	UserApp   application.UserAppInterface
 	CookieApp application.CookieAppInterface
+	S3App     application.S3AppInterface
 }
 
 //HandleChangePassword changes password of current user
@@ -216,7 +213,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
 // HandlePostAvatar takes avatar from request and assigns it to current user
 func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
-
 	bodySize := r.ContentLength
 	if bodySize < 0 { // No avatar was passed
 		w.WriteHeader(http.StatusBadRequest)
@@ -237,16 +233,9 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 
 	defer file.Close()
 
-	sess := r.Context().Value("sess").(*session.Session)
-	s3BucketName := r.Context().Value("s3BucketName").(string)
-	uploader := s3manager.NewUploader(sess)
+	newAvatarPath := "avatars/" + handler.Filename // TODO: avatars folder sharding by date, random prefix generato
 
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(s3BucketName),
-		ACL:    aws.String("public-read"),
-		Key:    aws.String("avatars/" + handler.Filename), // TODO: avatars folder sharding by date, random suffix generator
-		Body:   file,
-	})
+	err = profileInfo.S3App.UploadFile(file, newAvatarPath)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -260,20 +249,17 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if user.Avatar != "/assets/img/default-avatar.jpg" { //TODO: this should be a global variable, probably
-		// Deleting user's old avatar
-		deleter := s3.New(sess)
-		_, err = deleter.DeleteObject(&s3.DeleteObjectInput{
-			Bucket: aws.String(s3BucketName),
-			Key:    aws.String(user.Avatar),
-		})
+	if user.Avatar != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
+		err = profileInfo.S3App.DeleteFile(user.Avatar)
+
 		if err != nil {
+			profileInfo.S3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
 
-	user.Avatar = "avatars/" + handler.Filename
+	user.Avatar = newAvatarPath
 	err = profileInfo.UserApp.SaveUser(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

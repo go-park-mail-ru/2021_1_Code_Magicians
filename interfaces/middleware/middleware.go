@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
-
-	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
@@ -46,17 +44,6 @@ func PanicMid(next http.Handler) http.Handler {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
-		next.ServeHTTP(w, r)
-	})
-}
-
-//AWS Mid adds AWS session object and bucket name to request context
-func AWSMid(next http.HandlerFunc, sess *session.Session, s3BucketName string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), "sess", sess)
-		ctx = context.WithValue(ctx, "s3BucketName", s3BucketName)
-		r = r.Clone(ctx)
-
 		next.ServeHTTP(w, r)
 	})
 }

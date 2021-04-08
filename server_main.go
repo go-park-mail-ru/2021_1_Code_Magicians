@@ -47,7 +47,7 @@ func runServer(addr string) {
 		log.Println(err)
 		fmt.Println("Could not load s3.env file")
 	}
-	//TODO: check if all needed variables are present
+	// TODO: check if all needed variables are present
 
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv("LOCAL_DB_USER"), os.Getenv("LOCAL_DB_PASSWORD"), os.Getenv("LOCAL_DB_HOST"),

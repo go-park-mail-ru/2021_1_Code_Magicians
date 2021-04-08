@@ -34,6 +34,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	profileInfo := profile.ProfileInfo{
 		UserApp:   authInfo.UserApp,
 		CookieApp: authInfo.CookieApp,
+		S3App:     application.NewS3App(sess, s3BucketName),
 	}
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
@@ -47,7 +48,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET")
 	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), profileInfo.CookieApp)).Methods("GET")
-	r.HandleFunc("/profile/avatar", mid.AuthMid(mid.AWSMid(profileInfo.HandlePostAvatar, sess, s3BucketName), profileInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, profileInfo.CookieApp)).Methods("PUT")
 
 	// pins := &pins.PinsStorage{
 	// 	Storage: pin.NewPinsSet(),
