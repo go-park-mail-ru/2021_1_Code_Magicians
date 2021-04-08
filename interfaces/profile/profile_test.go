@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"pinterest/application"
+	"pinterest/application/mock_application"
 	"pinterest/domain/entity"
-	"pinterest/infrastructure/mock_repository"
 	"pinterest/interfaces/auth"
 	"testing"
 	"time"
@@ -245,7 +245,10 @@ var successCookies []*http.Cookie
 func TestProfileSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+
+	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	cookieApp := application.NewCookieApp()
+	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -258,20 +261,20 @@ func TestProfileSuccess(t *testing.T) {
 		Avatar:    "avatars/1",
 		Salt:      "",
 	}
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
-	mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
-	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
-	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Normal user output using cookie's userID
 
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Before changing password, handler requests user data
 	expectedUser.Password = "New Password"
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
+	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1) // Password changing
 
-	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
-	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
 
-	expecteduser := entity.User{
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Before profile editing, handler reuqests user data
+	expectedUserEdited := entity.User{
 		UserID:    0,
 		Username:  "new_User_Name",
 		Password:  "New Password",
@@ -281,22 +284,23 @@ func TestProfileSuccess(t *testing.T) {
 		Avatar:    "avatars/2",
 		Salt:      "",
 	}
-	mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
+	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1) // Profile editing
 
-	mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUserEdited.UserID).Return(&expectedUserEdited, nil).Times(1) // Normal user output using userID
 
-	userApp := application.NewUserApp(mockDoer)
-	cookieApp := application.NewCookieApp()
+	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID, mockS3App).Return(nil).Times(1)
 
 	testAuthInfo = auth.AuthInfo{
-		UserApp:      userApp,
+		UserApp:      mockUserApp,
 		CookieApp:    cookieApp,
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
 	}
+
 	testProfileInfo = ProfileInfo{
-		UserApp:   userApp,
+		UserApp:   mockUserApp,
 		CookieApp: cookieApp,
+		S3App:     mockS3App,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt

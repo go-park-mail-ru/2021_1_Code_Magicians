@@ -12,6 +12,7 @@ import (
 	"net/url"
 
 	"pinterest/application"
+	"pinterest/application/mock_application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 
@@ -164,7 +165,7 @@ var successCookies []*http.Cookie
 func TestAuthSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -176,12 +177,13 @@ func TestAuthSuccess(t *testing.T) {
 		Avatar:    "/assets/img/default-avatar.jpg",
 		Salt:      "",
 	}
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1)
-	mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)
+	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
+	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+
+	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(expectedUser.UserID, nil).Times(1) // Logging user in
 
 	testInfo = AuthInfo{
-		UserApp:      application.NewUserApp(mockDoer),
+		UserApp:      mockUser,
 		CookieApp:    application.NewCookieApp(),
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
