@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gorilla/mux"
 )
@@ -243,7 +244,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	_, err = uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(s3BucketName),
 		ACL:    aws.String("public-read"),
-		Key:    aws.String("avatars/" + handler.Filename), // TODO: avatars folder sharding by date
+		Key:    aws.String("avatars/" + handler.Filename), // TODO: avatars folder sharding by date, random suffix generator
 		Body:   file,
 	})
 
@@ -257,6 +258,19 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if user.Avatar != "/assets/img/default-avatar.jpg" { //TODO: this should be a global variable, probably
+		// Deleting user's old avatar
+		deleter := s3.New(sess)
+		_, err = deleter.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(s3BucketName),
+			Key:    aws.String(user.Avatar),
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	user.Avatar = "avatars/" + handler.Filename
