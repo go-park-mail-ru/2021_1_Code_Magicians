@@ -122,7 +122,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
 	http.SetCookie(w, userCookie.Cookie)
 
-	err = profileInfo.UserApp.DeleteUser(userCookie.UserID)
+	err = profileInfo.UserApp.DeleteUser(userCookie.UserID, profileInfo.S3App)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

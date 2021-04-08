@@ -17,7 +17,7 @@ func NewUserApp(us repository.UserRepository) *UserApp {
 type UserAppInterface interface {
 	CreateUser(*entity.User) (int, error)             // Create user, returns created user's ID
 	SaveUser(*entity.User) error                      // Save changed user to database
-	DeleteUser(int) error                             // Delete user with passed userID from database
+	DeleteUser(int, S3AppInterface) error             // Delete user with passed userID from database
 	GetUser(int) (*entity.User, error)                // Get user by his ID
 	GetUsers() ([]entity.User, error)                 // Get all users
 	GetUserByUsername(string) (*entity.User, error)   // Get user by his username
@@ -37,8 +37,22 @@ func (u *UserApp) SaveUser(user *entity.User) error {
 }
 
 // SaveUser deletes user with passed ID
+// S3AppInterface is needed for avatar deletion
 // It returns nil on success and error on failure
-func (u *UserApp) DeleteUser(userID int) error {
+func (u *UserApp) DeleteUser(userID int, s3App S3AppInterface) error {
+	user, err := u.us.GetUser(userID)
+	if err != nil {
+		return err
+	}
+
+	if user.Avatar != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable or s3App's parameter, probably
+		err = s3App.DeleteFile(user.Avatar)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return u.us.DeleteUser(userID)
 }
 
