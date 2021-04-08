@@ -8,13 +8,47 @@ import (
 	"os"
 	"pinterest/interfaces/routing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jackc/pgx/v4"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
+// connectAws returns session that can be used to connect to Amazon Web Service
+func connectAws() *session.Session {
+	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	myRegion := os.Getenv("AWS_REGION")
+	sess, err := session.NewSession(
+		&aws.Config{
+			Region: aws.String(myRegion),
+			Credentials: credentials.NewStaticCredentials(
+				accessKeyID,
+				secretAccessKey,
+				"", // a token will be created when the session it's used.
+			),
+		})
+	if err != nil {
+		panic(err)
+	}
+	return sess
+}
+
 func runServer(addr string) {
-	godotenv.Load(".env")
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Println(err)
+		fmt.Println("Could not load .env file")
+	}
+	err = godotenv.Load("s3.env")
+	if err != nil {
+		log.Println(err)
+		fmt.Println("Could not load s3.env file")
+	}
+	//TODO: check if all needed variables are present
+
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv("LOCAL_DB_USER"), os.Getenv("LOCAL_DB_PASSWORD"), os.Getenv("LOCAL_DB_HOST"),
 		os.Getenv("LOCAL_DB_PORT"), os.Getenv("LOCAL_DB_NAME"))
@@ -27,7 +61,7 @@ func runServer(addr string) {
 
 	defer conn.Close(context.Background())
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn)
+	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://52.59.228.167:8081"},

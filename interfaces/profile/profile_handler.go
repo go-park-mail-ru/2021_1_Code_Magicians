@@ -10,6 +10,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gorilla/mux"
 )
 
@@ -209,6 +212,59 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	return
 }
 
+var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
 // HandlePostAvatar takes avatar from request and assigns it to current user
 func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
+
+	bodySize := r.ContentLength
+	if bodySize < 0 { // No avatar was passed
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if bodySize > int64(maxPostAvatarBodySize) { // Avatar is too large
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	r.ParseMultipartForm(bodySize)
+	file, handler, err := r.FormFile("avatarImage")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	defer file.Close()
+
+	sess := r.Context().Value("sess").(*session.Session)
+	s3BucketName := r.Context().Value("s3BucketName").(string)
+	uploader := s3manager.NewUploader(sess)
+
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(s3BucketName),
+		ACL:    aws.String("public-read"),
+		Key:    aws.String("avatars/" + handler.Filename), // TODO: avatars folder sharding by date
+		Body:   file,
+	})
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	user, err := profileInfo.UserApp.GetUser(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	user.Avatar = "avatars/" + handler.Filename
+	err = profileInfo.UserApp.SaveUser(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

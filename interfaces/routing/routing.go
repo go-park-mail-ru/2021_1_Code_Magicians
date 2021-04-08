@@ -9,6 +9,7 @@ import (
 	"pinterest/interfaces/profile"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 )
@@ -18,7 +19,7 @@ func boardHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO /board handling
 }
 
-func CreateRouter(conn *pgx.Conn) *mux.Router {
+func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
@@ -46,7 +47,7 @@ func CreateRouter(conn *pgx.Conn) *mux.Router {
 	r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET")
 	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), profileInfo.CookieApp)).Methods("GET")
-	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, profileInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/avatar", mid.AuthMid(mid.AWSMid(profileInfo.HandlePostAvatar, sess, s3BucketName), profileInfo.CookieApp)).Methods("PUT")
 
 	// pins := &pins.PinsStorage{
 	// 	Storage: pin.NewPinsSet(),

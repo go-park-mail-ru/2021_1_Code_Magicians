@@ -9,7 +9,7 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
-const usernameRegexp = "^[a-zA-Z0-9 _]{2,42}$"
+const usernameRegexp = "^[a-zA-Z0-9_]{2,42}$"
 const firstNameRegexp = "^[a-zA-Z ]{0,42}$"
 
 // init initiates custom validators for User struct
