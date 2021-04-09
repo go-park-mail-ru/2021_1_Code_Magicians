@@ -71,7 +71,7 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 	rows, err := r.db.Query(context.Background(), getPinsByBoardQuery, boardID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No pins found in database with passed boardID")
+			return nil, fmt.Errorf("No pins found")
 		}
 
 		// Other errors

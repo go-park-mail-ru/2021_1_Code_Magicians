@@ -3,11 +3,14 @@ package pin
 import (
 	"bytes"
 	"fmt"
+	"github.com/golang/mock/gomock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"pinterest/application"
+	"pinterest/application/mock_application"
+	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/middleware"
 	"testing"
@@ -72,8 +75,6 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 
 var testPinInfo PinInfo
 var testAuthInfo auth.AuthInfo
-
-var successCookies []*http.Cookie
 
 var pinTest = []struct {
 	in   InputStruct
@@ -217,94 +218,94 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/3",
+			"/pin/3",
 			"/pin/{id:[0-9]+}",
 			"GET",
 			nil,
 			nil,
 			testPinInfo.HandleGetPinByID,
-			middleware.NoAuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			404,
 			nil,
-			[]byte("404 page not found\n"),
+			nil,
 		},
 		"Testing get not existent pin by id",
 	},
-	{
-		InputStruct{
-			"/pins/0",
-			"/pins/{id:[0-9]+}",
-			"DELETE",
-			nil,
-			nil,
-			testPinInfo.HandleDelPinByID,
-			middleware.AuthMid,
-		},
-
-		OutputStruct{
-			404,
-			nil,
-			nil,
-		},
-		"Testing delete not existent pin", // I don't know right now how to easily check if password changed
-	},
 }
 
-func TestUserPins(t *testing.T) {
-	//mockCtrl := gomock.NewController(t)
-	//defer mockCtrl.Finish()
-	//mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
-	////
-	//expectedUser := entity.User{
-	//	UserID:    0,
-	//	Username:  "TestUsername",
-	//	Password:  "thisisapassword",
-	//	FirstName: "TestFirstName",
-	//	LastName:  "TestLastName",
-	//	Email:     "test@example.com",
-	//	Avatar:    "avatars/1",
-	//	Salt:      "",
-	//}
-	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
-	//mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	//
-	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
-	//
-	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
-	//
-	//expectedUser.Password = "New Password"
-	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
-	//
-	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
-	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
-	//
-	//expecteduser := entity.User{
-	//	UserID:    0,
-	//	Username:  "new_User_Name",
-	//	Password:  "New Password",
-	//	FirstName: "new First name",
-	//	LastName:  "new Last Name",
-	//	Email:     "new@example.com",
-	//	Avatar:    "avatars/2",
-	//	Salt:      "",
-	//}
-	//mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
-	//
-	//mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
+var successCookies []*http.Cookie
 
-	userApp := application.NewUserApp(nil)
+func TestProfileSuccess(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
+
 	cookieApp := application.NewCookieApp()
+	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+
+	// TODO: maybe replace this with JSON parsing?
+	expectedUser := entity.User{
+		UserID:    0,
+		Username:  "TestUsername",
+		Password:  "thisisapassword",
+		FirstName: "TestFirstName",
+		LastName:  "TestLastName",
+		Email:     "test@example.com",
+		Avatar:    "avatars/1",
+		Salt:      "",
+	}
+
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+
+	expectedPinFirst := entity.Pin{
+		PinId:       0,
+		BoardID:     0,
+		Title:       "exampletitle",
+		ImageLink:   "example/link",
+		Description: "exampleDescription",
+	}
+
+	expectedPinSecond := entity.Pin{
+		PinId:       1,
+		BoardID:     0,
+		Title:       "exampletitle",
+		ImageLink:   "example/link",
+		Description: "exampleDescription",
+	}
+
+	expectedPinsInBoard := []entity.Pin{
+		expectedPinFirst,
+		expectedPinSecond,
+	}
+
+	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1) // Handler will request user info
+
+	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
+
+	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
+
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
+
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(nil).Times(1)
+
+	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
 	testAuthInfo = auth.AuthInfo{
-		UserApp:      userApp,
+		UserApp:      mockUserApp,
 		CookieApp:    cookieApp,
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
 	}
-	counter := 0
+
+	testPinInfo = PinInfo{
+		PinApp: mockPinApp,
+	}
 	for _, tt := range pinTest {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -314,12 +315,7 @@ func TestUserPins(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				if counter == 0 {
-					funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
-					counter++
-				} else {
-					funcToHandle = tt.in.middleware(funcToHandle, nil)
-				}
+				funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
@@ -345,7 +341,7 @@ func TestUserPins(t *testing.T) {
 			}
 			require.Equal(t, tt.out.postBody, result.postBody,
 				fmt.Sprintf("Expected: %v as response body\nbut got:  %v",
-					tt.out.postBody, result.postBody))
+					string(tt.out.postBody), string(result.postBody)))
 		})
 	}
 }
