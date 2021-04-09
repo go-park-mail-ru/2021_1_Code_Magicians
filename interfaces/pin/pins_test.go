@@ -3,14 +3,11 @@ package pin
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/mock/gomock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"pinterest/application"
-	"pinterest/domain/entity"
-	"pinterest/infrastructure/mock_repository"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/middleware"
 	"testing"
@@ -257,48 +254,48 @@ var pinTest = []struct {
 }
 
 func TestUserPins(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	//mockCtrl := gomock.NewController(t)
+	//defer mockCtrl.Finish()
+	//mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	////
+	//expectedUser := entity.User{
+	//	UserID:    0,
+	//	Username:  "TestUsername",
+	//	Password:  "thisisapassword",
+	//	FirstName: "TestFirstName",
+	//	LastName:  "TestLastName",
+	//	Email:     "test@example.com",
+	//	Avatar:    "avatars/1",
+	//	Salt:      "",
+	//}
+	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
+	//mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	//
+	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
+	//
+	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	//
+	//expectedUser.Password = "New Password"
+	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
+	//
+	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
+	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	//
+	//expecteduser := entity.User{
+	//	UserID:    0,
+	//	Username:  "new_User_Name",
+	//	Password:  "New Password",
+	//	FirstName: "new First name",
+	//	LastName:  "new Last Name",
+	//	Email:     "new@example.com",
+	//	Avatar:    "avatars/2",
+	//	Salt:      "",
+	//}
+	//mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
+	//
+	//mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
 
-	expectedUser := entity.User{
-		UserID:    0,
-		Username:  "TestUsername",
-		Password:  "thisisapassword",
-		FirstName: "TestFirstName",
-		LastName:  "TestLastName",
-		Email:     "test@example.com",
-		Avatar:    "avatars/1",
-		Salt:      "",
-	}
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
-	mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-
-	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
-
-	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
-
-	expectedUser.Password = "New Password"
-	mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
-
-	mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
-	mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
-
-	expecteduser := entity.User{
-		UserID:    0,
-		Username:  "new_User_Name",
-		Password:  "New Password",
-		FirstName: "new First name",
-		LastName:  "new Last Name",
-		Email:     "new@example.com",
-		Avatar:    "avatars/2",
-		Salt:      "",
-	}
-	mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
-
-	mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
-
-	userApp := application.NewUserApp(mockDoer)
+	userApp := application.NewUserApp(nil)
 	cookieApp := application.NewCookieApp()
 
 	testAuthInfo = auth.AuthInfo{
