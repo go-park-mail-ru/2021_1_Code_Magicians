@@ -14,6 +14,7 @@ import (
 type AuthInfo struct {
 	UserApp      application.UserAppInterface
 	CookieApp    application.CookieAppInterface
+	S3App        application.S3AppInterface
 	CookieLength int
 	Duration     time.Duration
 }
@@ -49,10 +50,6 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if newUser.Avatar == "" {
-		newUser.Avatar = "/assets/img/default-avatar.jpg" // default user avatar path
-	}
-
 	newUser.UserID, err = info.UserApp.CreateUser(&newUser)
 	if err != nil {
 		if err.Error() == "Username or email is already taken" {
@@ -68,7 +65,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		// TODO: delete user
+		info.UserApp.DeleteUser(newUser.UserID, info.S3App)
 		return
 	}
 
@@ -93,14 +90,14 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := info.UserApp.CheckUserCredentials(userInput.Username, userInput.Password)
+	user, err := info.UserApp.CheckUserCredentials(userInput.Username, userInput.Password)
 
 	if err != nil {
 		switch err.Error() {
 		case "Password does not match":
 			w.WriteHeader(http.StatusUnauthorized)
 		case "No user found with such username":
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -114,7 +111,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = info.CookieApp.AddCookie(&entity.CookieInfo{id, cookie})
+	err = info.CookieApp.AddCookie(&entity.CookieInfo{user.UserID, cookie})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

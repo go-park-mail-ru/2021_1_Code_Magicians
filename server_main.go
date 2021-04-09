@@ -64,7 +64,7 @@ func runServer(addr string) {
 	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://52.59.228.167:8081"},
+		AllowedOrigins:   []string{"http://52.59.228.167:8081", "http://127.0.0.1:8081"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 	})

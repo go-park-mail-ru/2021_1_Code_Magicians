@@ -16,14 +16,14 @@ func NewUserApp(us repository.UserRepository) *UserApp {
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error)              // Create user, returns created user's ID
-	SaveUser(*entity.User) error                       // Save changed user to database
-	DeleteUser(int, S3AppInterface) error              // Delete user with passed userID from database
-	GetUser(int) (*entity.User, error)                 // Get user by his ID
-	GetUsers() ([]entity.User, error)                  // Get all users
-	GetUserByUsername(string) (*entity.User, error)    // Get user by his username
-	CheckUserCredentials(string, string) (int, error)  // Check if passed username and password are correct
-	UpdateAvatar(int, io.Reader, S3AppInterface) error // Replace user's avatar with one passed as second parameter
+	CreateUser(*entity.User) (int, error)                      // Create user, returns created user's ID
+	SaveUser(*entity.User) error                               // Save changed user to database
+	DeleteUser(int, S3AppInterface) error                      // Delete user with passed userID from database
+	GetUser(int) (*entity.User, error)                         // Get user by his ID
+	GetUsers() ([]entity.User, error)                          // Get all users
+	GetUserByUsername(string) (*entity.User, error)            // Get user by his username
+	CheckUserCredentials(string, string) (*entity.User, error) // Check if passed username and password are correct
+	UpdateAvatar(int, io.Reader, S3AppInterface) error         // Replace user's avatar with one passed as second parameter
 }
 
 // CreateUser add new user to database with passed fields
@@ -77,18 +77,18 @@ func (u *UserApp) GetUserByUsername(username string) (*entity.User, error) {
 }
 
 // GetUserCredentials check whether there is user with such username/password pair
-// It returns user's ID, nil on success and nil, error on failure
+// It returns user, nil on success and nil, error on failure
 // Those errors are descriptive and tell what did not match
-func (u *UserApp) CheckUserCredentials(username string, password string) (int, error) { // TODO: return actual user, will save a request to DB
+func (u *UserApp) CheckUserCredentials(username string, password string) (*entity.User, error) {
 	user, err := u.us.GetUserByUsername(username)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	if user.Password != password { // TODO: hashing
-		return -1, fmt.Errorf("Password does not match")
+		return nil, fmt.Errorf("Password does not match")
 	}
 
-	return user.UserID, nil
+	return user, nil
 }
 
 func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface) error {

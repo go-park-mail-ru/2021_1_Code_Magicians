@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"log"
 	"pinterest/domain/entity"
 	"strings"
 
@@ -21,10 +22,32 @@ const createUserQuery string = "INSERT INTO Users (username, passwordhash, salt,
 	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING userID"
 
+const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwordhash, salt, email, first_name, last_name, avatar)\n" +
+	"values ($1, $2, $3, $4, $5, $6, DEFAULT)\n" +
+	"RETURNING userID"
+
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
-	row := r.db.QueryRow(context.Background(), createUserQuery, user.Username, user.Password, user.Salt, user.Email, user.FirstName, user.LastName, user.Avatar)
+	firstNamePtr := &user.FirstName
+	if user.FirstName == "" {
+		firstNamePtr = nil
+	}
+	lastNamePtr := &user.LastName
+	if user.LastName == "" {
+		lastNamePtr = nil
+	}
+
+	var row pgx.Row
+	switch user.Avatar {
+	case "": // If avatar was not specified, we need to use it's default value
+		row = r.db.QueryRow(context.Background(), createUserQueryDefaulAvatar,
+			user.Username, user.Password, user.Salt, user.Email, &firstNamePtr, &lastNamePtr)
+	default:
+		row = r.db.QueryRow(context.Background(), createUserQuery,
+			user.Username, user.Password, user.Salt, user.Email, &firstNamePtr, &lastNamePtr, user.Avatar)
+	}
+
 	newUserID := 0
 	err := row.Scan(&newUserID)
 	if err != nil {
@@ -34,7 +57,7 @@ func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
 		}
 
 		// Other errors
-		// log.Println(err)
+		log.Println(err)
 		return -1, err
 	}
 	return newUserID, nil

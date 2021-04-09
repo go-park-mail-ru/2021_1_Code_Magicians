@@ -25,7 +25,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 
 	repo := persistence.NewUserRepository(conn)
 	authInfo := auth.AuthInfo{
-		UserApp:      application.NewUserApp(repo), // TODO: mocking
+		UserApp:      application.NewUserApp(repo),
 		CookieApp:    application.NewCookieApp(),
 		CookieLength: 40,
 		Duration:     10 * time.Hour,

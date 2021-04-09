@@ -37,10 +37,10 @@ func (m *MockUserAppInterface) EXPECT() *MockUserAppInterfaceMockRecorder {
 }
 
 // CheckUserCredentials mocks base method.
-func (m *MockUserAppInterface) CheckUserCredentials(arg0, arg1 string) (int, error) {
+func (m *MockUserAppInterface) CheckUserCredentials(arg0, arg1 string) (*entity.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckUserCredentials", arg0, arg1)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(*entity.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

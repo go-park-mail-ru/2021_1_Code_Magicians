@@ -74,7 +74,6 @@ type UserRegInput struct {
 	Email     string `json:"email" valid:"email"`
 	FirstName string `json:"firstName" valid:"name,optional"`
 	LastName  string `json:"lastName" valid:"name,optional"`
-	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
 }
 
 // UserLoginInput is used when parsing JSON in auth/login handler
@@ -133,7 +132,6 @@ func (user *User) UpdateFrom(userInput interface{}) error {
 			user.Email = userRegInput.Email
 			user.FirstName = userRegInput.FirstName
 			user.LastName = userRegInput.LastName
-			user.Avatar = userRegInput.Avatar
 		}
 	case *UserPassChangeInput:
 		user.Password = userInput.(*UserPassChangeInput).Password // TODO: hashing
