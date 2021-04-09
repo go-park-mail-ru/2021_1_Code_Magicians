@@ -30,7 +30,8 @@ type BoardsStorage struct {
 }
 
 type Board struct {
-	Id          int    `json:"id"`
+	BoardID     int    `json:"boardID"`
+	UserID      int    `json:"userID"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }

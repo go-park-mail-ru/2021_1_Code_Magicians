@@ -13,11 +13,11 @@ func NewPinApp(p repository.PinRepository) *PinApp {
 	return &PinApp{p}
 }
 
-type PinRepository interface {
+type PinAppInterface interface {
 	AddPin(*entity.Pin) (int, error)   // Saving user's pin
 	GetPin(int) (*entity.Pin, error)   // Get pin by pinID
 	GetPins(int) ([]entity.Pin, error) // Get pins by boardID
-	DeletePin(int) error               // Removes pin by ID
+	DeletePin(int, int) error               // Removes pin by ID
 }
 
 // AddPin adds user's pin to database
@@ -40,6 +40,6 @@ func (pn *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
 
 // DeletePin deletes pin with passed pinID
 // It returns nil on success and error on failure
-func (pn *PinApp) DeletePin(pinID int) error {
-	return pn.p.DeletePin(pinID)
+func (pn *PinApp) DeletePin(pinID int, userID int) error {
+	return pn.p.DeletePin(pinID, userID)
 }

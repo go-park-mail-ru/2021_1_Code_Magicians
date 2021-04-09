@@ -13,11 +13,11 @@ func NewBoardApp(b repository.BoardRepository) *BoardApp {
 	return &BoardApp{b}
 }
 
-type BoardRepository interface {
+type BoardAppInterface interface {
 	AddBoard(board *entity.Board) (int, error) // Creating user's board
 	GetBoard(int) (*entity.Board, error)       // Get description of the board
 	GetBoards(int) ([]entity.Board, error)     // Get boards by authorID
-	DeleteBoard(int) error                     // Removes user's board by ID
+	DeleteBoard(int, int) error                     // Removes user's board by ID
 }
 
 // AddBoard adds user's board to database
@@ -40,6 +40,6 @@ func (brd *BoardApp) GetBoards(authorID int) ([]entity.Board, error) {
 
 // DeleteBoard deletes user's board with passed boardID
 // It returns nil on success and error on failure
-func (brd *BoardApp) DeleteBoard(boardID int) error {
-	return brd.b.DeleteBoard(boardID)
+func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
+	return brd.b.DeleteBoard(boardID, userID)
 }
