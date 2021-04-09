@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"pinterest/domain/entity"
+	"pinterest/application"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/middleware"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -23,7 +24,7 @@ type InputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	profileFunc  func(w http.ResponseWriter, r *http.Request)
-	middleware   func(next http.HandlerFunc) http.HandlerFunc
+	middleware   func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms InputStruct to http.Request, adding global cookies
@@ -69,9 +70,8 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 	return err
 }
 
-var testPinSet = entity.PinsStorage{
-	Storage: entity.NewPinsSet(),
-}
+var testPinInfo PinInfo
+var testAuthInfo auth.AuthInfo
 
 var successCookies []*http.Cookie
 
@@ -93,7 +93,7 @@ var pinTest = []struct {
 				`"email": "test@example.com",` +
 				`"avatar": "avatars/1"}`,
 			),
-			auth.HandleCreateUser,
+			testAuthInfo.HandleCreateUser,
 			middleware.NoAuthMid,
 		},
 
@@ -114,7 +114,7 @@ var pinTest = []struct {
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
-			testPinSet.Storage.HandleAddPin,
+			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -135,7 +135,7 @@ var pinTest = []struct {
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
-			testPinSet.Storage.HandleAddPin,
+			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -153,7 +153,7 @@ var pinTest = []struct {
 			"GET",
 			nil,
 			nil,
-			testPinSet.Storage.HandleGetPinByID,
+			testPinInfo.HandleGetPinByID,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -176,7 +176,7 @@ var pinTest = []struct {
 			"GET",
 			nil,
 			nil,
-			testPinSet.Storage.HandleGetPinsByBoardID,
+			testPinInfo.HandleGetPinsByBoardID,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -204,7 +204,7 @@ var pinTest = []struct {
 			"DELETE",
 			nil,
 			nil,
-			testPinSet.Storage.HandleDelPinByID,
+			testPinInfo.HandleDelPinByID,
 			middleware.AuthMid,
 		},
 
@@ -222,7 +222,7 @@ var pinTest = []struct {
 			"GET",
 			nil,
 			nil,
-			testPinSet.Storage.HandleGetPinByID,
+			testPinInfo.HandleGetPinByID,
 			middleware.NoAuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -240,7 +240,7 @@ var pinTest = []struct {
 			"DELETE",
 			nil,
 			nil,
-			testPinSet.Storage.HandleDelPinByID,
+			testPinInfo.HandleDelPinByID,
 			middleware.AuthMid,
 		},
 
@@ -254,6 +254,57 @@ var pinTest = []struct {
 }
 
 func TestUserPins(t *testing.T) {
+	//mockCtrl := gomock.NewController(t)
+	//defer mockCtrl.Finish()
+	//mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	////
+	//expectedUser := entity.User{
+	//	UserID:    0,
+	//	Username:  "TestUsername",
+	//	Password:  "thisisapassword",
+	//	FirstName: "TestFirstName",
+	//	LastName:  "TestLastName",
+	//	Email:     "test@example.com",
+	//	Avatar:    "avatars/1",
+	//	Salt:      "",
+	//}
+	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // Credentials check
+	//mockDoer.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	//
+	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(2) // Credentials check, then normal user output using cookie's userID
+	//
+	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	//
+	//expectedUser.Password = "New Password"
+	//mockDoer.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
+	//
+	//mockDoer.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Credentials check
+	//mockDoer.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1)
+	//
+	//expecteduser := entity.User{
+	//	UserID:    0,
+	//	Username:  "new_User_Name",
+	//	Password:  "New Password",
+	//	FirstName: "new First name",
+	//	LastName:  "new Last Name",
+	//	Email:     "new@example.com",
+	//	Avatar:    "avatars/2",
+	//	Salt:      "",
+	//}
+	//mockDoer.EXPECT().GetUser(expecteduser.UserID).Return(&expecteduser, nil).Times(1) // Normal user output using userID
+	//
+	//mockDoer.EXPECT().DeleteUser(expecteduser.UserID).Return(nil).Times(1)
+
+	userApp := application.NewUserApp(nil)
+	cookieApp := application.NewCookieApp()
+
+	testAuthInfo = auth.AuthInfo{
+		UserApp:      userApp,
+		CookieApp:    cookieApp,
+		CookieLength: 40,
+		Duration:     10 * time.Hour,
+	}
+	counter := 0
 	for _, tt := range pinTest {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -263,7 +314,12 @@ func TestUserPins(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle)
+				if counter == 0 {
+					funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
+					counter++
+				} else {
+					funcToHandle = tt.in.middleware(funcToHandle, nil)
+				}
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
