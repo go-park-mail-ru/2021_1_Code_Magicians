@@ -99,7 +99,10 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		case "No user found with such username":
 			w.WriteHeader(http.StatusNotFound)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
+			{
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 		return
 	}

@@ -18,6 +18,14 @@ func NewUserRepository(db *pgx.Conn) *UserRepo {
 	return &UserRepo{db}
 }
 
+// emptyIfNil replaces nil input with pointer to empty string, noop otherwise
+func emptyIfNil(input *string) *string {
+	if input == nil {
+		return new(string)
+	}
+	return input
+}
+
 const createUserQuery string = "INSERT INTO Users (username, passwordhash, salt, email, first_name, last_name, avatar)\n" +
 	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING userID"
@@ -99,8 +107,12 @@ const getUserQuery string = "SELECT username, passwordhash, salt, email, first_n
 // It returns that user, nil on success and nil, error on failure
 func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 	user := entity.User{UserID: userID}
+	firstNamePtr := new(string)
+	secondNamePtr := new(string)
+	avatarPtr := new(string)
+
 	row := r.db.QueryRow(context.Background(), getUserQuery, userID)
-	err := row.Scan(&user.Username, &user.Password, &user.Salt, &user.Email, &user.FirstName, &user.LastName, &user.Avatar)
+	err := row.Scan(&user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No user found with such id")
@@ -108,6 +120,10 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 		// Other errors
 		return nil, err
 	}
+
+	user.FirstName = *emptyIfNil(firstNamePtr)
+	user.LastName = *emptyIfNil(secondNamePtr)
+	user.Avatar = *emptyIfNil(avatarPtr)
 	return &user, nil
 }
 
@@ -129,10 +145,18 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 
 	for rows.Next() {
 		user := entity.User{}
-		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &user.FirstName, &user.LastName, &user.Avatar)
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
 		users = append(users, user)
 	}
 	return users, nil
@@ -145,8 +169,12 @@ const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email,
 // It returns that user, nil on success and nil, error on failure
 func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	user := entity.User{Username: username}
+	firstNamePtr := new(string)
+	secondNamePtr := new(string)
+	avatarPtr := new(string)
+
 	row := r.db.QueryRow(context.Background(), getUserByUsernameQuery, username)
-	err := row.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &user.FirstName, &user.LastName, &user.Avatar)
+	err := row.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No user found with such username")
@@ -155,5 +183,9 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 		// Other errors
 		return nil, err
 	}
+
+	user.FirstName = *emptyIfNil(firstNamePtr)
+	user.LastName = *emptyIfNil(secondNamePtr)
+	user.Avatar = *emptyIfNil(avatarPtr)
 	return &user, nil
 }
