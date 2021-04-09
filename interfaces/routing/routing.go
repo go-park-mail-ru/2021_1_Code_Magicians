@@ -4,6 +4,7 @@ import (
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
+	"pinterest/interfaces/board"
 	mid "pinterest/interfaces/middleware"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
@@ -30,12 +31,15 @@ func CreateRouter(conn *pgx.Conn) *mux.Router {
 		CookieApp: authInfo.CookieApp,
 	}
 
- 	repoPins := persistence.NewPinsRepository(conn)
+	repoPins := persistence.NewPinsRepository(conn)
 	pinsInfo := pin.PinInfo{
 		PinApp: application.NewPinApp(repoPins),
 	}
 
-	//repoBoards := persistence.NewBoardsRepository(conn)
+	repoBoards := persistence.NewBoardsRepository(conn)
+	boardsInfo := board.BoardInfo{
+		BoardApp: application.NewBoardApp(repoBoards),
+	}
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authInfo.CookieApp)).Methods("POST")
@@ -55,9 +59,10 @@ func CreateRouter(conn *pgx.Conn) *mux.Router {
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, authInfo.CookieApp)).Methods("DELETE")
 	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
 
-	// r.HandleFunc("/board/", mid.AuthMid(boards.Storage.HandleAddBoard)).Methods("POST") // Will split later
-	// r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boards.Storage.HandleDelBoardByID)).Methods("GET")
-	// r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boards.Storage.HandleGetBoardByID)).Methods("DELETE")
+	r.HandleFunc("/board/", mid.AuthMid(boardsInfo.HandleAddBoard, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleDelBoardByID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleDelBoardByID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleGetBoardByID, authInfo.CookieApp)).Methods("DELETE")
 
 	return r
 }
