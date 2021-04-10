@@ -195,7 +195,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 	var userOutput entity.UserOutput
 	userOutput.FillFromUser(user)
-	userOutput.Password = "" // Password is ommitted on purpose
 
 	responseBody, err := json.Marshal(userOutput)
 	if err != nil {
