@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"pinterest/domain/entity"
@@ -87,6 +88,7 @@ func (r *UserRepo) SaveUser(user *entity.User) error {
 		}
 
 		// Other errors
+		log.Println(err)
 		return err
 	}
 	return nil
@@ -97,8 +99,14 @@ const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 // SaveUser deletes user with passed ID
 // It returns nil on success and error on failure
 func (r *UserRepo) DeleteUser(userID int) error {
-	_, err := r.db.Exec(context.Background(), deleteUserQuery, userID)
-	return err
+	commandTag, err := r.db.Exec(context.Background(), deleteUserQuery, userID)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return errors.New("User not found")
+	}
+	return nil
 }
 
 const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar FROM Users WHERE userID=$1"
