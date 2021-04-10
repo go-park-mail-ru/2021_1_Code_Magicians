@@ -111,8 +111,7 @@ var pinTest = []struct {
 			"/pin",
 			"POST",
 			nil,
-			[]byte(`{"boardID":0,` +
-				`"title":"exampletitle",` +
+			[]byte(`{"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
 			testPinInfo.HandleAddPin,
@@ -132,8 +131,7 @@ var pinTest = []struct {
 			"/pin",
 			"POST",
 			nil,
-			[]byte(`{"boardID":0,` +
-				`"title":"exampletitle",` +
+			[]byte(`{"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`),
 			testPinInfo.HandleAddPin,
@@ -162,7 +160,6 @@ var pinTest = []struct {
 			200,
 			nil,
 			[]byte(`{"id":1,` +
-				`"boardID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`,
@@ -185,12 +182,10 @@ var pinTest = []struct {
 			200,
 			nil,
 			[]byte(`[{"id":0,` +
-				`"boardID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"},` +
 				`{"id":1,` +
-				`"boardID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}]`,
@@ -234,6 +229,24 @@ var pinTest = []struct {
 		},
 		"Testing get not existent pin by id",
 	},
+	{
+		InputStruct{
+			"/pins/0",
+			"/pins/{id:[0-9]+}",
+			"DELETE",
+			nil,
+			nil,
+			testPinInfo.HandleDelPinByID,
+			middleware.AuthMid,
+		},
+
+		OutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing delete not existent pin", // I don't know right now how to easily check if password changed
+	},
 }
 
 var successCookies []*http.Cookie
@@ -265,7 +278,6 @@ func TestProfileSuccess(t *testing.T) {
 
 	expectedPinFirst := entity.Pin{
 		PinId:       0,
-		BoardID:     0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
@@ -273,7 +285,6 @@ func TestProfileSuccess(t *testing.T) {
 
 	expectedPinSecond := entity.Pin{
 		PinId:       1,
-		BoardID:     0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
@@ -284,17 +295,19 @@ func TestProfileSuccess(t *testing.T) {
 		expectedPinSecond,
 	}
 
-	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1) // Handler will request user info
+
 
 	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
-
+	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
 	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
+
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = auth.AuthInfo{
 		UserApp:      mockUserApp,

@@ -29,6 +29,8 @@ type UserAppInterface interface {
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (u *UserApp) CreateUser(user *entity.User) (int, error) {
+	initialBoard := &entity.Board{UserID: user.UserID, Title: "Saved pins"}
+	_, err := BoardApp.AddBoard(initialBoard)
 	return u.us.CreateUser(user)
 }
 

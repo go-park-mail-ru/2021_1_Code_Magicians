@@ -33,7 +33,6 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resultPin := &entity.Pin{
-		BoardID:     currPin.BoardID,
 		Title:       currPin.Title,
 		Description: currPin.Description,
 		ImageLink:   currPin.ImageLink,
@@ -63,7 +62,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 
 	err = pinInfo.PinApp.DeletePin(pinId, userId)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
