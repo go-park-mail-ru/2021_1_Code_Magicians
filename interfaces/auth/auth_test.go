@@ -178,7 +178,7 @@ func TestAuthSuccess(t *testing.T) {
 		Salt:      "",
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
-	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockUser.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 

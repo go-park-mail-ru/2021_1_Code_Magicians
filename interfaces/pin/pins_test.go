@@ -274,7 +274,7 @@ func TestProfileSuccess(t *testing.T) {
 	}
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
 	expectedPinFirst := entity.Pin{
 		PinId:       0,
@@ -295,19 +295,17 @@ func TestProfileSuccess(t *testing.T) {
 		expectedPinSecond,
 	}
 
-
-
 	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().AddPin(gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(nil).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = auth.AuthInfo{
 		UserApp:      mockUserApp,

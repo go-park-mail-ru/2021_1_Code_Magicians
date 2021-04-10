@@ -3,6 +3,7 @@ package pin
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
@@ -13,6 +14,7 @@ import (
 
 type PinInfo struct {
 	PinApp application.PinAppInterface
+	S3App application.S3AppInterface
 }
 
 func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +62,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
-	err = pinInfo.PinApp.DeletePin(pinId, userId)
+	err = pinInfo.PinApp.DeletePin(pinId, userId, pinInfo.S3App)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -116,4 +118,38 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
+}
+
+const maxPostPictureBodySize = 8 * 1024 * 1024 // 8 mB
+// HandleUploadPicture takes picture from request and assigns it to current pin
+func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Request) {
+	bodySize := r.ContentLength
+	if bodySize < 0 { // No picture was passed
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if bodySize > int64(maxPostPictureBodySize) { // Picture is too large
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	r.ParseMultipartForm(bodySize)
+	file, _, err := r.FormFile("pinImage")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	defer file.Close()
+
+	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	err = pinInfo.PinApp.UploadPicture(userID, file, pinInfo.S3App)
+
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

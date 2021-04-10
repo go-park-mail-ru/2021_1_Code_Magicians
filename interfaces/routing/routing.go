@@ -60,6 +60,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinByID)).Methods("GET")
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, authInfo.CookieApp)).Methods("DELETE")
 	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
+	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, authInfo.CookieApp)).Methods("PUT")
 
 	r.HandleFunc("/board/", mid.AuthMid(boardsInfo.HandleAddBoard, authInfo.CookieApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleDelBoardByID)).Methods("GET")
