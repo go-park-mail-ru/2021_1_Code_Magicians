@@ -16,7 +16,7 @@ func NewPinApp(p repository.PinRepository) *PinApp {
 }
 
 type PinAppInterface interface {
-	AddPin(*entity.Pin) (int, error)                    // Saving user's pin
+	AddPin(int, *entity.Pin) (int, error)                    // Saving user's pin
 	GetPin(int) (*entity.Pin, error)                    // Get pin by pinID
 	GetPins(int) ([]entity.Pin, error)                  // Get pins by boardID
 	GetLastUserPinID(int) (int, error)
@@ -27,8 +27,14 @@ type PinAppInterface interface {
 
 // AddPin adds user's pin to database
 // It returns pin's assigned ID and nil on success, any number and error on failure
-func (pn *PinApp) AddPin(pin *entity.Pin) (int, error) {
-	return pn.p.AddPin(pin)
+func (pn *PinApp) AddPin(userID int, pin *entity.Pin) (int, error) {
+	boardApp := BoardApp{}
+	initBoardID, err := boardApp.GetInitUserBoard(userID)
+	if err != nil {
+		return -1, err
+	}
+
+	return pn.p.AddPin(initBoardID, pin)
 }
 
 // GetPin returns pin with passed pinID

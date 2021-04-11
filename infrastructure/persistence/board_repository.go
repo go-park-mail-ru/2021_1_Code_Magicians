@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"pinterest/domain/entity"
 
@@ -16,14 +17,14 @@ func NewBoardsRepository(db *pgx.Conn) *BoardsRepo {
 	return &BoardsRepo{db}
 }
 
-const createBoardQuery string = "INSERT INTO Boards (title, description)\n" +
-	"values ($1, $2)\n" +
+const createBoardQuery string = "INSERT INTO Boards (userID, title, description)\n" +
+	"values ($1, $2, $3)\n" +
 	"RETURNING boardID"
 
-// BoardsRepo add new user to database with passed fields
+// AddBoard add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
-	row := r.db.QueryRow(context.Background(), createBoardQuery, board.Title, board.Description)
+	row := r.db.QueryRow(context.Background(), createBoardQuery, board.UserID, board.Title, board.Description)
 	newBoardID := 0
 	err := row.Scan(&newBoardID)
 	if err != nil {
@@ -39,7 +40,13 @@ const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1 AND userID=
 // SaveUser deletes user with passed ID
 // It returns nil on success and error on failure
 func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
-	_, err := r.db.Exec(context.Background(), deleteBoardQuery, boardID, userID)
+	commandTag, err := r.db.Exec(context.Background(), deleteBoardQuery, boardID, userID)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return errors.New("pin not found")
+	}
 	return err
 }
 
@@ -67,7 +74,7 @@ const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boa
 // It returns slice of all users, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	boards := make([]entity.Board, 0)
-	rows, err := r.db.Query(context.Background(), getPinsByBoardQuery, userID)
+	rows, err := r.db.Query(context.Background(), getBoardsByUserQuery, userID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No boards found in database with passed userID")
@@ -86,4 +93,24 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 		boards = append(boards, board)
 	}
 	return boards, nil
+}
+
+const getInitUserBoardQuery string = "SELECT b1.boardID\n" +
+	"FROM boards AS b1\n" +
+	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
+	"GROUP BY b1.boardID, b2.userID\n" +
+	"ORDER BY b2.userID LIMIT 1\n"
+
+func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
+	initBoardID := 0
+	row := r.db.QueryRow(context.Background(), getInitUserBoardQuery, userID)
+	err := row.Scan(&initBoardID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return -1, fmt.Errorf("No board found")
+		}
+		// Other errors
+		return -1, err
+	}
+	return initBoardID, nil
 }

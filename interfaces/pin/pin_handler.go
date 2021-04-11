@@ -14,7 +14,7 @@ import (
 
 type PinInfo struct {
 	PinApp application.PinAppInterface
-	S3App application.S3AppInterface
+	S3App  application.S3AppInterface
 }
 
 func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +40,9 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		ImageLink:   currPin.ImageLink,
 	}
 
-	resultPin.PinId, err = pinInfo.PinApp.AddPin(resultPin)
+	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+
+	resultPin.PinId, err = pinInfo.PinApp.AddPin(userId, resultPin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

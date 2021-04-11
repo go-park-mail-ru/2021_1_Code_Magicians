@@ -17,22 +17,30 @@ type PinsRepo struct {
 func NewPinsRepository(db *pgx.Conn) *PinsRepo {
 	return &PinsRepo{db}
 }
-
+const createPairQuery string = "INSERT INTO pairs (boardID, pinID)\n" +
+	"values ($1, $2);\n"
 const createPinQuery string = "INSERT INTO Pins (title, imageLink, description)\n" +
 	"values ($1, $2, $3)\n" +
-	"RETURNING pinID"
+	"RETURNING pinID;\n"
 
 // AddPin add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (r *PinsRepo) AddPin(pin *entity.Pin) (int, error) {
+func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
 	row := r.db.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description)
 	newPinID := 0
 	err := row.Scan(&newPinID)
 	if err != nil {
-		// Other errors
-		// log.Println(err)
 		return -1, err
 	}
+
+	commandTag, err := r.db.Exec(context.Background(), createPairQuery, boardID, newPinID)
+	if err != nil {
+		return -1, err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return -1, errors.New("pin not found")
+	}
+
 	return newPinID, nil
 }
 
@@ -48,7 +56,6 @@ func (r *PinsRepo) DeletePin(pinID int, userID int) error {
 	if commandTag.RowsAffected() != 1 {
 		return errors.New("pin not found")
 	}
-	return nil
 	return err
 }
 
@@ -118,12 +125,12 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"INNER JOIN pairs on pairs.pinID=pins.pinID\n" +
 	"INNER JOIN boards on boards.boardID=pairs.boardID AND boards.userID = $1\n" +
 	"GROUP BY boards.userID\n" +
-	"ORDER BY pins.pinID LIMIT 1\n"
+	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
 func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
-	firstPinID := 0
+	lastPinID := 0
 	row := r.db.QueryRow(context.Background(), getLastUserPinQuery, userID)
-	err := row.Scan(&firstPinID)
+	err := row.Scan(&lastPinID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return -1, fmt.Errorf("No pin found")
@@ -131,5 +138,5 @@ func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 		// Other errors
 		return -1, err
 	}
-	return firstPinID, nil
+	return lastPinID, nil
 }

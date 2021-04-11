@@ -1,9 +1,11 @@
-package pin
+package board
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,9 +17,6 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
-
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/require"
 )
 
 type InputStruct struct {
@@ -73,10 +72,10 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 	return err
 }
 
-var testPinInfo PinInfo
+var testBoardInfo BoardInfo
 var testAuthInfo auth.AuthInfo
 
-var pinTest = []struct {
+var boardTest = []struct {
 	in   InputStruct
 	out  OutputStruct
 	name string
@@ -107,100 +106,99 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pin",
-			"/pin",
+			"/board",
+			"/board",
 			"POST",
 			nil,
-			[]byte(`{"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+			[]byte(`{"userID":0,` +
+				`"title":"exampletitle",` +
 				`"description":"exampleDescription"}`),
-			testPinInfo.HandleAddPin,
+			testBoardInfo.HandleAddBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 0}`),
+			[]byte(`{"board_id": 0}`),
 		},
-		"Testing add first pin",
+		"Testing add first board",
 	},
 	{
 		InputStruct{
-			"/pin",
-			"/pin",
+			"/board",
+			"/board",
 			"POST",
 			nil,
-			[]byte(`{"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+			[]byte(`{"userID":0,` +
+				`"title":"exampletitle",` +
 				`"description":"exampleDescription"}`),
-			testPinInfo.HandleAddPin,
+			testBoardInfo.HandleAddBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 1}`),
+			[]byte(`{"board_id": 1}`),
 		},
-		"Testing add second pin",
+		"Testing add second board",
 	},
 	{
 		InputStruct{
-			"/pin/1",
-			"/pin/{id:[0-9]+}",
+			"/board/1",
+			"/board/{id:[0-9]+}",
 			"GET",
 			nil,
 			nil,
-			testPinInfo.HandleGetPinByID,
+			testBoardInfo.HandleGetBoardByID,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"id":1,` +
+			[]byte(`{"boardID":1,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`,
 			),
 		},
-		"Testing get pin by id",
+		"Testing get board by boardID",
 	},
 	{
 		InputStruct{
-			"/pins/0",
-			"/pins/{id:[0-9]+}",
+			"/boards/0",
+			"/boards/{id:[0-9]+}",
 			"GET",
 			nil,
 			nil,
-			testPinInfo.HandleGetPinsByBoardID,
-			middleware.AuthMid, // If user is not logged in, they can't access their profile
+			testBoardInfo.HandleGetBoardsByUserID,
+			middleware.AuthMid,
 		},
-
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"id":0,` +
+			[]byte(`[{"boardID":0,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"},` +
-				`{"id":1,` +
+				`{"boardID":1,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}]`,
 			),
 		},
-		"Testing get pin by board id",
+		"Testing get boards by user id",
 	},
 	{
 		InputStruct{
-			"/pin/0",
-			"/pin/{id:[0-9]+}",
+			"/board/0",
+			"/board/{id:[0-9]+}",
 			"DELETE",
 			nil,
 			nil,
-			testPinInfo.HandleDelPinByID,
+			testBoardInfo.HandleDelBoardByID,
 			middleware.AuthMid,
 		},
 
@@ -209,16 +207,16 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing delete pin", // I don't know right now how to easily check if password changed
+		"Testing delete board", // I don't know right now how to easily check if password changed
 	},
 	{
 		InputStruct{
-			"/pin/3",
-			"/pin/{id:[0-9]+}",
+			"/board/3",
+			"/board/{id:[0-9]+}",
 			"GET",
 			nil,
 			nil,
-			testPinInfo.HandleGetPinByID,
+			testBoardInfo.HandleGetBoardByID,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -227,16 +225,16 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing get not existent pin by id",
+		"Testing get not existent board by boardID",
 	},
 	{
 		InputStruct{
-			"/pin/0",
-			"/pin/{id:[0-9]+}",
+			"/board/0",
+			"/board/{id:[0-9]+}",
 			"DELETE",
 			nil,
 			nil,
-			testPinInfo.HandleDelPinByID,
+			testBoardInfo.HandleDelBoardByID,
 			middleware.AuthMid,
 		},
 
@@ -245,7 +243,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing delete not existent pin", // I don't know right now how to easily check if password changed
+		"Testing delete not existent board",
 	},
 }
 
@@ -256,10 +254,9 @@ func TestProfileSuccess(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
-	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
+	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 
 	cookieApp := application.NewCookieApp()
-	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -276,38 +273,38 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
-	expectedPinFirst := entity.Pin{
-		PinId:       0,
+	expectedBoardFirst := entity.Board{
+		BoardID:     0,
+		UserID:      0,
 		Title:       "exampletitle",
-		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
-	expectedPinSecond := entity.Pin{
-		PinId:       1,
+	expectedBoardSecond := entity.Board{
+		BoardID:     1,
+		UserID:      0,
 		Title:       "exampletitle",
-		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
-	expectedPinsInBoard := []entity.Pin{
-		expectedPinFirst,
-		expectedPinSecond,
+	expectedUserBoards := []entity.Board{
+		expectedBoardFirst,
+		expectedBoardSecond,
 	}
 
-	mockPinApp.EXPECT().AddPin(expectedUser.UserID, gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
+	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
-	mockPinApp.EXPECT().AddPin(expectedUser.UserID, gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
+	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardSecond.BoardID, nil).Times(1)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
+	mockBoardApp.EXPECT().GetBoard(expectedBoardSecond.BoardID).Return(&expectedBoardSecond, nil).Times(1)
 
-	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
+	mockBoardApp.EXPECT().GetBoards(expectedUser.UserID).Return(expectedUserBoards, nil).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(nil).Times(1)
+	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(nil).Times(1)
 
-	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
+	mockBoardApp.EXPECT().GetBoard(3).Return(nil, fmt.Errorf("No board found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(fmt.Errorf("pin not found")).Times(1)
+	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = auth.AuthInfo{
 		UserApp:      mockUserApp,
@@ -316,10 +313,10 @@ func TestProfileSuccess(t *testing.T) {
 		Duration:     10 * time.Hour,
 	}
 
-	testPinInfo = PinInfo{
-		PinApp: mockPinApp,
+	testBoardInfo = BoardInfo{
+		BoardApp: mockBoardApp,
 	}
-	for _, tt := range pinTest {
+	for _, tt := range boardTest {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			req := tt.in.toHTTPRequest(successCookies)

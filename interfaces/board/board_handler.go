@@ -33,11 +33,14 @@ func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+
 	boardInput := &entity.Board{
+		UserID:      userId,
 		Title:       currBoard.Title,
 		Description: currBoard.Description,
 	}
-	boardInput.UserID, err = boardInfo.BoardApp.AddBoard(boardInput)
+	boardInput.BoardID, err = boardInfo.BoardApp.AddBoard(boardInput)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -60,7 +63,7 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 	err = boardInfo.BoardApp.DeleteBoard(boardId, userId)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -78,7 +81,7 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 
 	resultBoard, err := boardInfo.BoardApp.GetBoard(boardId)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 

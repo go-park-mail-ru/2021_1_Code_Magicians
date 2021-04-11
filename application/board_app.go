@@ -17,6 +17,7 @@ type BoardAppInterface interface {
 	AddBoard(board *entity.Board) (int, error) // Creating user's board
 	GetBoard(int) (*entity.Board, error)       // Get description of the board
 	GetBoards(int) ([]entity.Board, error)     // Get boards by authorID
+	GetInitUserBoard(userID int) (int, error)
 	DeleteBoard(int, int) error                // Removes user's board by ID
 }
 
@@ -42,4 +43,8 @@ func (brd *BoardApp) GetBoards(authorID int) ([]entity.Board, error) {
 // It returns nil on success and error on failure
 func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
 	return brd.b.DeleteBoard(boardID, userID)
+}
+
+func (brd *BoardApp) GetInitUserBoard(userID int) (int, error) {
+	return brd.b.GetInitUserBoard(userID)
 }
