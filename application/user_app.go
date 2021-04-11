@@ -16,7 +16,7 @@ func NewUserApp(us repository.UserRepository) *UserApp {
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error)                      // Create user, returns created user's ID
+	CreateUser(*entity.User, BoardAppInterface, S3AppInterface) (int, error)                      // Create user, returns created user's ID
 	SaveUser(*entity.User) error                               // Save changed user to database
 	DeleteUser(int, S3AppInterface) error                      // Delete user with passed userID from database
 	GetUser(int) (*entity.User, error)                         // Get user by his ID
@@ -28,8 +28,21 @@ type UserAppInterface interface {
 
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (u *UserApp) CreateUser(user *entity.User) (int, error) {
-	return u.us.CreateUser(user)
+func (u *UserApp) CreateUser(user *entity.User, boardApp BoardAppInterface, s3 S3AppInterface) (int, error) {
+	initialBoard := &entity.Board{UserID: user.UserID, Title: "Saved pins"}
+
+	userID, err := u.us.CreateUser(user)
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = boardApp.AddBoard(initialBoard)
+	if err != nil {
+		u.DeleteUser(user.UserID, s3)
+		return -1, err
+	}
+
+	return userID, err
 }
 
 // SaveUser saves user to database with passed fields

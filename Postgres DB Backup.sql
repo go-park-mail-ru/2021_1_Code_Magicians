@@ -66,10 +66,9 @@ ALTER SEQUENCE public.boards_boardid_seq OWNED BY public.boards.boardid;
 --
 -- Name: pins; Type: TABLE; Schema: public; Owner: postgres
 --
-
+-- DROP TABLE public.pins
 CREATE TABLE public.pins (
     pinid integer NOT NULL,
-    boardid bigint NOT NULL,
     title character varying(100) NOT NULL,
     imagelink character varying(50) NOT NULL,
     description text
@@ -106,11 +105,26 @@ ALTER TABLE public.pins_pinid_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.pins_pinid_seq OWNED BY public.pins.pinid;
 
+----------------------------------------------------
+CREATE TABLE public.pairs
+(
+    boardid integer NOT NULL,
+    pinid   integer NOT NULL
+);
 
+
+ALTER TABLE public.pairs
+    OWNER TO postgres;
+
+--
+-- Name: TABLE boards; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
-
+----------------------------------------------------------------
 CREATE TABLE public.users (
     username character varying(45) NOT NULL,
     passwordhash character varying(40) NOT NULL,
@@ -187,7 +201,7 @@ COPY public.boards (boardid, userid, title, description) FROM stdin;
 -- Data for Name: pins; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pins (pinid, boardid, title, imagelink, description) FROM stdin;
+COPY public.pins (pinid, title, imagelink, description) FROM stdin;
 \.
 
 
@@ -277,12 +291,16 @@ ALTER TABLE ONLY public.boards
     ADD CONSTRAINT boards_fk FOREIGN KEY (userid) REFERENCES public.users(userid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
+ALTER TABLE ONLY public.pairs
+    ADD CONSTRAINT pairs_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid)  ON UPDATE CASCADE ON DELETE CASCADE;
+
+
 --
 -- Name: pins pins_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.pins
-    ADD CONSTRAINT pins_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid) ON UPDATE CASCADE ON DELETE CASCADE;
+-- ALTER TABLE ONLY public.pins
+--     ADD CONSTRAINT pins_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

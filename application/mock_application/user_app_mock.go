@@ -52,18 +52,18 @@ func (mr *MockUserAppInterfaceMockRecorder) CheckUserCredentials(arg0, arg1 inte
 }
 
 // CreateUser mocks base method.
-func (m *MockUserAppInterface) CreateUser(arg0 *entity.User) (int, error) {
+func (m *MockUserAppInterface) CreateUser(arg0 *entity.User, arg1 application.BoardAppInterface, arg2 application.S3AppInterface) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", arg0)
+	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1, arg2)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockUserAppInterfaceMockRecorder) CreateUser(arg0 interface{}) *gomock.Call {
+func (mr *MockUserAppInterfaceMockRecorder) CreateUser(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUser), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUser), arg0, arg1, arg2)
 }
 
 // DeleteUser mocks base method.

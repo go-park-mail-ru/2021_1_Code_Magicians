@@ -1,11 +1,12 @@
 package routing
 
 import (
-	"net/http"
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
+	"pinterest/interfaces/board"
 	mid "pinterest/interfaces/middleware"
+	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"time"
 
@@ -13,11 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 )
-
-func boardHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("{}"))
-	// TODO /board handling
-}
 
 func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *mux.Router {
 	r := mux.NewRouter()
@@ -35,6 +31,16 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 		UserApp:   authInfo.UserApp,
 		CookieApp: authInfo.CookieApp,
 		S3App:     application.NewS3App(sess, s3BucketName),
+	}
+
+	repoPins := persistence.NewPinsRepository(conn)
+	pinsInfo := pin.PinInfo{
+		PinApp: application.NewPinApp(repoPins),
+	}
+
+	repoBoards := persistence.NewBoardsRepository(conn)
+	boardsInfo := board.BoardInfo{
+		BoardApp: application.NewBoardApp(repoBoards),
 	}
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
@@ -55,21 +61,16 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r.HandleFunc("/follow/{id:[0-9]+}", profileInfo.HandleUnfollowProfile).Methods("DELETE") // Is preferred over next one
 	r.HandleFunc("/follow/{username}", profileInfo.HandleUnfollowProfile).Methods("DELETE")
 
-	// pins := &pins.PinsStorage{
-	// 	Storage: pin.NewPinsSet(),
-	// }
-	// boards := &board.BoardsStorage{
-	// 	Storage: board.NewBoardSet(),
-	// }
-
-	// r.HandleFunc("/pin", mid.AuthMid(pins.Storage.HandleAddPin)).Methods("POST")
-	// r.HandleFunc("/pin/{id:[0-9]+}", pins.Storage.HandleGetPinByID).Methods("GET")
-	// r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pins.Storage.HandleDelPinByID)).Methods("DELETE")
-	// r.HandleFunc("/pins/{id:[0-9]+}", mid.AuthMid(pins.Storage.HandleGetPinsByBoardID)).Methods("GET")
-
-	// r.HandleFunc("/board/", mid.AuthMid(boards.Storage.HandleAddBoard)).Methods("POST") // Will split later
-	// r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boards.Storage.HandleDelBoardByID)).Methods("GET")
-	// r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boards.Storage.HandleGetBoardByID)).Methods("DELETE")
+	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/pin/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinByID)).Methods("GET")
+	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, authInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
+	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, authInfo.CookieApp)).Methods("PUT")
+  
+	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleAddBoard, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardByID)).Methods("GET")
+	r.HandleFunc("/boards/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardsByUserID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, authInfo.CookieApp)).Methods("DELETE")
 
 	return r
 }

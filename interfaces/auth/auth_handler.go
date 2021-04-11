@@ -15,6 +15,7 @@ type AuthInfo struct {
 	UserApp      application.UserAppInterface
 	CookieApp    application.CookieAppInterface
 	S3App        application.S3AppInterface
+	BoardApp     application.BoardAppInterface              // For initial user's board
 	CookieLength int
 	Duration     time.Duration
 }
@@ -50,7 +51,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser.UserID, err = info.UserApp.CreateUser(&newUser)
+	newUser.UserID, err = info.UserApp.CreateUser(&newUser, info.BoardApp, info.S3App)
 	if err != nil {
 		if err.Error() == "Username or email is already taken" {
 			w.WriteHeader(http.StatusConflict)
