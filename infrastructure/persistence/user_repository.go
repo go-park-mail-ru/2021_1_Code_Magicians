@@ -88,6 +88,7 @@ func (r *UserRepo) SaveUser(user *entity.User) error {
 		}
 
 		// Other errors
+		log.Println(err)
 		return err
 	}
 	return nil

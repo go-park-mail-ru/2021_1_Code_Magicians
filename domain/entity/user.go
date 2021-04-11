@@ -9,7 +9,7 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
-const usernameRegexp = "^[a-zA-Z0-9_]{2,42}$"
+const usernameRegexp = "^[a-zA-Z][a-zA-Z0-9_]{1,41}$"
 const firstNameRegexp = "^[a-zA-Z ]{0,42}$"
 
 // init initiates custom validators for User struct
@@ -59,9 +59,8 @@ type User struct {
 
 // UserOutput is used to marshal JSON with users' data
 type UserOutput struct {
+	UserID    int    `json:"ID"`
 	Username  string `json:"username,omitempty"`
-	Password  string `json:"password,omitempty"`
-	Email     string `json:"email,omitempty"`
 	FirstName string `json:"firstName,omitempty"`
 	LastName  string `json:"lastName,omitempty"`
 	Avatar    string `json:"avatarLink,omitempty"`
@@ -162,11 +161,10 @@ func (user *User) UpdateFrom(userInput interface{}) error {
 }
 
 func (userOutput *UserOutput) FillFromUser(user *User) {
+	userOutput.UserID = user.UserID
 	userOutput.Username = user.Username
-	userOutput.Password = user.Password
 	userOutput.FirstName = user.FirstName
 	userOutput.LastName = user.LastName
-	userOutput.Email = user.Email
 	userOutput.Avatar = user.Avatar
 }
 

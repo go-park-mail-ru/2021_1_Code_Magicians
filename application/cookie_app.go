@@ -57,9 +57,11 @@ func (c *CookieApp) GenerateCookie(cookieLength int, duration time.Duration) (*h
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionValue,
+		Path:     "/", // Cookie should be usable on entire website
 		Expires:  expirationTime,
+		Secure:   true, // We use HTTPS
 		HttpOnly: true, // So that frontend won't have direct access to cookies
-		Path:     "/",  // Cookie should be usable on entire website
+		SameSite: http.SameSiteNoneMode,
 	}, nil
 }
 
