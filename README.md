@@ -19,6 +19,8 @@ To launch this bad boy:
 - Also, change .mod file, add your local database credentials to it
 - Otherwise, restore database schema from backup file "Postgres DB Backup.sql"  (located in root) and run your local Postgres server
 
+- If HTTPS support is needed, edit .env variable HTTPS_ON = true
+
 - $go run server_main.go
 
 - ???

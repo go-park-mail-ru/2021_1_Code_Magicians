@@ -27,7 +27,7 @@ func connectAws() *session.Session {
 			Credentials: credentials.NewStaticCredentials(
 				accessKeyID,
 				secretAccessKey,
-				"", // a token will be created when the session it's used.
+				"", // a token will be created when the session is used.
 			),
 		})
 	if err != nil {
@@ -71,7 +71,15 @@ func runServer(addr string) {
 
 	handler := c.Handler(r)
 	fmt.Printf("Starting server at localhost%s\n", addr)
-	log.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
+
+	switch os.Getenv("HTTPS_ON") {
+	case "true":
+		log.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
+	case "false":
+		log.Fatal(http.ListenAndServe(addr, handler))
+	default:
+		log.Fatal("HTTPS_ON variable is not set")
+	}
 }
 
 func main() {
