@@ -63,8 +63,18 @@ func runServer(addr string) {
 	fmt.Println("Successfully connected to database")
 	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
 
+	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
+	switch os.Getenv("HTTPS_ON") {
+	case "true":
+		allowedOrigins = append(allowedOrigins, "https://www.pinter-best.com:8081", "https://www.pinter-best.com:80", "https://127.0.0.1:8081")
+	case "false":
+		allowedOrigins = append(allowedOrigins, "http://www.pinter-best.com:8081", "http://www.pinter-best.com:80", "http://127.0.0.1:8081")
+	default:
+		log.Fatal("HTTPS_ON variable is not set")
+	}
+
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://www.pinter-best.com:8081", "https://www.pinter-best.com:80", "https://127.0.0.1:8081"},
+		AllowedOrigins:   allowedOrigins,
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 	})
@@ -77,8 +87,6 @@ func runServer(addr string) {
 		log.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
 	case "false":
 		log.Fatal(http.ListenAndServe(addr, handler))
-	default:
-		log.Fatal("HTTPS_ON variable is not set")
 	}
 }
 
