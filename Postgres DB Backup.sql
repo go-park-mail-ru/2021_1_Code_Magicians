@@ -64,9 +64,67 @@ ALTER SEQUENCE public.boards_boardid_seq OWNED BY public.boards.boardid;
 
 
 --
+-- Name: comments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.comments (
+    userid integer NOT NULL,
+    pinid integer NOT NULL,
+    text text NOT NULL
+);
+
+
+ALTER TABLE public.comments OWNER TO postgres;
+
+--
+-- Name: followers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.followers (
+    followerid integer NOT NULL,
+    followedid integer NOT NULL
+);
+
+
+ALTER TABLE public.followers OWNER TO postgres;
+
+--
+-- Name: COLUMN followers.followerid; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.followers.followerid IS 'User who follows';
+
+
+--
+-- Name: COLUMN followers.followedid; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.followers.followedid IS 'User who is followed';
+
+
+--
+-- Name: pairs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.pairs (
+    boardid integer NOT NULL,
+    pinid integer NOT NULL
+);
+
+
+ALTER TABLE public.pairs OWNER TO postgres;
+
+--
+-- Name: TABLE pairs; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
+
+
+--
 -- Name: pins; Type: TABLE; Schema: public; Owner: postgres
 --
--- DROP TABLE public.pins
+
 CREATE TABLE public.pins (
     pinid integer NOT NULL,
     title character varying(100) NOT NULL,
@@ -105,41 +163,7 @@ ALTER TABLE public.pins_pinid_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.pins_pinid_seq OWNED BY public.pins.pinid;
 
-----------------------------------------------------
-CREATE TABLE public.pairs
-(
-    boardid integer NOT NULL,
-    pinid   integer NOT NULL
-);
 
-
-ALTER TABLE public.pairs
-    OWNER TO postgres;
-
---
--- Name: TABLE boards; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
-
-
-CREATE TABLE public.comments
-(
-    userid integer NOT NULL,
-    pinid   integer NOT NULL,
-    text   text NOT NULL
-);
-
-
-ALTER TABLE public.comments
-    OWNER TO postgres;
-
---
--- Name: TABLE boards; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE public.comments IS 'Pin`s comments that users have created';
-----------------------------------------------------------------
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
@@ -151,7 +175,7 @@ CREATE TABLE public.users (
     email character varying(254) NOT NULL,
     last_name character varying(42),
     first_name character varying(42),
-    avatar character varying(70) DEFAULT '/assets/img/default-avatar.jpg'::character varying NOT NULL,
+    avatar character varying(70) DEFAULT 'assets/img/default-avatar.jpg'::character varying NOT NULL,
     userid integer NOT NULL
 );
 
@@ -213,6 +237,32 @@ ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.us
 --
 
 COPY public.boards (boardid, userid, title, description) FROM stdin;
+3	64	Saved pins	
+4	65	Saved pins	
+\.
+
+
+--
+-- Data for Name: comments; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.comments (userid, pinid, text) FROM stdin;
+\.
+
+
+--
+-- Data for Name: followers; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.followers (followerid, followedid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: pairs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.pairs (boardid, pinid) FROM stdin;
 \.
 
 
@@ -229,8 +279,8 @@ COPY public.pins (pinid, title, imagelink, description) FROM stdin;
 --
 
 COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid) FROM stdin;
-tester	password123	        	email@mail.l			/assets/img/default-avatar.jpg	39
-cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs			avatars/vmoBwFUKQyNirHZ_0b5OoarW6y4F1XpNAwfgRJrVZsODjdIbat4OIw==.jpg	40
+cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	/assets/img/default-avatar.jpg	64
+example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	/assets/img/default-avatar.jpg	65
 \.
 
 
@@ -238,7 +288,7 @@ cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs
 -- Name: boards_boardid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.boards_boardid_seq', 1, false);
+SELECT pg_catalog.setval('public.boards_boardid_seq', 4, true);
 
 
 --
@@ -252,7 +302,7 @@ SELECT pg_catalog.setval('public.pins_pinid_seq', 1, false);
 -- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_userid_seq', 40, true);
+SELECT pg_catalog.setval('public.users_userid_seq', 65, true);
 
 
 --
@@ -261,6 +311,14 @@ SELECT pg_catalog.setval('public.users_userid_seq', 40, true);
 
 ALTER TABLE ONLY public.boards
     ADD CONSTRAINT boards_pk_oardid PRIMARY KEY (boardid);
+
+
+--
+-- Name: followers followers_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.followers
+    ADD CONSTRAINT followers_pk PRIMARY KEY (followerid, followedid);
 
 
 --
@@ -310,21 +368,44 @@ ALTER TABLE ONLY public.boards
     ADD CONSTRAINT boards_fk FOREIGN KEY (userid) REFERENCES public.users(userid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
+--
+-- Name: comments comments_pin_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_pin_fk FOREIGN KEY (pinid) REFERENCES public.pins(pinid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: comments comments_user_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_user_fk FOREIGN KEY (userid) REFERENCES public.users(userid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: followers followers_users_followed; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.followers
+    ADD CONSTRAINT followers_users_followed FOREIGN KEY (followedid) REFERENCES public.users(userid);
+
+
+--
+-- Name: followers followers_users_follower; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.followers
+    ADD CONSTRAINT followers_users_follower FOREIGN KEY (followerid) REFERENCES public.users(userid);
+
+
+--
+-- Name: pairs pairs_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
 ALTER TABLE ONLY public.pairs
-    ADD CONSTRAINT pairs_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid)  ON UPDATE CASCADE ON DELETE CASCADE;
-
-
-ALTER TABLE ONLY public.comments
-    ADD CONSTRAINT comments_user_fk FOREIGN KEY (userid) REFERENCES public.users(userid)  ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY public.comments
-    ADD CONSTRAINT comments_pin_fk FOREIGN KEY (pinid) REFERENCES public.pins(pinid)  ON UPDATE CASCADE ON DELETE CASCADE;
---
--- Name: pins pins_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
--- ALTER TABLE ONLY public.pins
---     ADD CONSTRAINT pins_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT pairs_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
