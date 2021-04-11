@@ -16,8 +16,6 @@ import (
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 
-	"pinterest/infrastructure/mock_repository"
-
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -174,7 +172,7 @@ func TestAuthSuccess(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    "/assets/img/default-avatar.jpg",
+		Avatar:    "assets/img/default-avatar.jpg",
 		Salt:      "",
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
@@ -314,11 +312,11 @@ var failureCookies []*http.Cookie
 func TestAuthFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockDoer := mock_repository.NewMockUserRepository(mockCtrl)
+	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
 	// No functions in this test actually make request to the database
 
 	testInfo = AuthInfo{
-		UserApp:      application.NewUserApp(mockDoer),
+		UserApp:      mockUser,
 		CookieApp:    application.NewCookieApp(),
 		CookieLength: 40,
 		Duration:     10 * time.Hour,

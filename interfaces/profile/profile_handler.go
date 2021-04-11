@@ -2,6 +2,7 @@ package profile
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -247,9 +248,76 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 }
 
 func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
+	followedID := -1
+	vars := mux.Vars(r)
+	idStr, passedID := vars["id"]
+	switch passedID {
+	case true:
+		{
+			followedID, _ = strconv.Atoi(idStr)
+		}
+	case false: // ID was not passed
+		{
+			followedUsername, _ := vars["username"]
+			followedUser, err := profileInfo.UserApp.GetUserByUsername(followedUsername)
+			if err != nil {
+				if err.Error() == "No user found with such id" {
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			followedID = followedUser.UserID
+		}
+	}
+
+	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	err := profileInfo.UserApp.Follow(followerID, followedID)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
+	followedID := -1
+	vars := mux.Vars(r)
+	idStr, passedID := vars["id"]
+	switch passedID {
+	case true:
+		{
+			followedID, _ = strconv.Atoi(idStr)
+		}
+	case false: // ID was not passed
+		{
+			followedUsername, _ := vars["username"]
+			followedUser, err := profileInfo.UserApp.GetUserByUsername(followedUsername)
+			if err != nil {
+				if err.Error() == "No user found with such id" {
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			followedID = followedUser.UserID
+		}
+	}
+
+	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	err := profileInfo.UserApp.Unfollow(followerID, followedID)
+	if err != nil {
+		if err.Error() == "That follow relation does not exist" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

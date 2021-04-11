@@ -9,4 +9,6 @@ type UserRepository interface {
 	GetUser(int) (*entity.User, error)              // Get user by his ID
 	GetUsers() ([]entity.User, error)               // Get all users
 	GetUserByUsername(string) (*entity.User, error) // Get user by his username
+	Follow(int, int) error                          // Make first user follow second
+	Unfollow(int, int) error                        // Make first user unfollow second
 }

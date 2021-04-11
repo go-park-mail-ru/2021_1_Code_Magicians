@@ -197,3 +197,26 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	user.Avatar = *emptyIfNil(avatarPtr)
 	return &user, nil
 }
+
+const followQuery string = "INSERT INTO followers(followerID, followedID) VALUES ($1, $2)"
+
+func (r *UserRepo) Follow(followerID int, followedID int) error {
+	_, err := r.db.Exec(context.Background(), followQuery, followerID, followedID)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return err
+}
+
+const unfollowQuery string = "DELETE FROM followers WHERE followerID=$1 AND followedID=$2"
+
+func (r *UserRepo) Unfollow(followerID int, followedID int) error {
+	result, err := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
+
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("That follow relation does not exist")
+	}
+
+	return err
+}

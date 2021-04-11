@@ -24,6 +24,8 @@ type UserAppInterface interface {
 	GetUserByUsername(string) (*entity.User, error)                          // Get user by his username
 	CheckUserCredentials(string, string) (*entity.User, error)               // Check if passed username and password are correct
 	UpdateAvatar(int, io.Reader, S3AppInterface) error                       // Replace user's avatar with one passed as second parameter
+	Follow(int, int) error                                                   // Make first user follow second
+	Unfollow(int, int) error                                                 // Make first user unfollow second
 }
 
 // CreateUser add new user to database with passed fields
@@ -61,7 +63,7 @@ func (u *UserApp) DeleteUser(userID int, s3App S3AppInterface) error {
 		return err
 	}
 
-	if user.Avatar != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable or s3App's parameter, probably
+	if user.Avatar != "assets/img/default-avatar.jpg" { // TODO: this should be a global variable or s3App's parameter, probably
 		err = s3App.DeleteFile(user.Avatar)
 
 		if err != nil {
@@ -130,7 +132,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface)
 		return fmt.Errorf("User saving failed")
 	}
 
-	if oldAvatarPath != "/assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
+	if oldAvatarPath != "assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
 		err = s3App.DeleteFile(oldAvatarPath)
 
 		if err != nil {
@@ -140,4 +142,12 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface)
 	}
 
 	return nil
+}
+
+func (u *UserApp) Follow(followerID int, followedID int) error {
+	return u.us.Follow(followerID, followedID)
+}
+
+func (u *UserApp) Unfollow(followerID int, followedID int) error {
+	return u.us.Unfollow(followerID, followedID)
 }

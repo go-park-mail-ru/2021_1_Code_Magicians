@@ -80,6 +80,20 @@ func (mr *MockUserAppInterfaceMockRecorder) DeleteUser(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserAppInterface)(nil).DeleteUser), arg0, arg1)
 }
 
+// Follow mocks base method.
+func (m *MockUserAppInterface) Follow(arg0, arg1 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Follow", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Follow indicates an expected call of Follow.
+func (mr *MockUserAppInterfaceMockRecorder) Follow(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserAppInterface)(nil).Follow), arg0, arg1)
+}
+
 // GetUser mocks base method.
 func (m *MockUserAppInterface) GetUser(arg0 int) (*entity.User, error) {
 	m.ctrl.T.Helper()
@@ -137,6 +151,20 @@ func (m *MockUserAppInterface) SaveUser(arg0 *entity.User) error {
 func (mr *MockUserAppInterfaceMockRecorder) SaveUser(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUser", reflect.TypeOf((*MockUserAppInterface)(nil).SaveUser), arg0)
+}
+
+// Unfollow mocks base method.
+func (m *MockUserAppInterface) Unfollow(arg0, arg1 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unfollow", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unfollow indicates an expected call of Unfollow.
+func (mr *MockUserAppInterfaceMockRecorder) Unfollow(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockUserAppInterface)(nil).Unfollow), arg0, arg1)
 }
 
 // UpdateAvatar mocks base method.
