@@ -26,6 +26,8 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	}
 
 	repo := persistence.NewUserRepository(conn)
+	repoPins := persistence.NewPinsRepository(conn)
+	repoBoards := persistence.NewBoardsRepository(conn)
 	authInfo := auth.AuthInfo{
 		UserApp:      application.NewUserApp(repo),
 		CookieApp:    application.NewCookieApp(),
@@ -40,7 +42,6 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 		S3App:     application.NewS3App(sess, s3BucketName),
 	}
 
-	repoPins := persistence.NewPinsRepository(conn)
 	pinsInfo := pin.PinInfo{
 		PinApp: application.NewPinApp(repoPins),
 		S3App:  profileInfo.S3App,

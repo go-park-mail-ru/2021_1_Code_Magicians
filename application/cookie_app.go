@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"os"
 	"pinterest/domain/entity"
 	"sync"
 	"time"
@@ -54,14 +55,23 @@ func (c *CookieApp) GenerateCookie(cookieLength int, duration time.Duration) (*h
 	}
 
 	expirationTime := time.Now().Add(duration)
+	if os.Getenv("HTTPS_ON") == "true" {
+		return &http.Cookie{
+			Name:     "session_id",
+			Value:    sessionValue,
+			Path:     "/", // Cookie should be usable on entire website
+			Expires:  expirationTime,
+			Secure:   true, // We use HTTPS
+			HttpOnly: true, // So that frontend won't have direct access to cookies
+			SameSite: http.SameSiteNoneMode,
+		}, nil
+	}
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionValue,
 		Path:     "/", // Cookie should be usable on entire website
 		Expires:  expirationTime,
-		Secure:   true, // We use HTTPS
 		HttpOnly: true, // So that frontend won't have direct access to cookies
-		SameSite: http.SameSiteNoneMode,
 	}, nil
 }
 

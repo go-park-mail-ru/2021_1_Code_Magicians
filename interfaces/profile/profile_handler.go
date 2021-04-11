@@ -43,7 +43,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 
 	user, err := profileInfo.UserApp.GetUser(userID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError) // TODO: error handling
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -151,6 +151,8 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+
+			user.Email = "" // Email is ommited on purpose
 		}
 	case false: // ID was not passed
 		{
@@ -168,6 +170,8 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
+
+					user.Email = "" // Email is ommited on purpose
 				}
 
 			case false: // Username was also not passed

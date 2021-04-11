@@ -61,6 +61,7 @@ type User struct {
 type UserOutput struct {
 	UserID    int    `json:"ID"`
 	Username  string `json:"username,omitempty"`
+	Email     string `json:"email,omitempty"`
 	FirstName string `json:"firstName,omitempty"`
 	LastName  string `json:"lastName,omitempty"`
 	Avatar    string `json:"avatarLink,omitempty"`
@@ -163,6 +164,7 @@ func (user *User) UpdateFrom(userInput interface{}) error {
 func (userOutput *UserOutput) FillFromUser(user *User) {
 	userOutput.UserID = user.UserID
 	userOutput.Username = user.Username
+	userOutput.Email = user.Email
 	userOutput.FirstName = user.FirstName
 	userOutput.LastName = user.LastName
 	userOutput.Avatar = user.Avatar
