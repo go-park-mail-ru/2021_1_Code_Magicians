@@ -29,7 +29,7 @@ type UserAppInterface interface {
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (u *UserApp) CreateUser(user *entity.User, boardApp BoardAppInterface, s3 S3AppInterface) (int, error) {
-	initialBoard := &entity.Board{UserID: user.UserID, Title: "Saved pins"}
+	initialBoard := &entity.Board{UserID: user.UserID, Title: "Saved pins", Description: "Fast save"}
 
 	userID, err := u.us.CreateUser(user)
 	if err != nil {

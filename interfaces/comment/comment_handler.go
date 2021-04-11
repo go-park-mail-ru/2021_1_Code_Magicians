@@ -2,6 +2,7 @@ package comment
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"pinterest/application"
@@ -10,13 +11,25 @@ import (
 )
 
 type CommentInfo struct {
-	CommentApp application.CookieApp
+	CommentApp application.CommentAppInterface
 	PinApp application.PinAppInterface
-	UserApp  application.UserApp
 }
 
 func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	pinId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = commentInfo.PinApp.GetPin(pinId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -35,21 +48,51 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
 	resultComment := &entity.Comment{
-		UserID:       userId,
-		Description: currPin.Description,
-		ImageLink:   currPin.ImageLink,
+		UserID:     userId,
+		PinID:      pinId,
+		PinComment: currComment.PinComment,
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-
-	resultPin.PinId, err = commentInfo.PinApp.AddPin(userId, resultPin)
+	err = commentInfo.CommentApp.AddComment(resultComment)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"pin_id": ` + strconv.Itoa(resultPin.PinId) + `}`
+	body := `{"text": "` + resultComment.PinComment + `"}`
 
-	w.WriteHeader(http.StatusCreated) // returning success code
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(body))
+}
+
+func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pinId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = commentInfo.PinApp.GetPin(pinId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	pinComments, err := commentInfo.CommentApp.GetComments(pinId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	body, err := json.Marshal(pinComments)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
 }
