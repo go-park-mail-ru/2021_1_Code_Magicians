@@ -15,9 +15,10 @@ To launch this bad boy:
 - create in root file named cert.pem, key.pem by running the following command:
 - $openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pem
 
-- If you need to use remote (Amazon) Postgresql database, change variables in server_main.go: replace LOCAL prefix to AMAZON prefix
-- Also, change .mod file, add your local database credentials to it
+- If you need to use remote (Amazon) Postgresql database, change variable DB_PREFIX in .env to AMAZON instead of LOCAL
+
 - Otherwise, restore database schema from backup file "Postgres DB Backup.sql"  (located in root) and run your local Postgres server
+- And in that case, change .mod file, add your local database credentials to it
 
 - If HTTPS support is needed, edit .env variable HTTPS_ON = true
 

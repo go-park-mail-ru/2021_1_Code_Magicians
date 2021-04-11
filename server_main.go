@@ -49,9 +49,14 @@ func runServer(addr string) {
 	}
 	// TODO: check if all needed variables are present
 
+	dbPrefix := os.Getenv("DB_PREFIX")
+	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {
+		log.Fatalf("Wrong prefix: %s , should be AMAZON or LOCAL", dbPrefix)
+	}
+
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv("LOCAL_DB_USER"), os.Getenv("LOCAL_DB_PASSWORD"), os.Getenv("LOCAL_DB_HOST"),
-		os.Getenv("LOCAL_DB_PORT"), os.Getenv("LOCAL_DB_NAME"))
+		os.Getenv(dbPrefix+"_DB_USER"), os.Getenv(dbPrefix+"_DB_PASSWORD"), os.Getenv(dbPrefix+"_DB_HOST"),
+		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	conn, err := pgx.Connect(context.Background(), connectionString)
 	if err != nil {
 		log.Println(err)
@@ -66,9 +71,9 @@ func runServer(addr string) {
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {
 	case "true":
-		allowedOrigins = append(allowedOrigins, "https://www.pinter-best.com:8081", "https://www.pinter-best.com:80", "https://127.0.0.1:8081")
+		allowedOrigins = append(allowedOrigins, "https://www.pinter-best.com:8081", "https://www.pinter-best.com", "https://127.0.0.1:8081")
 	case "false":
-		allowedOrigins = append(allowedOrigins, "http://www.pinter-best.com:8081", "http://www.pinter-best.com:80", "http://127.0.0.1:8081")
+		allowedOrigins = append(allowedOrigins, "http://www.pinter-best.com:8081", "http://www.pinter-best.com", "http://127.0.0.1:8081")
 	default:
 		log.Fatal("HTTPS_ON variable is not set")
 	}
