@@ -38,7 +38,7 @@ func (u *UserApp) CreateUser(user *entity.User, boardApp BoardAppInterface, s3 S
 
 	_, err = boardApp.AddBoard(initialBoard)
 	if err != nil {
-		u.DeleteUser(user.UserID, s3)
+		_ = u.DeleteUser(user.UserID, s3)
 		return -1, err
 	}
 

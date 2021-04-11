@@ -55,6 +55,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {

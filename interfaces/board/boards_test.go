@@ -111,8 +111,8 @@ var boardTest = []struct {
 			"POST",
 			nil,
 			[]byte(`{"userID":0,` +
-				`"title":"exampletitle",` +
-				`"description":"exampleDescription"}`),
+				`"title":"exampletitle1",` +
+				`"description":"exampleDescription1"}`),
 			testBoardInfo.HandleAddBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
@@ -120,7 +120,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"board_id": 0}`),
+			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
 		},
 		"Testing add first board",
 	},
@@ -131,8 +131,8 @@ var boardTest = []struct {
 			"POST",
 			nil,
 			[]byte(`{"userID":0,` +
-				`"title":"exampletitle",` +
-				`"description":"exampleDescription"}`),
+				`"title":"exampletitle2",` +
+				`"description":"exampleDescription2"}`),
 			testBoardInfo.HandleAddBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
@@ -140,7 +140,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"board_id": 1}`),
+			[]byte(`{"title": "exampletitle2", "description": "exampleDescription2"}`),
 		},
 		"Testing add second board",
 	},
@@ -160,8 +160,8 @@ var boardTest = []struct {
 			nil,
 			[]byte(`{"boardID":1,` +
 				`"userID":0,` +
-				`"title":"exampletitle",` +
-				`"description":"exampleDescription"}`,
+				`"title":"exampletitle2",` +
+				`"description":"exampleDescription2"}`,
 			),
 		},
 		"Testing get board by boardID",
@@ -181,12 +181,12 @@ var boardTest = []struct {
 			nil,
 			[]byte(`[{"boardID":0,` +
 				`"userID":0,` +
-				`"title":"exampletitle",` +
-				`"description":"exampleDescription"},` +
+				`"title":"exampletitle1",` +
+				`"description":"exampleDescription1"},` +
 				`{"boardID":1,` +
 				`"userID":0,` +
-				`"title":"exampletitle",` +
-				`"description":"exampleDescription"}]`,
+				`"title":"exampletitle2",` +
+				`"description":"exampleDescription2"}]`,
 			),
 		},
 		"Testing get boards by user id",
@@ -276,15 +276,15 @@ func TestProfileSuccess(t *testing.T) {
 	expectedBoardFirst := entity.Board{
 		BoardID:     0,
 		UserID:      0,
-		Title:       "exampletitle",
-		Description: "exampleDescription",
+		Title:       "exampletitle1",
+		Description: "exampleDescription1",
 	}
 
 	expectedBoardSecond := entity.Board{
 		BoardID:     1,
 		UserID:      0,
-		Title:       "exampletitle",
-		Description: "exampleDescription",
+		Title:       "exampletitle2",
+		Description: "exampleDescription2",
 	}
 
 	expectedUserBoards := []entity.Board{
