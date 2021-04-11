@@ -20,14 +20,13 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
-	repoBoards := persistence.NewBoardsRepository(conn)
-	boardsInfo := board.BoardInfo{
-		BoardApp: application.NewBoardApp(repoBoards),
-	}
-
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
+
+	boardsInfo := board.BoardInfo{
+		BoardApp: application.NewBoardApp(repoBoards),
+	}
 	authInfo := auth.AuthInfo{
 		UserApp:      application.NewUserApp(repo),
 		CookieApp:    application.NewCookieApp(),
@@ -83,7 +82,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, authInfo.CookieApp)).Methods("DELETE")
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, authInfo.CookieApp)).Methods("POST")
-	r.HandleFunc("/comments/{id:[0-9]+}",  mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")
+	r.HandleFunc("/comments/{id:[0-9]+}", mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")
 
 	return r
 }
