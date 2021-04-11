@@ -12,6 +12,8 @@ To launch this bad boy:
 - $go mod download
 
 - create in root folder (where this file is) file named s3.mod. Populate it according to instruction at the start of this file
+- create in root file named cert.pem, key.pem by running the following command:
+- $openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pem
 
 - If you need to use remote (Amazon) Postgresql database, change variables in server_main.go: replace LOCAL prefix to AMAZON prefix
 - Also, change .mod file, add your local database credentials to it

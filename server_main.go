@@ -64,14 +64,14 @@ func runServer(addr string) {
 	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://52.59.228.167:8081", "http://52.59.228.167:80", "http://127.0.0.1:8081"},
+		AllowedOrigins:   []string{"https://www.pinter-best.com:8081", "https://www.pinter-best.com:80", "https://127.0.0.1:8081"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 	})
 
 	handler := c.Handler(r)
 	fmt.Printf("Starting server at localhost%s\n", addr)
-	log.Fatal(http.ListenAndServe(addr, handler))
+	log.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
 }
 
 func main() {
