@@ -203,7 +203,9 @@ const followQuery string = "INSERT INTO followers(followerID, followedID) VALUES
 func (r *UserRepo) Follow(followerID int, followedID int) error {
 	_, err := r.db.Exec(context.Background(), followQuery, followerID, followedID)
 	if err != nil {
-		log.Println(err)
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
+			return fmt.Errorf("This follow relation already exists")
+		}
 	}
 
 	return err
@@ -215,7 +217,7 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	result, err := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
 
 	if result.RowsAffected() != 1 {
-		return fmt.Errorf("That follow relation does not exist")
+		return fmt.Errorf("This follow relation does not exist")
 	}
 
 	return err

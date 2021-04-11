@@ -275,6 +275,11 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 	err := profileInfo.UserApp.Follow(followerID, followedID)
 	if err != nil {
+		if err.Error() == "This follow relation already exists" {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+
 		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -311,7 +316,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	err := profileInfo.UserApp.Unfollow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "That follow relation does not exist" {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusConflict)
 			return
 		}
 
