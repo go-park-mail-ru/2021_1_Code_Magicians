@@ -121,10 +121,29 @@ ALTER TABLE public.pairs
 --
 
 COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
+
+
+CREATE TABLE public.comments
+(
+    userid integer NOT NULL,
+    pinid   integer NOT NULL,
+    text   text NOT NULL
+);
+
+
+ALTER TABLE public.comments
+    OWNER TO postgres;
+
+--
+-- Name: TABLE boards; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.comments IS 'Pin`s comments that users have created';
+----------------------------------------------------------------
 --
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
-----------------------------------------------------------------
+
 CREATE TABLE public.users (
     username character varying(45) NOT NULL,
     passwordhash character varying(40) NOT NULL,
@@ -295,6 +314,11 @@ ALTER TABLE ONLY public.pairs
     ADD CONSTRAINT pairs_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid)  ON UPDATE CASCADE ON DELETE CASCADE;
 
 
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_user_fk FOREIGN KEY (userid) REFERENCES public.users(userid)  ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_pin_fk FOREIGN KEY (pinid) REFERENCES public.pins(pinid)  ON UPDATE CASCADE ON DELETE CASCADE;
 --
 -- Name: pins pins_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --

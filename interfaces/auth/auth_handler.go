@@ -15,7 +15,7 @@ type AuthInfo struct {
 	UserApp      application.UserAppInterface
 	CookieApp    application.CookieAppInterface
 	S3App        application.S3AppInterface
-	BoardApp     application.BoardAppInterface              // For initial user's board
+	BoardApp     application.BoardAppInterface // For initial user's board
 	CookieLength int
 	Duration     time.Duration
 }

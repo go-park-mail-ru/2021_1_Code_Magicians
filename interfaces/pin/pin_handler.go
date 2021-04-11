@@ -50,11 +50,13 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	body := `{"pin_id": ` + strconv.Itoa(resultPin.PinId) + `}`
 
-	w.WriteHeader(http.StatusCreated) // returning success code
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(body))
 }
 
 func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -95,6 +97,7 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }
 
@@ -118,13 +121,17 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }
 
 const maxPostPictureBodySize = 8 * 1024 * 1024 // 8 mB
 // HandleUploadPicture takes picture from request and assigns it to current pin
 func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	bodySize := r.ContentLength
 	if bodySize < 0 { // No picture was passed
 		w.WriteHeader(http.StatusBadRequest)

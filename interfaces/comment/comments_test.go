@@ -1,11 +1,9 @@
-package board
+package comment
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/golang/mock/gomock"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +15,9 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 )
 
 type InputStruct struct {
@@ -72,10 +73,10 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 	return err
 }
 
-var testBoardInfo BoardInfo
+var testCommentInfo CommentInfo
 var testAuthInfo auth.AuthInfo
 
-var boardTest = []struct {
+var commentTest = []struct {
 	in   InputStruct
 	out  OutputStruct
 	name string
@@ -106,117 +107,48 @@ var boardTest = []struct {
 	},
 	{
 		InputStruct{
-			"/board",
-			"/board",
+			"/comment/1",
+			"/comment/{id:[0-9]+}",
 			"POST",
 			nil,
-			[]byte(`{"userID":0,` +
-				`"title":"exampletitle1",` +
-				`"description":"exampleDescription1"}`),
-			testBoardInfo.HandleAddBoard,
+			[]byte(`{"pinID":1, "text":"Hello, my friends!!!"}`),
+			testCommentInfo.HandleAddComment,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
+			[]byte(`{"text": "Hello, my friends!!!"}`),
 		},
-		"Testing add first board",
+		"Testing add first comment",
 	},
 	{
 		InputStruct{
-			"/board",
-			"/board",
+			"/comment/1",
+			"/comment/{id:[0-9]+}",
 			"POST",
 			nil,
-			[]byte(`{"userID":0,` +
-				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}`),
-			testBoardInfo.HandleAddBoard,
+			[]byte(`{"pinID":1,"text":"Welcome to the club, buddy!!!"}`),
+			testCommentInfo.HandleAddComment,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle2", "description": "exampleDescription2"}`),
+			[]byte(`{"text": "Welcome to the club, buddy!!!"}`),
 		},
-		"Testing add second board",
+		"Testing add second comment",
 	},
 	{
 		InputStruct{
-			"/board/1",
-			"/board/{id:[0-9]+}",
+			"/comments/3",
+			"/comments/{id:[0-9]+}",
 			"GET",
 			nil,
 			nil,
-			testBoardInfo.HandleGetBoardByID,
-			middleware.AuthMid, // If user is not logged in, they can't access their profile
-		},
-
-		OutputStruct{
-			200,
-			nil,
-			[]byte(`{"boardID":1,` +
-				`"userID":0,` +
-				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}`,
-			),
-		},
-		"Testing get board by boardID",
-	},
-	{
-		InputStruct{
-			"/boards/0",
-			"/boards/{id:[0-9]+}",
-			"GET",
-			nil,
-			nil,
-			testBoardInfo.HandleGetBoardsByUserID,
-			middleware.AuthMid,
-		},
-		OutputStruct{
-			200,
-			nil,
-			[]byte(`[{"boardID":0,` +
-				`"userID":0,` +
-				`"title":"exampletitle1",` +
-				`"description":"exampleDescription1"},` +
-				`{"boardID":1,` +
-				`"userID":0,` +
-				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}]`,
-			),
-		},
-		"Testing get boards by user id",
-	},
-	{
-		InputStruct{
-			"/board/0",
-			"/board/{id:[0-9]+}",
-			"DELETE",
-			nil,
-			nil,
-			testBoardInfo.HandleDelBoardByID,
-			middleware.AuthMid,
-		},
-
-		OutputStruct{
-			204,
-			nil,
-			nil,
-		},
-		"Testing delete board", // I don't know right now how to easily check if password changed
-	},
-	{
-		InputStruct{
-			"/board/3",
-			"/board/{id:[0-9]+}",
-			"GET",
-			nil,
-			nil,
-			testBoardInfo.HandleGetBoardByID,
+			testCommentInfo.HandleGetComments,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -225,25 +157,45 @@ var boardTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing get not existent board by boardID",
+		"Testing get not existent comments by pinID",
 	},
 	{
 		InputStruct{
-			"/board/0",
-			"/board/{id:[0-9]+}",
-			"DELETE",
+			"/comment/1",
+			"/comment/{id:[0-9]+}",
+			"GET",
 			nil,
 			nil,
-			testBoardInfo.HandleDelBoardByID,
-			middleware.AuthMid,
+			testCommentInfo.HandleGetComments,
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
 		OutputStruct{
-			404,
+			200,
 			nil,
-			nil,
+			[]byte(`[{"userID":0,"pinID":1,"text":"Hello, my friends!!!"},` +
+				`{"userID":0,"pinID":1,"text":"Welcome to the club, buddy!!!"}]`,
+			),
 		},
-		"Testing delete not existent board",
+		"Testing get comments by pinID",
+	},
+	{
+		InputStruct{
+			"/comments/2",
+			"/comments/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testCommentInfo.HandleGetComments,
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte("[]"),
+		},
+		"Testing get not existent comments by pinID",
 	},
 }
 
@@ -254,9 +206,11 @@ func TestProfileSuccess(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
-	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
+	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
+	mockCommentApp := mock_application.NewMockCommentAppInterface(mockCtrl)
 
 	cookieApp := application.NewCookieApp()
+	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -273,38 +227,44 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
-	expectedBoardFirst := entity.Board{
-		BoardID:     0,
-		UserID:      0,
-		Title:       "exampletitle1",
-		Description: "exampleDescription1",
+	expectedPinFirst := entity.Pin{
+		PinId:       1,
+		Title:       "exampletitle",
+		ImageLink:   "example/link",
+		Description: "exampleDescription",
 	}
 
-	expectedBoardSecond := entity.Board{
-		BoardID:     1,
-		UserID:      0,
-		Title:       "exampletitle2",
-		Description: "exampleDescription2",
+	expectedPinSecond := entity.Pin{
+		PinId:       2,
+		Title:       "exampletitle",
+		ImageLink:   "example/link",
+		Description: "exampleDescription",
 	}
 
-	expectedUserBoards := []entity.Board{
-		expectedBoardFirst,
-		expectedBoardSecond,
+	comment1 := entity.Comment{
+		UserID:     0,
+		PinID:      1,
+		PinComment: "Hello, my friends!!!",
 	}
 
-	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardFirst.BoardID, nil).Times(1)
+	comment2 := entity.Comment{
+		UserID:     0,
+		PinID:      1,
+		PinComment: "Welcome to the club, buddy!!!",
+	}
 
-	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardSecond.BoardID, nil).Times(1)
+	expectedComments := []entity.Comment{comment1, comment2}
 
-	mockBoardApp.EXPECT().GetBoard(expectedBoardSecond.BoardID).Return(&expectedBoardSecond, nil).Times(1)
+	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinId).Return(&expectedPinFirst, nil).Times(3)
 
-	mockBoardApp.EXPECT().GetBoards(expectedUser.UserID).Return(expectedUserBoards, nil).Times(1)
+	mockCommentApp.EXPECT().AddComment(gomock.Any()).Return(nil).Times(2)
 
-	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(nil).Times(1)
+	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockBoardApp.EXPECT().GetBoard(3).Return(nil, fmt.Errorf("No board found")).Times(1)
+	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinId).Return(expectedComments, nil)
 
-	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
+	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinId).Return([]entity.Comment{}, nil)
 
 	testAuthInfo = auth.AuthInfo{
 		UserApp:      mockUserApp,
@@ -313,10 +273,11 @@ func TestProfileSuccess(t *testing.T) {
 		Duration:     10 * time.Hour,
 	}
 
-	testBoardInfo = BoardInfo{
-		BoardApp: mockBoardApp,
+	testCommentInfo = CommentInfo{
+		PinApp:     mockPinApp,
+		CommentApp: mockCommentApp,
 	}
-	for _, tt := range boardTest {
+	for _, tt := range commentTest {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			req := tt.in.toHTTPRequest(successCookies)

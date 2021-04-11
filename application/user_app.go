@@ -38,7 +38,8 @@ func (u *UserApp) CreateUser(user *entity.User, boardApp BoardAppInterface, s3 S
 	initialBoard := &entity.Board{UserID: userID, Title: "Saved pins"}
 	_, err = boardApp.AddBoard(initialBoard)
 	if err != nil {
-		u.DeleteUser(userID, s3)
+
+		_ = u.DeleteUser(user.UserID, s3)
 		return -1, err
 	}
 

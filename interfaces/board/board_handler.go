@@ -46,13 +46,16 @@ func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	body := `{"board_id": ` + strconv.Itoa(boardInput.BoardID) + `}`
+	body := `{"title": "` + boardInput.Title + `", "description": "`+ boardInput.Description + `"}`
 
-	w.WriteHeader(http.StatusCreated) // returning success code
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(body))
 }
 
 func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	vars := mux.Vars(r)
 	boardId, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -97,6 +100,7 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }
 
@@ -122,5 +126,6 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }

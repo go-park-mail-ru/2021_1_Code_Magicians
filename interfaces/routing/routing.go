@@ -5,6 +5,7 @@ import (
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
+	"pinterest/interfaces/comment"
 	mid "pinterest/interfaces/middleware"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
@@ -19,13 +20,18 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
+	repoBoards := persistence.NewBoardsRepository(conn)
+	boardsInfo := board.BoardInfo{
+		BoardApp: application.NewBoardApp(repoBoards),
+	}
+
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
 	authInfo := auth.AuthInfo{
 		UserApp:      application.NewUserApp(repo),
 		CookieApp:    application.NewCookieApp(),
-		BoardApp:     application.NewBoardApp(repoBoards),
+		BoardApp:     boardsInfo.BoardApp,
 		CookieLength: 40,
 		Duration:     10 * time.Hour,
 	}
@@ -38,10 +44,13 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 
 	pinsInfo := pin.PinInfo{
 		PinApp: application.NewPinApp(repoPins),
+		S3App:  profileInfo.S3App,
 	}
 
-	boardsInfo := board.BoardInfo{
-		BoardApp: authInfo.BoardApp,
+	repoComments := persistence.NewCommentsRepository(conn)
+	commentsInfo := comment.CommentInfo{
+		PinApp:     pinsInfo.PinApp,
+		CommentApp: application.NewCommentApp(repoComments),
 	}
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
@@ -72,6 +81,9 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardByID)).Methods("GET")
 	r.HandleFunc("/boards/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardsByUserID)).Methods("GET")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, authInfo.CookieApp)).Methods("DELETE")
+
+	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/comments/{id:[0-9]+}",  mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")
 
 	return r
 }
