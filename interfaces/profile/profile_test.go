@@ -124,7 +124,8 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` + // No spaces because that's how go marshalls JSON
+			[]byte(`{"ID":0,` +
+				`"username":"TestUsername",` +
 				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
@@ -165,8 +166,8 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"TestUsername",` +
-				`"email":"test@example.com",` +
+			[]byte(`{"ID":0,` +
+				`"username":"TestUsername",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1"}`,
@@ -211,8 +212,8 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"username":"new_User_Name",` +
-				`"email":"new@example.com",` +
+			[]byte(`{"ID":0,` +
+				`"username":"new_User_Name",` +
 				`"firstName":"new First name",` +
 				`"lastName":"new Last Name",` +
 				`"avatarLink":"avatars/2"}`,
