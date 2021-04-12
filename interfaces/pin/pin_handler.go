@@ -13,8 +13,15 @@ import (
 )
 
 type PinInfo struct {
-	PinApp application.PinAppInterface
-	S3App  application.S3AppInterface
+	pinApp application.PinAppInterface
+	s3App  application.S3AppInterface
+}
+
+func NewPinInfo(pinApp application.PinAppInterface, s3App application.S3AppInterface) *PinInfo {
+	return &PinInfo{
+		pinApp: pinApp,
+		s3App:  s3App,
+	}
 }
 
 func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +49,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
-	resultPin.PinId, err = pinInfo.PinApp.AddPin(userId, resultPin)
+	resultPin.PinId, err = pinInfo.pinApp.AddPin(userId, resultPin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -66,7 +73,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
 
-	err = pinInfo.PinApp.DeletePin(pinId, userId, pinInfo.S3App)
+	err = pinInfo.pinApp.DeletePin(pinId, userId, pinInfo.s3App)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -84,7 +91,7 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	resultPin, err := pinInfo.PinApp.GetPin(pinId)
+	resultPin, err := pinInfo.pinApp.GetPin(pinId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -110,7 +117,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	boardPins, err := pinInfo.PinApp.GetPins(boardId)
+	boardPins, err := pinInfo.pinApp.GetPins(boardId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -152,7 +159,7 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 	defer file.Close()
 
 	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	err = pinInfo.PinApp.UploadPicture(userID, file, pinInfo.S3App)
+	err = pinInfo.pinApp.UploadPicture(userID, file, pinInfo.s3App)
 
 	if err != nil {
 		log.Println(err)

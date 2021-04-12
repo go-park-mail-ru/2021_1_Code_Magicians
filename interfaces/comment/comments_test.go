@@ -3,7 +3,6 @@ package comment
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/mock/gomock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -208,9 +209,9 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	mockCommentApp := mock_application.NewMockCommentAppInterface(mockCtrl)
-
-	cookieApp := application.NewCookieApp()
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+
+	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -266,16 +267,11 @@ func TestProfileSuccess(t *testing.T) {
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
 	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinId).Return([]entity.Comment{}, nil)
 
-	testAuthInfo = auth.AuthInfo{
-		UserApp:      mockUserApp,
-		CookieApp:    cookieApp,
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
-	}
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
 
 	testCommentInfo = CommentInfo{
-		PinApp:     mockPinApp,
-		CommentApp: mockCommentApp,
+		pinApp:     mockPinApp,
+		commentApp: mockCommentApp,
 	}
 	for _, tt := range commentTest {
 		tt := tt
@@ -286,7 +282,7 @@ func TestProfileSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, cookieApp)
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)

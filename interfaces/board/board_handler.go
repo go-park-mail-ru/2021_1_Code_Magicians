@@ -13,7 +13,13 @@ import (
 )
 
 type BoardInfo struct {
-	BoardApp application.BoardAppInterface
+	boardApp application.BoardAppInterface
+}
+
+func NewBoardInfo(boardApp application.BoardAppInterface) *BoardInfo {
+	return &BoardInfo{
+		boardApp: boardApp,
+	}
 }
 
 func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Request) {
@@ -40,13 +46,13 @@ func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Reques
 		Title:       currBoard.Title,
 		Description: currBoard.Description,
 	}
-	boardInput.BoardID, err = boardInfo.BoardApp.AddBoard(boardInput)
+	boardInput.BoardID, err = boardInfo.boardApp.AddBoard(boardInput)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"title": "` + boardInput.Title + `", "description": "`+ boardInput.Description + `"}`
+	body := `{"title": "` + boardInput.Title + `", "description": "` + boardInput.Description + `"}`
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
@@ -64,7 +70,7 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 	}
 
 	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	err = boardInfo.BoardApp.DeleteBoard(boardId, userId)
+	err = boardInfo.boardApp.DeleteBoard(boardId, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -82,7 +88,7 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	resultBoard, err := boardInfo.BoardApp.GetBoard(boardId)
+	resultBoard, err := boardInfo.boardApp.GetBoard(boardId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -113,7 +119,7 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	resultBoards, err := boardInfo.BoardApp.GetBoards(userId)
+	resultBoards, err := boardInfo.boardApp.GetBoards(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

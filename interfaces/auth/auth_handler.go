@@ -12,12 +12,20 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	UserApp      application.UserAppInterface
-	CookieApp    application.CookieAppInterface
-	S3App        application.S3AppInterface
-	BoardApp     application.BoardAppInterface // For initial user's board
-	CookieLength int
-	Duration     time.Duration
+	userApp   application.UserAppInterface
+	cookieApp application.CookieAppInterface
+	s3App     application.S3AppInterface
+	boardApp  application.BoardAppInterface // For initial user's board
+}
+
+func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
+	s3App application.S3AppInterface, boardApp application.BoardAppInterface) *AuthInfo {
+	return &AuthInfo{
+		userApp:   userApp,
+		cookieApp: cookieApp,
+		s3App:     s3App,
+		boardApp:  boardApp,
+	}
 }
 
 // HandleCreateUser creates user with parameters passed in JSON
@@ -31,7 +39,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid, err := userInput.Validate()
+	valid, _ := userInput.Validate()
 	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -45,13 +53,13 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := info.UserApp.GetUserByUsername(newUser.Username)
+	user, _ := info.userApp.GetUserByUsername(newUser.Username)
 	if user != nil {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
-	newUser.UserID, err = info.UserApp.CreateUser(&newUser, info.BoardApp, info.S3App)
+	newUser.UserID, err = info.userApp.CreateUser(&newUser, info.boardApp, info.s3App)
 	if err != nil {
 		if err.Error() == "Username or email is already taken" {
 			w.WriteHeader(http.StatusConflict)
@@ -61,16 +69,16 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.CookieApp.GenerateCookie(info.CookieLength, info.Duration)
+	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		info.UserApp.DeleteUser(newUser.UserID, info.S3App)
+		info.userApp.DeleteUser(newUser.UserID, info.s3App)
 		return
 	}
 
-	err = info.CookieApp.AddCookie(&entity.CookieInfo{newUser.UserID, cookie})
+	err = info.cookieApp.AddCookie(&entity.CookieInfo{newUser.UserID, cookie})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -91,7 +99,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := info.UserApp.CheckUserCredentials(userInput.Username, userInput.Password)
+	user, err := info.userApp.CheckUserCredentials(userInput.Username, userInput.Password)
 
 	if err != nil {
 		switch err.Error() {
@@ -108,14 +116,14 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.CookieApp.GenerateCookie(info.CookieLength, info.Duration)
+	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = info.CookieApp.AddCookie(&entity.CookieInfo{user.UserID, cookie})
+	err = info.cookieApp.AddCookie(&entity.CookieInfo{user.UserID, cookie})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -130,7 +138,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
 
-	err := info.CookieApp.RemoveCookie(userCookie)
+	err := info.cookieApp.RemoveCookie(userCookie)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -145,7 +153,7 @@ func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleCheckUser checks if current user is logged in
 func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
-	_, found := middleware.CheckCookies(r, info.CookieApp)
+	_, found := middleware.CheckCookies(r, info.cookieApp)
 	if !found {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

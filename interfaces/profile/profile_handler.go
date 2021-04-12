@@ -16,9 +16,19 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	UserApp   application.UserAppInterface
-	CookieApp application.CookieAppInterface
-	S3App     application.S3AppInterface
+	userApp   application.UserAppInterface
+	cookieApp application.CookieAppInterface
+	s3App     application.S3AppInterface
+}
+
+func NewProfileInfo(userApp application.UserAppInterface,
+	cookieApp application.CookieAppInterface,
+	s3App application.S3AppInterface) *ProfileInfo {
+	return &ProfileInfo{
+		userApp:   userApp,
+		cookieApp: cookieApp,
+		s3App:     s3App,
+	}
 }
 
 //HandleChangePassword changes password of current user
@@ -36,20 +46,20 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 		return
 	}
 
-	valid, err := userInput.Validate()
+	valid, _ := userInput.Validate()
 	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	user, err := profileInfo.UserApp.GetUser(userID)
+	user, err := profileInfo.userApp.GetUser(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	user.Password = userInput.Password
-	err = profileInfo.UserApp.SaveUser(user)
+	err = profileInfo.userApp.SaveUser(user)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -74,13 +84,13 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 		return
 	}
 
-	valid, err := userInput.Validate()
+	valid, _ := userInput.Validate()
 	if !valid {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	newUser, err := profileInfo.UserApp.GetUser(userID)
+	newUser, err := profileInfo.userApp.GetUser(userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -92,7 +102,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = profileInfo.UserApp.SaveUser(newUser)
+	err = profileInfo.userApp.SaveUser(newUser)
 	if err != nil {
 		switch err.Error() {
 		case "Username or email is already taken":
@@ -112,7 +122,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
 
-	err := profileInfo.CookieApp.RemoveCookie(userCookie)
+	err := profileInfo.cookieApp.RemoveCookie(userCookie)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -122,7 +132,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
 	http.SetCookie(w, userCookie.Cookie)
 
-	err = profileInfo.UserApp.DeleteUser(userCookie.UserID, profileInfo.S3App)
+	err = profileInfo.userApp.DeleteUser(userCookie.UserID, profileInfo.s3App)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -142,7 +152,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	case true:
 		{
 			id, _ := strconv.Atoi(idStr)
-			user, err = profileInfo.UserApp.GetUser(id)
+			user, err = profileInfo.userApp.GetUser(id)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
 					w.WriteHeader(http.StatusNotFound)
@@ -161,7 +171,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			switch passedUsername {
 			case true:
 				{
-					user, err = profileInfo.UserApp.GetUserByUsername(username)
+					user, err = profileInfo.userApp.GetUserByUsername(username)
 					if err != nil {
 						if err.Error() == "No user found with such username" {
 							w.WriteHeader(http.StatusNotFound)
@@ -183,7 +193,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 						return
 					}
 
-					user, err = profileInfo.UserApp.GetUser(userCookie.UserID)
+					user, err = profileInfo.userApp.GetUser(userCookie.UserID)
 					if err != nil {
 						if err.Error() == "No user found with such id" {
 							w.WriteHeader(http.StatusNotFound)
@@ -236,7 +246,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	defer file.Close()
 
 	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	err = profileInfo.UserApp.UpdateAvatar(userID, file, profileInfo.S3App)
+	err = profileInfo.userApp.UpdateAvatar(userID, file, profileInfo.s3App)
 
 	if err != nil {
 		log.Println(err)
@@ -259,7 +269,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	case false: // ID was not passed
 		{
 			followedUsername, _ := vars["username"]
-			followedUser, err := profileInfo.UserApp.GetUserByUsername(followedUsername)
+			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
 					w.WriteHeader(http.StatusNotFound)
@@ -273,7 +283,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	}
 
 	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	err := profileInfo.UserApp.Follow(followerID, followedID)
+	err := profileInfo.userApp.Follow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "This follow relation already exists" {
 			w.WriteHeader(http.StatusConflict)
@@ -299,7 +309,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	case false: // ID was not passed
 		{
 			followedUsername, _ := vars["username"]
-			followedUser, err := profileInfo.UserApp.GetUserByUsername(followedUsername)
+			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
 					w.WriteHeader(http.StatusNotFound)
@@ -313,7 +323,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	}
 
 	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
-	err := profileInfo.UserApp.Unfollow(followerID, followedID)
+	err := profileInfo.userApp.Unfollow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "That follow relation does not exist" {
 			w.WriteHeader(http.StatusConflict)

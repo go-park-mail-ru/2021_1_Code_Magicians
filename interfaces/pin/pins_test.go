@@ -3,7 +3,6 @@ package pin
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/mock/gomock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -257,9 +258,9 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
-
-	cookieApp := application.NewCookieApp()
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+
+	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -309,15 +310,11 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(fmt.Errorf("pin not found")).Times(1)
 
-	testAuthInfo = auth.AuthInfo{
-		UserApp:      mockUserApp,
-		CookieApp:    cookieApp,
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
-	}
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
 
 	testPinInfo = PinInfo{
-		PinApp: mockPinApp,
+		pinApp: mockPinApp,
+		s3App:  nil, // S3 is not needed, as we do not currently test file upload
 	}
 	for _, tt := range pinTest {
 		tt := tt
@@ -328,7 +325,7 @@ func TestProfileSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, cookieApp)
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)

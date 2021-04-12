@@ -11,16 +11,22 @@ import (
 )
 
 type CookieApp struct {
-	sessions map[string]entity.CookieInfo
-	mu       sync.Mutex
+	sessions     map[string]entity.CookieInfo
+	mu           sync.Mutex
+	cookieLength int
+	duration     time.Duration
 }
 
-func NewCookieApp() *CookieApp {
-	return &CookieApp{sessions: make(map[string]entity.CookieInfo)}
+func NewCookieApp(cookieLength int, duration time.Duration) *CookieApp {
+	return &CookieApp{
+		sessions:     make(map[string]entity.CookieInfo),
+		cookieLength: cookieLength,
+		duration:     duration,
+	}
 }
 
 type CookieAppInterface interface {
-	GenerateCookie(int, time.Duration) (*http.Cookie, error)
+	GenerateCookie() (*http.Cookie, error)
 	AddCookie(*entity.CookieInfo) error
 	CheckCookie(*http.Cookie) (*entity.CookieInfo, bool)
 	RemoveCookie(*entity.CookieInfo) error
@@ -48,13 +54,13 @@ func GenerateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
-func (c *CookieApp) GenerateCookie(cookieLength int, duration time.Duration) (*http.Cookie, error) {
-	sessionValue, err := GenerateRandomString(cookieLength) // cookie value - random string
+func (c *CookieApp) GenerateCookie() (*http.Cookie, error) {
+	sessionValue, err := GenerateRandomString(c.cookieLength) // cookie value - random string
 	if err != nil {
 		return nil, err
 	}
 
-	expirationTime := time.Now().Add(duration)
+	expirationTime := time.Now().Add(c.duration)
 	if os.Getenv("HTTPS_ON") == "true" {
 		return &http.Cookie{
 			Name:     "session_id",

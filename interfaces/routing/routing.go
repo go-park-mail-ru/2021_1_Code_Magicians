@@ -23,65 +23,51 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
-
-	boardsInfo := board.BoardInfo{
-		BoardApp: application.NewBoardApp(repoBoards),
-	}
-	authInfo := auth.AuthInfo{
-		UserApp:      application.NewUserApp(repo),
-		CookieApp:    application.NewCookieApp(),
-		BoardApp:     boardsInfo.BoardApp,
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
-	}
-
-	profileInfo := profile.ProfileInfo{
-		UserApp:   authInfo.UserApp,
-		CookieApp: authInfo.CookieApp,
-		S3App:     application.NewS3App(sess, s3BucketName),
-	}
-
-	pinsInfo := pin.PinInfo{
-		PinApp: application.NewPinApp(repoPins),
-		S3App:  profileInfo.S3App,
-	}
-
 	repoComments := persistence.NewCommentsRepository(conn)
-	commentsInfo := comment.CommentInfo{
-		PinApp:     pinsInfo.PinApp,
-		CommentApp: application.NewCommentApp(repoComments),
-	}
 
-	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authInfo.CookieApp)).Methods("POST")
-	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authInfo.CookieApp)).Methods("POST")
-	r.HandleFunc("/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, authInfo.CookieApp)).Methods("POST")
+	userApp := application.NewUserApp(repo)
+	cookieApp := application.NewCookieApp(40, 10*time.Hour)
+	boardApp := application.NewBoardApp(repoBoards)
+	s3App := application.NewS3App(sess, s3BucketName)
+	pinApp := application.NewPinApp(repoPins)
+	commentApp := application.NewCommentApp(repoComments)
+
+	boardsInfo := board.NewBoardInfo(boardApp)
+	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp)
+	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App)
+	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
+
+	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
+	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
+	r.HandleFunc("/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/check", authInfo.HandleCheckUser).Methods("GET")
 
-	r.HandleFunc("/profile/password", mid.AuthMid(profileInfo.HandleChangePassword, profileInfo.CookieApp)).Methods("PUT")
-	r.HandleFunc("/profile/edit", mid.AuthMid(profileInfo.HandleEditProfile, profileInfo.CookieApp)).Methods("PUT")
-	r.HandleFunc("/profile/delete", mid.AuthMid(profileInfo.HandleDeleteProfile, profileInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/profile/password", mid.AuthMid(profileInfo.HandleChangePassword, cookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/edit", mid.AuthMid(profileInfo.HandleEditProfile, cookieApp)).Methods("PUT")
+	r.HandleFunc("/profile/delete", mid.AuthMid(profileInfo.HandleDeleteProfile, cookieApp)).Methods("DELETE")
 	r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET") // Is preferred over next one
 	r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET")
-	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), profileInfo.CookieApp)).Methods("GET")
-	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, profileInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), cookieApp)).Methods("GET")
+	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, cookieApp)).Methods("PUT")
 
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, profileInfo.CookieApp)).Methods("POST") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleFollowProfile, profileInfo.CookieApp)).Methods("POST")
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleUnfollowProfile, profileInfo.CookieApp)).Methods("DELETE") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleUnfollowProfile, profileInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, cookieApp)).Methods("POST") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleFollowProfile, cookieApp)).Methods("POST")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleUnfollowProfile, cookieApp)).Methods("DELETE") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleUnfollowProfile, cookieApp)).Methods("DELETE")
 
-	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, cookieApp)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinByID)).Methods("GET")
-	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, authInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, cookieApp)).Methods("DELETE")
 	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
-	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, authInfo.CookieApp)).Methods("PUT")
+	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
 
-	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleAddBoard, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleAddBoard, cookieApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardByID)).Methods("GET")
 	r.HandleFunc("/boards/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardsByUserID)).Methods("GET")
-	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, authInfo.CookieApp)).Methods("DELETE")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, cookieApp)).Methods("DELETE")
 
-	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, authInfo.CookieApp)).Methods("POST")
+	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")
 
 	return r

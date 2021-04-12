@@ -2,17 +2,25 @@ package comment
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type CommentInfo struct {
-	CommentApp application.CommentAppInterface
-	PinApp application.PinAppInterface
+	commentApp application.CommentAppInterface
+	pinApp     application.PinAppInterface
+}
+
+func NewCommentInfo(commentApp application.CommentAppInterface, pinApp application.PinAppInterface) *CommentInfo {
+	return &CommentInfo{
+		commentApp: commentApp,
+		pinApp:     pinApp,
+	}
 }
 
 func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +33,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	_, err = commentInfo.PinApp.GetPin(pinId)
+	_, err = commentInfo.pinApp.GetPin(pinId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -37,7 +45,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	currComment:= entity.Comment{}
+	currComment := entity.Comment{}
 
 	err = json.Unmarshal(data, &currComment)
 	if err != nil {
@@ -53,7 +61,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		PinComment: currComment.PinComment,
 	}
 
-	err = commentInfo.CommentApp.AddComment(resultComment)
+	err = commentInfo.commentApp.AddComment(resultComment)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -74,13 +82,13 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 		return
 	}
 
-	_, err = commentInfo.PinApp.GetPin(pinId)
+	_, err = commentInfo.pinApp.GetPin(pinId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	pinComments, err := commentInfo.CommentApp.GetComments(pinId)
+	pinComments, err := commentInfo.commentApp.GetComments(pinId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

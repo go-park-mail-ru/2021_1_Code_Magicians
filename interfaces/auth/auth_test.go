@@ -181,10 +181,10 @@ func TestAuthSuccess(t *testing.T) {
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
 	testInfo = AuthInfo{
-		UserApp:      mockUser,
-		CookieApp:    application.NewCookieApp(),
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
+		userApp:   mockUser,
+		cookieApp: application.NewCookieApp(40, 10*time.Hour),
+		s3App:     nil, // We don't need S3 bucket in these tests
+		boardApp:  nil, // We don't really care about boards in these tests
 	}
 	for _, tt := range authTestSuccess {
 		tt := tt
@@ -195,7 +195,7 @@ func TestAuthSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testInfo.CookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, testInfo.cookieApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
@@ -316,10 +316,10 @@ func TestAuthFailure(t *testing.T) {
 	// No functions in this test actually make request to the database
 
 	testInfo = AuthInfo{
-		UserApp:      mockUser,
-		CookieApp:    application.NewCookieApp(),
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
+		userApp:   mockUser,
+		cookieApp: application.NewCookieApp(40, 10*time.Hour),
+		s3App:     nil, // We don't need S3 bucket in these tests
+		boardApp:  nil, // We don't really care about boards in these tests
 	}
 	for _, tt := range authTestFailure {
 		tt := tt
@@ -330,7 +330,7 @@ func TestAuthFailure(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testInfo.CookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, testInfo.cookieApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)

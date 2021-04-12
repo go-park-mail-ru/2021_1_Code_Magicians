@@ -248,7 +248,7 @@ func TestProfileSuccess(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
-	cookieApp := application.NewCookieApp()
+	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -291,17 +291,12 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID, mockS3App).Return(nil).Times(1)
 
-	testAuthInfo = auth.AuthInfo{
-		UserApp:      mockUserApp,
-		CookieApp:    cookieApp,
-		CookieLength: 40,
-		Duration:     10 * time.Hour,
-	}
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need to handle boards in these tests
 
 	testProfileInfo = ProfileInfo{
-		UserApp:   mockUserApp,
-		CookieApp: cookieApp,
-		S3App:     mockS3App,
+		userApp:   mockUserApp,
+		cookieApp: cookieApp,
+		s3App:     mockS3App,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt
@@ -312,7 +307,7 @@ func TestProfileSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.profileFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testAuthInfo.CookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, cookieApp)
 			}
 			m.HandleFunc(tt.in.urlForRouter, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
