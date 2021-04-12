@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"pinterest/domain/entity"
-	_ "strings"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -17,14 +16,15 @@ type PinsRepo struct {
 func NewPinsRepository(db *pgx.Conn) *PinsRepo {
 	return &PinsRepo{db}
 }
+
 const createPairQuery string = "INSERT INTO pairs (boardID, pinID)\n" +
 	"values ($1, $2);\n"
 const createPinQuery string = "INSERT INTO Pins (title, imageLink, description)\n" +
 	"values ($1, $2, $3)\n" +
 	"RETURNING pinID;\n"
 
-// AddPin add new user to database with passed fields
-// It returns user's assigned ID and nil on success, any number and error on failure
+// AddPin add new pin to specified board with passed fields
+// It returns pin's assigned ID and nil on success, any number and error on failure
 func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
 	row := r.db.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description)
 	newPinID := 0
@@ -38,7 +38,7 @@ func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
 		return -1, err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return -1, errors.New("pin not found")
+		return -1, errors.New("Pin not found")
 	}
 
 	return newPinID, nil
@@ -46,7 +46,7 @@ func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
 
 const deletePinQuery string = "DELETE FROM pins INNER JOIN boards on userID=1$ WHERE pinID=$2"
 
-// DeletePin deletes user with passed ID
+// DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure
 func (r *PinsRepo) DeletePin(pinID int, userID int) error {
 	commandTag, err := r.db.Exec(context.Background(), deletePinQuery, userID, pinID)
@@ -54,7 +54,7 @@ func (r *PinsRepo) DeletePin(pinID int, userID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("pin not found")
+		return errors.New("Pin not found")
 	}
 	return err
 }
@@ -69,7 +69,7 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	err := row.Scan(&pin.Title, &pin.ImageLink, &pin.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No pin found")
+			return nil, fmt.Errorf("Pin not found")
 		}
 		// Other errors
 		return nil, err
@@ -127,13 +127,14 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"GROUP BY boards.userID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
+// GetLastUserPinId - ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	lastPinID := 0
 	row := r.db.QueryRow(context.Background(), getLastUserPinQuery, userID)
 	err := row.Scan(&lastPinID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return -1, fmt.Errorf("No pin found")
+			return -1, fmt.Errorf("Pin not found")
 		}
 		// Other errors
 		return -1, err

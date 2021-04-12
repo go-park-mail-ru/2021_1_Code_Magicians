@@ -21,15 +21,14 @@ const createBoardQuery string = "INSERT INTO Boards (userID, title, description)
 	"values ($1, $2, $3)\n" +
 	"RETURNING boardID"
 
-// AddBoard add new user to database with passed fields
-// It returns user's assigned ID and nil on success, any number and error on failure
+// AddBoard add new board to database with passed fields
+// It returns board's assigned ID and nil on success, any number and error on failure
 func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
 	row := r.db.QueryRow(context.Background(), createBoardQuery, board.UserID, board.Title, board.Description)
 	newBoardID := 0
 	err := row.Scan(&newBoardID)
 	if err != nil {
 		// Other errors
-		// log.Println(err)
 		return -1, err
 	}
 	return newBoardID, nil
@@ -37,23 +36,23 @@ func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
 
 const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1 AND userID=$2"
 
-// SaveUser deletes user with passed ID
-// It returns nil on success and error on failure
+// DeleteBoard deletes board with passed id belonging to passed user.
+// It returns error if board is not found or if there were problems with database
 func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
 	commandTag, err := r.db.Exec(context.Background(), deleteBoardQuery, boardID, userID)
 	if err != nil {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("pin not found")
+		return errors.New("Board not found")
 	}
 	return err
 }
 
 const getBoardQuery string = "SELECT userID, title, description FROM Boards WHERE boardID=$1"
 
-// GetUser fetches user with passed ID from database
-// It returns that user, nil on success and nil, error on failure
+// GetBoard fetches board with passed ID from database
+// It returns that board, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	board := entity.Board{BoardID: boardID}
 	row := r.db.QueryRow(context.Background(), getBoardQuery, boardID)
@@ -62,6 +61,7 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No board found with such id")
 		}
+
 		// Other errors
 		return nil, err
 	}
@@ -70,8 +70,8 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 
 const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boards WHERE userID=$1"
 
-// GetUsers fetches all users from database
-// It returns slice of all users, nil on success and nil, error on failure
+// GetBoards fetches all boards created by user with specified ID from database
+// It returns slice of these boards, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	boards := make([]entity.Board, 0)
 	rows, err := r.db.Query(context.Background(), getBoardsByUserQuery, userID)
@@ -85,8 +85,8 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	}
 
 	for rows.Next() {
-		board := entity.Board{}
-		err := rows.Scan(&board.BoardID, &board.UserID, &board.Title, &board.Description)
+		board := entity.Board{UserID: userID}
+		err := rows.Scan(&board.BoardID, &board.Title, &board.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -95,22 +95,25 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	return boards, nil
 }
 
-const getInitUserBoardQuery string = "SELECT b1.boardID\n" +
+const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description\n" +
 	"FROM boards AS b1\n" +
 	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
 	"GROUP BY b1.boardID, b2.userID\n" +
 	"ORDER BY b2.userID LIMIT 1\n"
 
-func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
-	initBoardID := 0
+// GetInitUserBoard gets user's first board from database
+// It returns that board and nil on success, nil and error on failure
+func (r *BoardsRepo) GetInitUserBoard(userID int) (*entity.Board, error) {
+	board := entity.Board{UserID: userID}
 	row := r.db.QueryRow(context.Background(), getInitUserBoardQuery, userID)
-	err := row.Scan(&initBoardID)
+	err := row.Scan(&board.BoardID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return -1, fmt.Errorf("No board found")
+			return nil, fmt.Errorf("No board found")
 		}
+
 		// Other errors
-		return -1, err
+		return nil, err
 	}
-	return initBoardID, nil
+	return &board, nil
 }
