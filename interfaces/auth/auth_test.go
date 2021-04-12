@@ -172,7 +172,7 @@ func TestAuthSuccess(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    "assets/img/default-avatar.jpg",
+		Avatar:    entity.AvatarDefaultPath,
 		Salt:      "",
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness

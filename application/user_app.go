@@ -63,7 +63,7 @@ func (u *UserApp) DeleteUser(userID int, s3App S3AppInterface) error {
 		return err
 	}
 
-	if user.Avatar != "assets/img/default-avatar.jpg" { // TODO: this should be a global variable or s3App's parameter, probably
+	if user.Avatar != entity.AvatarDefaultPath {
 		err = s3App.DeleteFile(user.Avatar)
 
 		if err != nil {
@@ -132,7 +132,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface)
 		return fmt.Errorf("User saving failed")
 	}
 
-	if oldAvatarPath != "assets/img/default-avatar.jpg" { // TODO: this should be a global variable, probably
+	if oldAvatarPath != entity.AvatarDefaultPath {
 		err = s3App.DeleteFile(oldAvatarPath)
 
 		if err != nil {
