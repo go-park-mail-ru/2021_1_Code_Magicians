@@ -27,7 +27,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars["id"])
+	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -53,7 +53,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	resultComment := &entity.Comment{
 		UserID:     userId,
@@ -76,7 +76,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 
 func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars["id"])
+	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

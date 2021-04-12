@@ -2,9 +2,7 @@ package entity
 
 import (
 	"errors"
-	"net/http"
 	"regexp"
-	"sync"
 
 	"github.com/asaskevich/govalidator"
 )
@@ -168,23 +166,4 @@ func (userOutput *UserOutput) FillFromUser(user *User) {
 	userOutput.FirstName = user.FirstName
 	userOutput.LastName = user.LastName
 	userOutput.Avatar = user.Avatar
-}
-
-// // UsersMap is basically a database's fake
-// type UsersMap struct {
-// 	Users          map[int]User
-// 	LastFreeUserID int
-// 	Mu             sync.Mutex
-// }
-
-// CookieInfo contains information about a cookie: which user it belongs to and cookie itself
-type CookieInfo struct {
-	UserID int
-	Cookie *http.Cookie
-}
-
-// SessionMap is used to keep track of users currently logged in
-type SessionMap struct {
-	Sessions map[string]CookieInfo // key is cookie value, for easier lookup
-	Mu       sync.Mutex
 }

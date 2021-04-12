@@ -47,7 +47,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		ImageLink:   currPin.ImageLink,
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	resultPin.PinId, err = pinInfo.pinApp.AddPin(userId, resultPin)
 	if err != nil {
@@ -65,13 +65,13 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars["id"])
+	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	err = pinInfo.pinApp.DeletePin(pinId, userId, pinInfo.s3App)
 	if err != nil {
@@ -85,7 +85,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	pinId, err := strconv.Atoi(vars["id"])
+	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -110,7 +110,7 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 
 func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	boardId, err := strconv.Atoi(vars["id"])
+	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -158,7 +158,7 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 
 	defer file.Close()
 
-	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err = pinInfo.pinApp.UploadPicture(userID, file, pinInfo.s3App)
 
 	if err != nil {

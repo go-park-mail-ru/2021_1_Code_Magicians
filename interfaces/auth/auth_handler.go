@@ -136,7 +136,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser logs current user out of their session
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
 	err := info.cookieApp.RemoveCookie(userCookie)
 	if err != nil {

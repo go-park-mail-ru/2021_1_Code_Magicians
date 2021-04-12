@@ -39,7 +39,7 @@ func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	boardInput := &entity.Board{
 		UserID:      userId,
@@ -63,13 +63,13 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
-	boardId, err := strconv.Atoi(vars["id"])
+	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	userId := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err = boardInfo.boardApp.DeleteBoard(boardId, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -81,7 +81,7 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 
 func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	boardId, err := strconv.Atoi(vars["id"])
+	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -112,7 +112,7 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 
 func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userId, err := strconv.Atoi(vars["id"])
+	userId, err := strconv.Atoi(vars[string(entity.IDKey)])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

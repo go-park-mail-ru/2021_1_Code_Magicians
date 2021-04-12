@@ -16,7 +16,7 @@ func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) ht
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "cookieInfo", cookie)
+		ctx := context.WithValue(r.Context(), entity.CookieInfoKey, cookie)
 		r = r.Clone(ctx)
 
 		next.ServeHTTP(w, r)
@@ -52,7 +52,7 @@ var sessions entity.SessionMap = entity.SessionMap{Sessions: make(map[string]ent
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
 func CheckCookies(r *http.Request, cookieApp application.CookieAppInterface) (*entity.CookieInfo, bool) {
-	cookie, err := r.Cookie("session_id")
+	cookie, err := r.Cookie(entity.CookieNameKey)
 	if err == http.ErrNoCookie {
 		return nil, false
 	}

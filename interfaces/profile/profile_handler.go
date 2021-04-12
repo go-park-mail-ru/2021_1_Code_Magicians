@@ -35,7 +35,7 @@ func NewProfileInfo(userApp application.UserAppInterface,
 func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -73,7 +73,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -120,7 +120,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
 	err := profileInfo.cookieApp.RemoveCookie(userCookie)
 	if err != nil {
@@ -147,7 +147,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	user := new(entity.User)
 	var err error
 	vars := mux.Vars(r)
-	idStr, passedID := vars["id"]
+	idStr, passedID := vars[string(entity.IDKey)]
 	switch passedID {
 	case true:
 		{
@@ -167,7 +167,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		}
 	case false: // ID was not passed
 		{
-			username, passedUsername := vars["username"]
+			username, passedUsername := vars[string(entity.UsernameKey)]
 			switch passedUsername {
 			case true:
 				{
@@ -187,7 +187,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 			case false: // Username was also not passed
 				{
-					userCookie := r.Context().Value("cookieInfo").(*entity.CookieInfo)
+					userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 					if userCookie == nil {
 						w.WriteHeader(http.StatusBadRequest)
 						return
@@ -245,7 +245,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 
 	defer file.Close()
 
-	userID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err = profileInfo.userApp.UpdateAvatar(userID, file, profileInfo.s3App)
 
 	if err != nil {
@@ -260,7 +260,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *http.Request) {
 	followedID := -1
 	vars := mux.Vars(r)
-	idStr, passedID := vars["id"]
+	idStr, passedID := vars[string(entity.IDKey)]
 	switch passedID {
 	case true:
 		{
@@ -268,7 +268,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		}
 	case false: // ID was not passed
 		{
-			followedUsername, _ := vars["username"]
+			followedUsername, _ := vars[string(entity.UsernameKey)]
 			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
@@ -282,7 +282,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		}
 	}
 
-	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err := profileInfo.userApp.Follow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "This follow relation already exists" {
@@ -300,7 +300,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
 	followedID := -1
 	vars := mux.Vars(r)
-	idStr, passedID := vars["id"]
+	idStr, passedID := vars[string(entity.IDKey)]
 	switch passedID {
 	case true:
 		{
@@ -308,7 +308,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		}
 	case false: // ID was not passed
 		{
-			followedUsername, _ := vars["username"]
+			followedUsername, _ := vars[string(entity.UsernameKey)]
 			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
@@ -322,7 +322,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		}
 	}
 
-	followerID := r.Context().Value("cookieInfo").(*entity.CookieInfo).UserID
+	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err := profileInfo.userApp.Unfollow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "That follow relation does not exist" {
