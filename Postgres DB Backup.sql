@@ -237,8 +237,8 @@ ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.us
 --
 
 COPY public.boards (boardid, userid, title, description) FROM stdin;
-3	64	Saved pins	
-4	65	Saved pins	
+6	67	Saved pins	
+7	68	Saved pins	
 \.
 
 
@@ -279,8 +279,8 @@ COPY public.pins (pinid, title, imagelink, description) FROM stdin;
 --
 
 COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid) FROM stdin;
-cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	/assets/img/default-avatar.jpg	64
-example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	/assets/img/default-avatar.jpg	65
+cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	assets/img/default-avatar.jpg	67
+example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	assets/img/default-avatar.jpg	68
 \.
 
 
@@ -288,7 +288,7 @@ example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	/assets/img/default-a
 -- Name: boards_boardid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.boards_boardid_seq', 4, true);
+SELECT pg_catalog.setval('public.boards_boardid_seq', 7, true);
 
 
 --
@@ -302,7 +302,7 @@ SELECT pg_catalog.setval('public.pins_pinid_seq', 1, false);
 -- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_userid_seq', 65, true);
+SELECT pg_catalog.setval('public.users_userid_seq', 68, true);
 
 
 --
@@ -357,7 +357,7 @@ ALTER TABLE ONLY public.users
 -- Name: users_un_avatar; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE UNIQUE INDEX users_un_avatar ON public.users USING btree (avatar) WHERE ((avatar)::text <> '/assets/img/default-avatar.jpg'::text);
+CREATE UNIQUE INDEX users_un_avatar ON public.users USING btree (avatar) WHERE ((avatar)::text <> 'assets/img/default-avatar.jpg'::text);
 
 
 --

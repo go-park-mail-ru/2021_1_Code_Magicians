@@ -94,10 +94,10 @@ func (mr *MockBoardAppInterfaceMockRecorder) GetBoards(arg0 interface{}) *gomock
 }
 
 // GetInitUserBoard mocks base method.
-func (m *MockBoardAppInterface) GetInitUserBoard(userID int) (int, error) {
+func (m *MockBoardAppInterface) GetInitUserBoard(userID int) (*entity.Board, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInitUserBoard", userID)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(*entity.Board)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

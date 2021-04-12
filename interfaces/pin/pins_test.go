@@ -296,7 +296,7 @@ func TestProfileSuccess(t *testing.T) {
 		expectedPinSecond,
 	}
 
-	mockPinApp.EXPECT().AddPin(expectedUser.UserID, gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(expectedUser.UserID, gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().AddPin(expectedUser.UserID, gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
 

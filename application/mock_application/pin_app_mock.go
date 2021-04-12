@@ -37,18 +37,32 @@ func (m *MockPinAppInterface) EXPECT() *MockPinAppInterfaceMockRecorder {
 }
 
 // AddPin mocks base method.
-func (m *MockPinAppInterface) AddPin(arg0 int, arg1 *entity.Pin) (int, error) {
+func (m *MockPinAppInterface) AddPin(arg0, arg1 int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddPin", arg0, arg1)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AddPin indicates an expected call of AddPin.
 func (mr *MockPinAppInterfaceMockRecorder) AddPin(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPin", reflect.TypeOf((*MockPinAppInterface)(nil).AddPin), arg0, arg1)
+}
+
+// CreatePin mocks base method.
+func (m *MockPinAppInterface) CreatePin(arg0 int, arg1 *entity.Pin) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePin", arg0, arg1)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePin indicates an expected call of CreatePin.
+func (mr *MockPinAppInterfaceMockRecorder) CreatePin(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePin", reflect.TypeOf((*MockPinAppInterface)(nil).CreatePin), arg0, arg1)
 }
 
 // DeletePin mocks base method.

@@ -17,18 +17,18 @@ func NewPinApp(p repository.PinRepository) *PinApp {
 
 type PinAppInterface interface {
 	CreatePin(int, *entity.Pin) (int, error)
-	AddPin(int, int) error                    // Saving user's pin
-	GetPin(int) (*entity.Pin, error)                    // Get pin by pinID
-	GetPins(int) ([]entity.Pin, error)                  // Get pins by boardID
+	AddPin(int, int) error             // Saving user's pin
+	GetPin(int) (*entity.Pin, error)   // Get pin by pinID
+	GetPins(int) ([]entity.Pin, error) // Get pins by boardID
 	GetLastUserPinID(int) (int, error)
 	SavePicture(pin *entity.Pin) error
-	DeletePin(int, int, S3AppInterface) error                           // Removes pin by ID
+	DeletePin(int, int, S3AppInterface) error           // Removes pin by ID
 	UploadPicture(int, io.Reader, S3AppInterface) error // Upload pin
 }
 
 func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 	boardApp := BoardApp{}
-	initBoardID, err := boardApp.GetInitUserBoard(userID)
+	initBoard, err := boardApp.GetInitUserBoard(userID)
 	if err != nil {
 		return -1, err
 	}
@@ -37,7 +37,7 @@ func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 		return -1, err
 	}
 
-	err = pn.p.AddPin(initBoardID, pinID)
+	err = pn.p.AddPin(initBoard.BoardID, pinID)
 	if err != nil {
 		pn.p.DeletePin(pinID, userID)
 		return -1, err

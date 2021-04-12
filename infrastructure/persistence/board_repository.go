@@ -103,17 +103,17 @@ const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.descriptio
 
 // GetInitUserBoard gets user's first board from database
 // It returns that board and nil on success, nil and error on failure
-func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
+func (r *BoardsRepo) GetInitUserBoard(userID int) (*entity.Board, error) {
 	board := entity.Board{UserID: userID}
 	row := r.db.QueryRow(context.Background(), getInitUserBoardQuery, userID)
 	err := row.Scan(&board.BoardID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return -1, fmt.Errorf("No board found")
+			return nil, fmt.Errorf("No board found")
 		}
 
 		// Other errors
-		return -1, err
+		return nil, err
 	}
-	return board.BoardID, nil
+	return &board, nil
 }
