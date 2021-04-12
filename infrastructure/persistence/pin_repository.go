@@ -17,15 +17,13 @@ func NewPinsRepository(db *pgx.Conn) *PinsRepo {
 	return &PinsRepo{db}
 }
 
-const createPairQuery string = "INSERT INTO pairs (boardID, pinID)\n" +
-	"values ($1, $2);\n"
 const createPinQuery string = "INSERT INTO Pins (title, imageLink, description)\n" +
 	"values ($1, $2, $3)\n" +
 	"RETURNING pinID;\n"
 
-// AddPin add new pin to specified board with passed fields
+// CreatePin creates new pin with passed fields
 // It returns pin's assigned ID and nil on success, any number and error on failure
-func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
+func (r *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
 	row := r.db.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description)
 	newPinID := 0
 	err := row.Scan(&newPinID)
@@ -33,18 +31,27 @@ func (r *PinsRepo) AddPin(boardID int, pin *entity.Pin) (int, error) {
 		return -1, err
 	}
 
-	commandTag, err := r.db.Exec(context.Background(), createPairQuery, boardID, newPinID)
-	if err != nil {
-		return -1, err
-	}
-	if commandTag.RowsAffected() != 1 {
-		return -1, errors.New("Pin not found")
-	}
-
 	return newPinID, nil
 }
 
-const deletePinQuery string = "DELETE FROM pins INNER JOIN boards on userID=1$ WHERE pinID=$2"
+const createPairQuery string = "INSERT INTO pairs (boardID, pinID)\n" +
+	"values ($1, $2);\n"
+
+// AddPin add new pin to specified board with passed fields
+// It returns nil on success, error on failure
+func (r *PinsRepo) AddPin(boardID int, pinID int) error {
+	commandTag, err := r.db.Exec(context.Background(), createPairQuery, boardID, pinID)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return errors.New("Pin not found")
+	}
+
+	return nil
+}
+
+const deletePinQuery string = "DELETE FROM pins WHERE pinID=$2"
 
 // DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure

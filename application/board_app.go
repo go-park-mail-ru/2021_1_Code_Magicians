@@ -17,7 +17,7 @@ type BoardAppInterface interface {
 	AddBoard(board *entity.Board) (int, error) // Creating user's board
 	GetBoard(int) (*entity.Board, error)       // Get description of the board
 	GetBoards(int) ([]entity.Board, error)     // Get boards by authorID
-	GetInitUserBoard(userID int) (int, error)
+	GetInitUserBoard(int) (int, error)
 	DeleteBoard(int, int) error // Removes user's board by ID
 }
 

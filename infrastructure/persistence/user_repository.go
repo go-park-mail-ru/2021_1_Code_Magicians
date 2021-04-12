@@ -141,7 +141,7 @@ const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email
 // It returns slice of all users, nil on success and nil, error on failure
 func (r *UserRepo) GetUsers() ([]entity.User, error) {
 	users := make([]entity.User, 0)
-	rows, err := r.db.Query(context.Background(), getUserQuery)
+	rows, err := r.db.Query(context.Background(), getUsersQuery)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No users found in database")

@@ -49,7 +49,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
-	resultPin.PinId, err = pinInfo.pinApp.AddPin(userId, resultPin)
+	resultPin.PinId, err = pinInfo.pinApp.CreatePin(userId, resultPin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

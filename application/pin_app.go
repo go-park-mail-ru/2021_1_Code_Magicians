@@ -16,7 +16,8 @@ func NewPinApp(p repository.PinRepository) *PinApp {
 }
 
 type PinAppInterface interface {
-	AddPin(int, *entity.Pin) (int, error)                    // Saving user's pin
+	CreatePin(int, *entity.Pin) (int, error)
+	AddPin(int, int) error                    // Saving user's pin
 	GetPin(int) (*entity.Pin, error)                    // Get pin by pinID
 	GetPins(int) ([]entity.Pin, error)                  // Get pins by boardID
 	GetLastUserPinID(int) (int, error)
@@ -25,16 +26,30 @@ type PinAppInterface interface {
 	UploadPicture(int, io.Reader, S3AppInterface) error // Upload pin
 }
 
-// AddPin adds user's pin to database
-// It returns pin's assigned ID and nil on success, any number and error on failure
-func (pn *PinApp) AddPin(userID int, pin *entity.Pin) (int, error) {
+func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 	boardApp := BoardApp{}
 	initBoardID, err := boardApp.GetInitUserBoard(userID)
 	if err != nil {
 		return -1, err
 	}
+	pinID, err := pn.p.CreatePin(pin)
+	if err != nil {
+		return -1, err
+	}
 
-	return pn.p.AddPin(initBoardID, pin)
+	err = pn.p.AddPin(initBoardID, pinID)
+	if err != nil {
+		pn.p.DeletePin(pinID, userID)
+		return -1, err
+	}
+
+	return pinID, nil
+}
+
+// AddPin adds user's pin to database
+// It returns pin's assigned ID and nil on success, any number and error on failure
+func (pn *PinApp) AddPin(boardID int, pinID int) error {
+	return pn.p.AddPin(boardID, pinID)
 }
 
 // GetPin returns pin with passed pinID
@@ -65,10 +80,14 @@ func (pn *PinApp) DeletePin(pinID int, userID int, s3App S3AppInterface) error {
 	return s3App.DeleteFile(pin.ImageLink)
 }
 
+// SavePicture saves path to image of current pin in database
+// It returns nil on success and error on failure
 func (pn *PinApp) SavePicture(pin *entity.Pin) error {
 	return pn.p.SavePicture(pin)
 }
 
+// GetLastUserPinID returns path to image of current pin in database
+// It returns nil on success and error on failure
 func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 	return pn.p.GetLastUserPinID(userID)
 }
