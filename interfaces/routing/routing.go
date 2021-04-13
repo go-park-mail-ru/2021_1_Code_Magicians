@@ -13,10 +13,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *mux.Router {
+func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 

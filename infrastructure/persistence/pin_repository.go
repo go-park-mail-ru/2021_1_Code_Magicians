@@ -7,13 +7,14 @@ import (
 	"pinterest/domain/entity"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type PinsRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewPinsRepository(db *pgx.Conn) *PinsRepo {
+func NewPinsRepository(db *pgxpool.Pool) *PinsRepo {
 	return &PinsRepo{db}
 }
 

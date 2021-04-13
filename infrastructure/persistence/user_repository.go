@@ -9,13 +9,14 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type UserRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewUserRepository(db *pgx.Conn) *UserRepo {
+func NewUserRepository(db *pgxpool.Pool) *UserRepo {
 	return &UserRepo{db}
 }
 

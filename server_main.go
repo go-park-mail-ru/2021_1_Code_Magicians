@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -57,14 +57,14 @@ func runServer(addr string) {
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv(dbPrefix+"_DB_USER"), os.Getenv(dbPrefix+"_DB_PASSWORD"), os.Getenv(dbPrefix+"_DB_HOST"),
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
-	conn, err := pgx.Connect(context.Background(), connectionString)
+	conn, err := pgxpool.Connect(context.Background(), connectionString)
 	if err != nil {
 		log.Println(err)
 		fmt.Println("Could not connect to database. Closing...")
 		return
 	}
 
-	defer conn.Close(context.Background())
+	defer conn.Close()
 	fmt.Println("Successfully connected to database")
 	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
 
