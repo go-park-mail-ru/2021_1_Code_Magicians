@@ -46,9 +46,9 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/profile/password", mid.AuthMid(profileInfo.HandleChangePassword, cookieApp)).Methods("PUT")
 	r.HandleFunc("/profile/edit", mid.AuthMid(profileInfo.HandleEditProfile, cookieApp)).Methods("PUT")
 	r.HandleFunc("/profile/delete", mid.AuthMid(profileInfo.HandleDeleteProfile, cookieApp)).Methods("DELETE")
-	r.HandleFunc("/profile/{id:[0-9]+}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET") // Is preferred over next one
-	r.HandleFunc("/profile/{username}", mid.JsonContentTypeMid(profileInfo.HandleGetProfile)).Methods("GET")
-	r.HandleFunc("/profile", mid.AuthMid(mid.JsonContentTypeMid(profileInfo.HandleGetProfile), cookieApp)).Methods("GET")
+	r.HandleFunc("/profile/{id:[0-9]+}", profileInfo.HandleGetProfile).Methods("GET") // Is preferred over next one
+	r.HandleFunc("/profile/{username}", profileInfo.HandleGetProfile).Methods("GET")
+	r.HandleFunc("/profile", mid.AuthMid(profileInfo.HandleGetProfile, cookieApp)).Methods("GET")
 	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, cookieApp)).Methods("PUT")
 
 	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, cookieApp)).Methods("POST") // Is preferred over next one
@@ -57,18 +57,18 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleUnfollowProfile, cookieApp)).Methods("DELETE")
 
 	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, cookieApp)).Methods("POST")
-	r.HandleFunc("/pin/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinByID)).Methods("GET")
+	r.HandleFunc("/pin/{id:[0-9]+}", pinsInfo.HandleGetPinByID).Methods("GET")
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, cookieApp)).Methods("DELETE")
-	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
+	r.HandleFunc("/pins/{id:[0-9]+}", pinsInfo.HandleGetPinsByBoardID).Methods("GET")
 	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
 
 	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleAddBoard, cookieApp)).Methods("POST")
-	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardByID)).Methods("GET")
-	r.HandleFunc("/boards/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardsByUserID)).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", boardsInfo.HandleGetBoardByID).Methods("GET")
+	r.HandleFunc("/boards/{id:[0-9]+}", boardsInfo.HandleGetBoardsByUserID).Methods("GET")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, cookieApp)).Methods("DELETE")
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
-	r.HandleFunc("/comments/{id:[0-9]+}", mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")
+	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
 	return r
 }

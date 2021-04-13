@@ -59,11 +59,3 @@ func CheckCookies(r *http.Request, cookieApp application.CookieAppInterface) (*e
 
 	return cookieApp.CheckCookie(cookie)
 }
-
-// JsonContentTypeMid adds "Content-type: application/json" to headers
-func JsonContentTypeMid(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
-}

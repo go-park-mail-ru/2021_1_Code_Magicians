@@ -217,10 +217,9 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseBody)
-	return
 }
 
 var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
