@@ -80,6 +80,8 @@ var testPinInfo PinInfo
 var testAuthInfo auth.AuthInfo
 var testBoardInfo board.BoardInfo
 
+//headers := make(map[string][]string, 0)
+//headers["Content-Length"] = []string{"zdes_dlina_tela"}
 var pinTest = []struct {
 	in   InputStruct
 	out  OutputStruct
@@ -91,12 +93,22 @@ var pinTest = []struct {
 			"/auth/signup",
 			"POST",
 			nil,
-			[]byte(`{"username": "TestUsername",` +
+			[]byte(`-----------------------------9051914041544843365972754266` +
+			`Content-Disposition: form-data;` +
+				`name="pinInfo"` +
+				`{"username": "TestUsername",` +
 				`"password": "thisisapassword",` +
 				`"first_name": "TestFirstName",` +
 				`"last_name": "TestLastname",` +
 				`"email": "test@example.com",` +
-				`"avatar": "avatars/1"}`,
+				`"avatar": "avatars/1"}` +
+				`-----------------------------9051914041544843365972754266` +
+				`Content-Disposition: form-data;` +
+				`name="pinImage"; ` +
+				`filename="a.txt"` +
+				`Content-Type: image/jpeg` +
+				`randomStr` +
+				`-----------------------------9051914041544843365972754266--`,
 			),
 			testAuthInfo.HandleCreateUser,
 			middleware.NoAuthMid,
@@ -125,7 +137,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 0}`),
+			nil,
 		},
 		"Testing add first pin",
 	},
@@ -145,7 +157,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 1}`),
+			nil,
 		},
 		"Testing add second pin",
 	},
@@ -233,7 +245,7 @@ var pinTest = []struct {
 		},
 
 		OutputStruct{
-			200,
+			201,
 			nil,
 			[]byte(`{"pin_id": 1}`),
 		},
@@ -251,11 +263,11 @@ var pinTest = []struct {
 		},
 
 		OutputStruct{
-			200,
+			201,
 			nil,
 			[]byte(`{"pin_id": 0}`),
 		},
-		"Testing saving second pin",
+		"Testing saving second pin to board",
 	},
 	{
 		InputStruct{
@@ -318,7 +330,7 @@ var successCookies []*http.Cookie
 func TestPins(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-
+	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
@@ -367,7 +379,7 @@ func TestPins(t *testing.T) {
 		*expectedPinFirst,
 		*expectedPinSecond,
 	}
-
+	mockS3App.EXPECT().UploadFile(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	mockPinApp.EXPECT().CreatePin(expectedUserFirst.UserID, expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
 
 	mockPinApp.EXPECT().CreatePin(expectedUserFirst.UserID, gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
