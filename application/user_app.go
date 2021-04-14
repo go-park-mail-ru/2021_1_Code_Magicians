@@ -28,6 +28,7 @@ type UserAppInterface interface {
 	UpdateAvatar(int, io.Reader) error                       // Replace user's avatar with one passed as second parameter
 	Follow(int, int) error                                                   // Make first user follow second
 	Unfollow(int, int) error                                                 // Make first user unfollow second
+	CheckIfFollowed(int, int) (bool, error)                                  // Check if first user follows second. Err != nil if those users are the same
 }
 
 // CreateUser add new user to database with passed fields
@@ -147,9 +148,22 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 }
 
 func (u *UserApp) Follow(followerID int, followedID int) error {
+	if followerID == followedID {
+		return fmt.Errorf("Users can't follow themselves")
+	}
 	return u.us.Follow(followerID, followedID)
 }
 
 func (u *UserApp) Unfollow(followerID int, followedID int) error {
+	if followerID == followedID {
+		return fmt.Errorf("Users can't unfollow themselves")
+	}
 	return u.us.Unfollow(followerID, followedID)
+}
+
+func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
+	if followerID == followedID {
+		return false, fmt.Errorf("Users can't follow themselves")
+	}
+	return u.us.CheckIfFollowed(followerID, followedID)
 }

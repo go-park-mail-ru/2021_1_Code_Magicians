@@ -179,7 +179,9 @@ CREATE TABLE public.users (
     last_name character varying(42),
     first_name character varying(42),
     avatar character varying(70) DEFAULT 'assets/img/default-avatar.jpg'::character varying NOT NULL,
-    userid integer NOT NULL
+    userid integer NOT NULL,
+    following integer DEFAULT 0 NOT NULL,
+    followed_by integer DEFAULT 0 NOT NULL
 );
 
 
@@ -240,8 +242,8 @@ ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.us
 --
 
 COPY public.boards (boardid, userid, title, description) FROM stdin;
-6	67	Saved pins	
-7	68	Saved pins	
+10	71	Saved pins	
+11	72	Saved pins	
 \.
 
 
@@ -281,9 +283,9 @@ COPY public.pins (pinid, title, imagelink, description) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid) FROM stdin;
-cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	assets/img/default-avatar.jpg	67
-example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	assets/img/default-avatar.jpg	68
+COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by) FROM stdin;
+cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	assets/img/default-avatar.jpg	72	0	0
+example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	assets/img/default-avatar.jpg	71	0	0
 \.
 
 
@@ -291,7 +293,7 @@ example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	assets/img/default-av
 -- Name: boards_boardid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.boards_boardid_seq', 7, true);
+SELECT pg_catalog.setval('public.boards_boardid_seq', 11, true);
 
 
 --
@@ -305,7 +307,7 @@ SELECT pg_catalog.setval('public.pins_pinid_seq', 1, false);
 -- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_userid_seq', 68, true);
+SELECT pg_catalog.setval('public.users_userid_seq', 72, true);
 
 
 --

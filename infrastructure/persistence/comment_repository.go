@@ -3,15 +3,17 @@ package persistence
 import (
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v4"
 	"pinterest/domain/entity"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type CommentsRepo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewCommentsRepository(db *pgx.Conn) *CommentsRepo {
+func NewCommentsRepository(db *pgxpool.Pool) *CommentsRepo {
 	return &CommentsRepo{db}
 }
 

@@ -2,12 +2,12 @@ package profile
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
+	"pinterest/interfaces/middleware"
 	"strconv"
 	"time"
 
@@ -162,8 +162,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-
-			user.Email = "" // Email is ommited on purpose
 		}
 	case false: // ID was not passed
 		{
@@ -181,8 +179,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
-
-					user.Email = "" // Email is ommited on purpose
 				}
 
 			case false: // Username was also not passed
@@ -211,16 +207,42 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	var userOutput entity.UserOutput
 	userOutput.FillFromUser(user)
 
+	cookie, found := middleware.CheckCookies(r, profileInfo.cookieApp)
+	if !found {
+		userOutput.Email = ""
+		responseBody, err := json.Marshal(userOutput)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseBody)
+	}
+
+	currentUserID := cookie.UserID
+	otherUserID := user.UserID
+	if currentUserID != otherUserID {
+		userOutput.Email = ""
+		followed, err := profileInfo.userApp.CheckIfFollowed(currentUserID, otherUserID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		userOutput.Followed = &followed
+	}
+
 	responseBody, err := json.Marshal(userOutput)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseBody)
-	return
 }
 
 var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
@@ -258,18 +280,15 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 }
 
 func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *http.Request) {
-	followedID := -1
+	var followedUser *entity.User = nil
+	var err error // Maybe move this line into switch?
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
 	switch passedID {
 	case true:
 		{
-			followedID, _ = strconv.Atoi(idStr)
-		}
-	case false: // ID was not passed
-		{
-			followedUsername, _ := vars[string(entity.UsernameKey)]
-			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
+			followedID, _ := strconv.Atoi(idStr)
+			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
 					w.WriteHeader(http.StatusNotFound)
@@ -278,38 +297,48 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-			followedID = followedUser.UserID
+		}
+	case false: // ID was not passed
+		{
+			followedUsername := vars[string(entity.UsernameKey)]
+			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
+			if err != nil {
+				if err.Error() == "No user found with such id" {
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 	}
 
 	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err := profileInfo.userApp.Follow(followerID, followedID)
+	followedID := followedUser.UserID
+	err = profileInfo.userApp.Follow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "This follow relation already exists" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-
-		fmt.Println(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
-	followedID := -1
+	var followedUser *entity.User = nil
+	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
 	switch passedID {
 	case true:
 		{
-			followedID, _ = strconv.Atoi(idStr)
-		}
-	case false: // ID was not passed
-		{
-			followedUsername, _ := vars[string(entity.UsernameKey)]
-			followedUser, err := profileInfo.userApp.GetUserByUsername(followedUsername)
+			followedID, _ := strconv.Atoi(idStr)
+			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
 					w.WriteHeader(http.StatusNotFound)
@@ -318,21 +347,34 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-			followedID = followedUser.UserID
+		}
+	case false: // ID was not passed
+		{
+			followedUsername := vars[string(entity.UsernameKey)]
+			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
+			if err != nil {
+				if err.Error() == "No user found with such id" {
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 	}
 
 	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err := profileInfo.userApp.Unfollow(followerID, followedID)
+	followedID := followedUser.UserID
+	err = profileInfo.userApp.Unfollow(followerID, followedID)
 	if err != nil {
 		if err.Error() == "That follow relation does not exist" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-
-		fmt.Println(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
