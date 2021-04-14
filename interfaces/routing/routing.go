@@ -25,11 +25,11 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	repoBoards := persistence.NewBoardsRepository(conn)
 	repoComments := persistence.NewCommentsRepository(conn)
 
-	userApp := application.NewUserApp(repo)
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	boardApp := application.NewBoardApp(repoBoards)
 	s3App := application.NewS3App(sess, s3BucketName)
-	pinApp := application.NewPinApp(repoPins)
+	userApp := application.NewUserApp(repo, boardApp, s3App)
+	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := application.NewCommentApp(repoComments)
 
 	boardsInfo := board.NewBoardInfo(boardApp)

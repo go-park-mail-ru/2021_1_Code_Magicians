@@ -150,7 +150,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = pinInfo.pinApp.DeletePin(boardID, pinID, pinInfo.s3App)
+	err = pinInfo.pinApp.DeletePin(boardID, pinID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -235,7 +235,7 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 	defer file.Close()
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = pinInfo.pinApp.UploadPicture(userID, file, pinInfo.s3App)
+	err = pinInfo.pinApp.UploadPicture(userID, file)
 
 	if err != nil {
 		log.Println(err)

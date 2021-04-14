@@ -59,7 +59,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser.UserID, err = info.userApp.CreateUser(&newUser, info.boardApp, info.s3App)
+	newUser.UserID, err = info.userApp.CreateUser(&newUser)
 	if err != nil {
 		if err.Error() == "Username or email is already taken" {
 			w.WriteHeader(http.StatusConflict)
@@ -74,7 +74,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		info.userApp.DeleteUser(newUser.UserID, info.s3App)
+		info.userApp.DeleteUser(newUser.UserID)
 		return
 	}
 

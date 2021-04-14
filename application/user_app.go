@@ -9,39 +9,41 @@ import (
 
 type UserApp struct {
 	us repository.UserRepository
+	boardApp BoardAppInterface
+	s3App S3AppInterface
 }
 
-func NewUserApp(us repository.UserRepository) *UserApp {
-	return &UserApp{us}
+func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App S3AppInterface) *UserApp {
+	return &UserApp{us, boardApp, s3App}
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User, BoardAppInterface, S3AppInterface) (int, error) // Create user, returns created user's ID
+	CreateUser(*entity.User) (int, error) // Create user, returns created user's ID
 	SaveUser(*entity.User) error                                             // Save changed user to database
-	DeleteUser(int, S3AppInterface) error                                    // Delete user with passed userID from database
+	DeleteUser(int) error                                    // Delete user with passed userID from database
 	GetUser(int) (*entity.User, error)                                       // Get user by his ID
 	GetUsers() ([]entity.User, error)                                        // Get all users
 	GetUserByUsername(string) (*entity.User, error)                          // Get user by his username
 	CheckUserCredentials(string, string) (*entity.User, error)               // Check if passed username and password are correct
-	UpdateAvatar(int, io.Reader, S3AppInterface) error                       // Replace user's avatar with one passed as second parameter
+	UpdateAvatar(int, io.Reader) error                       // Replace user's avatar with one passed as second parameter
 	Follow(int, int) error                                                   // Make first user follow second
 	Unfollow(int, int) error                                                 // Make first user unfollow second
 }
 
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (u *UserApp) CreateUser(user *entity.User, boardApp BoardAppInterface, s3 S3AppInterface) (int, error) {
+func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 	userID, err := u.us.CreateUser(user)
 	if err != nil {
 		fmt.Println(err)
 		return -1, err
 	}
 
-	initialBoard := &entity.Board{UserID: userID, Title: "Saved pins"}
-	_, err = boardApp.AddBoard(initialBoard)
+	initialBoard := &entity.Board{UserID: userID, Title: "Saved pins", Description: "Fast save"}
+	_, err = u.boardApp.AddBoard(initialBoard)
 	if err != nil {
 
-		_ = u.DeleteUser(user.UserID, s3)
+		_ = u.DeleteUser(user.UserID)
 		return -1, err
 	}
 
@@ -57,14 +59,14 @@ func (u *UserApp) SaveUser(user *entity.User) error {
 // SaveUser deletes user with passed ID
 // S3AppInterface is needed for avatar deletion
 // It returns nil on success and error on failure
-func (u *UserApp) DeleteUser(userID int, s3App S3AppInterface) error {
+func (u *UserApp) DeleteUser(userID int) error {
 	user, err := u.us.GetUser(userID)
 	if err != nil {
 		return err
 	}
 
 	if user.Avatar != entity.AvatarDefaultPath {
-		err = s3App.DeleteFile(user.Avatar)
+		err = u.s3App.DeleteFile(user.Avatar)
 
 		if err != nil {
 			return err
@@ -107,7 +109,7 @@ func (u *UserApp) CheckUserCredentials(username string, password string) (*entit
 	return user, nil
 }
 
-func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface) error {
+func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 	user, err := u.GetUser(userID)
 	if err != nil {
 		return fmt.Errorf("Could not find user in database")
@@ -119,7 +121,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface)
 	}
 
 	newAvatarPath := "avatars/" + filenamePrefix + ".jpg" // TODO: avatars folder sharding by date
-	err = s3App.UploadFile(file, newAvatarPath)
+	err = u.s3App.UploadFile(file, newAvatarPath)
 	if err != nil {
 		return fmt.Errorf("File upload failed")
 	}
@@ -128,15 +130,15 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, s3App S3AppInterface)
 	user.Avatar = newAvatarPath
 	err = u.SaveUser(user)
 	if err != nil {
-		s3App.DeleteFile(newAvatarPath)
+		u.s3App.DeleteFile(newAvatarPath)
 		return fmt.Errorf("User saving failed")
 	}
 
 	if oldAvatarPath != entity.AvatarDefaultPath {
-		err = s3App.DeleteFile(oldAvatarPath)
+		err = u.s3App.DeleteFile(oldAvatarPath)
 
 		if err != nil {
-			s3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
+			u.s3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
 			return fmt.Errorf("Old avatar deletion failed")
 		}
 	}

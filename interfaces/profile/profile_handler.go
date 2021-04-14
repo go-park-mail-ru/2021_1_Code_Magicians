@@ -132,7 +132,7 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 	userCookie.Cookie.Expires = time.Now().AddDate(0, 0, -1) // Making cookie expire
 	http.SetCookie(w, userCookie.Cookie)
 
-	err = profileInfo.userApp.DeleteUser(userCookie.UserID, profileInfo.s3App)
+	err = profileInfo.userApp.DeleteUser(userCookie.UserID)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -246,7 +246,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	defer file.Close()
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = profileInfo.userApp.UpdateAvatar(userID, file, profileInfo.s3App)
+	err = profileInfo.userApp.UpdateAvatar(userID, file)
 
 	if err != nil {
 		log.Println(err)

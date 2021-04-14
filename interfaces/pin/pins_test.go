@@ -315,7 +315,7 @@ var pinTest = []struct {
 
 var successCookies []*http.Cookie
 
-func TestProfileSuccess(t *testing.T) {
+func TestPins(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -338,7 +338,7 @@ func TestProfileSuccess(t *testing.T) {
 	}
 
 	mockUserApp.EXPECT().GetUserByUsername(expectedUserFirst.Username).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
-	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUserFirst.UserID, nil).Times(1)
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUserFirst.UserID, nil).Times(1)
 
 	expectedPinFirst := &entity.Pin{
 		PinId:       0,
@@ -383,11 +383,11 @@ func TestProfileSuccess(t *testing.T) {
 	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(3)
 	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinId).Return(nil).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinId, nil).Return(nil).Times(1)
+	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinId).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUserFirst.UserID, nil).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUserFirst.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
 

@@ -14,7 +14,7 @@ func NewBoardApp(b repository.BoardRepository) *BoardApp {
 }
 
 type BoardAppInterface interface {
-	AddBoard(board *entity.Board) (int, error) // Creating user's board
+	AddBoard(*entity.Board) (int, error) // Creating user's board
 	GetBoard(int) (*entity.Board, error)       // Get description of the board
 	GetBoards(int) ([]entity.Board, error)     // Get boards by authorID
 	GetInitUserBoard(int) (int, error)
