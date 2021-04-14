@@ -124,8 +124,6 @@ COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
 --
 -- Name: pins; Type: TABLE; Schema: public; Owner: postgres
 --
-ALTER TABLE public.pins
-    ADD COLUMN  userid integer;
 
 
 CREATE TABLE public.pins (
@@ -134,6 +132,9 @@ CREATE TABLE public.pins (
     imagelink character varying(50) NOT NULL,
     description text
 );
+
+ALTER TABLE public.pins
+    ADD COLUMN  userid integer;
 
 
 ALTER TABLE public.pins OWNER TO postgres;
@@ -236,57 +237,6 @@ ALTER TABLE ONLY public.pins ALTER COLUMN pinid SET DEFAULT nextval('public.pins
 
 ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.users_userid_seq'::regclass);
 
-
---
--- Data for Name: boards; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.boards (boardid, userid, title, description) FROM stdin;
-10	71	Saved pins	
-11	72	Saved pins	
-\.
-
-
---
--- Data for Name: comments; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.comments (userid, pinid, text) FROM stdin;
-\.
-
-
---
--- Data for Name: followers; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.followers (followerid, followedid) FROM stdin;
-\.
-
-
---
--- Data for Name: pairs; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.pairs (boardid, pinid) FROM stdin;
-\.
-
-
---
--- Data for Name: pins; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.pins (pinid, title, imagelink, description) FROM stdin;
-\.
-
-
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by) FROM stdin;
-cupidatat_Duis_exercitation	officia consectetur irure	        	dgrDmB2TdK@VX.tvs	\N	\N	assets/img/default-avatar.jpg	72	0	0
-example	w5t5rhdsgerthtyretsdr	        	other@mail.ru	\N	\N	assets/img/default-avatar.jpg	71	0	0
-\.
 
 
 --

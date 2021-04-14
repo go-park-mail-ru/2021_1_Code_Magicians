@@ -3,7 +3,6 @@ package pin
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"pinterest/application"
@@ -29,18 +28,28 @@ func NewPinInfo(pinApp application.PinAppInterface,
 	}
 }
 
+const maxPostPictureBodySize int = 8 * 1024 * 1024 // 8 mB
+const maxJSONSize int = 1024 * 1024
+
 func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	bodySize := r.ContentLength
+	if bodySize < 0 { // No picture was passed
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if bodySize > int64(maxPostPictureBodySize) { // Picture is too large
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	r.ParseMultipartForm(bodySize)
+	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
+
 	currPin := entity.Pin{}
 
-	err = json.Unmarshal(data, &currPin)
+	err := json.Unmarshal([]byte(jsonData), &currPin)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -48,24 +57,31 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
-	resultPin := &entity.Pin{
-		UserID:      userID,
-		Title:       currPin.Title,
-		Description: currPin.Description,
-		ImageLink:   currPin.ImageLink,
-	}
+	currPin.UserID = userID
 
-	resultPin.PinId, err = pinInfo.pinApp.CreatePin(userID, resultPin)
+	currPin.PinId, err = pinInfo.pinApp.CreatePin(userID, &currPin)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"pin_id": ` + strconv.Itoa(resultPin.PinId) + `}`
+	file, _, err := r.FormFile("pinImage")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
+
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	// TODO: Add pin to specified board
 }
 
 func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +113,7 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	body := `{"pin_id": ` + strconv.Itoa(pinID) + `}`
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
@@ -210,7 +223,6 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 	w.Write(body)
 }
 
-const maxPostPictureBodySize = 8 * 1024 * 1024 // 8 mB
 // HandleUploadPicture takes picture from request and assigns it to current pin
 func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -235,7 +247,7 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 	defer file.Close()
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = pinInfo.pinApp.UploadPicture(userID, file)
+	err = pinInfo.pinApp.UploadPicture(userID, file) // TODO: change userID to pinID
 
 	if err != nil {
 		log.Println(err)
