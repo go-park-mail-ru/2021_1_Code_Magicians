@@ -110,7 +110,8 @@ func (r *UserRepo) DeleteUser(userID int) error {
 	return nil
 }
 
-const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar FROM Users WHERE userID=$1"
+const getUserQuery string = "SELECT username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following\n" +
+	"FROM Users WHERE userID=$1"
 
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
@@ -121,7 +122,8 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 	avatarPtr := new(string)
 
 	row := r.db.QueryRow(context.Background(), getUserQuery, userID)
-	err := row.Scan(&user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
+	err := row.Scan(&user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No user found with such id")
@@ -136,7 +138,8 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 	return &user, nil
 }
 
-const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar FROM Users"
+const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following\n" +
+	"FROM Users"
 
 // GetUsers fetches all users from database
 // It returns slice of all users, nil on success and nil, error on failure
@@ -158,7 +161,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 		secondNamePtr := new(string)
 		avatarPtr := new(string)
 
-		err := rows.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
 			return nil, err // TODO: error handling
@@ -201,9 +204,9 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	return &user, nil
 }
 
-const followQuery string = "INSERT INTO followers(followerID, followedID) VALUES ($1, $2)"
-const updateFollowingQuery string = "UPDATE users SET following = following + 1 WHERE userID=$1"
-const updateFollowedByQuery string = "UPDATE users SET followed_by = followed_by + 1 WHERE userID=$1"
+const followQuery string = "INSERT INTO Followers(followerID, followedID) VALUES ($1, $2)"
+const updateFollowingQuery string = "UPDATE Users SET following = following + 1 WHERE userID=$1"
+const updateFollowedByQuery string = "UPDATE Users SET followed_by = followed_by + 1 WHERE userID=$1"
 
 func (r *UserRepo) Follow(followerID int, followedID int) error {
 	_, err := r.db.Exec(context.Background(), followQuery, followerID, followedID)
@@ -237,9 +240,9 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 	return nil
 }
 
-const unfollowQuery string = "DELETE FROM followers WHERE followerID=$1 AND followedID=$2"
-const updateUnfollowingQuery string = "UPDATE users SET following = following - 1 WHERE userID=$1"
-const updateUnfollowedByQuery string = "UPDATE users SET followed_by = followed_by - 1 WHERE userID=$1"
+const unfollowQuery string = "DELETE FROM Followers WHERE followerID=$1 AND followedID=$2"
+const updateUnfollowingQuery string = "UPDATE Users SET following = following - 1 WHERE userID=$1"
+const updateUnfollowedByQuery string = "UPDATE Users SET followed_by = followed_by - 1 WHERE userID=$1"
 
 func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	result, _ := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
@@ -263,7 +266,7 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	return err
 }
 
-const checkIfFollowedQuery string = "SELECT 1 FROM followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, nothing otherwise
+const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, nothing otherwise
 
 func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	row := r.db.QueryRow(context.Background(), checkIfFollowedQuery, followerID, followedID)

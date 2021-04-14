@@ -300,7 +300,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		}
 	case false: // ID was not passed
 		{
-			followedUsername, _ := vars[string(entity.UsernameKey)]
+			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
@@ -350,7 +350,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		}
 	case false: // ID was not passed
 		{
-			followedUsername, _ := vars[string(entity.UsernameKey)]
+			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
 				if err.Error() == "No user found with such id" {
