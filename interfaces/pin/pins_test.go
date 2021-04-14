@@ -11,6 +11,7 @@ import (
 	"pinterest/application/mock_application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
+	"pinterest/interfaces/board"
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ type InputStruct struct {
 	method       string
 	headers      map[string][]string
 	postBody     []byte // JSON
-	profileFunc  func(w http.ResponseWriter, r *http.Request)
+	handleFunc   func(w http.ResponseWriter, r *http.Request)
 	middleware   func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
@@ -57,6 +58,7 @@ type OutputStruct struct {
 	responseCode int
 	headers      map[string][]string
 	postBody     []byte // JSON
+
 }
 
 // fillFromResponse transforms http.Response to OutputStruct
@@ -76,6 +78,7 @@ func (output *OutputStruct) fillFromResponse(response *http.Response) error {
 
 var testPinInfo PinInfo
 var testAuthInfo auth.AuthInfo
+var testBoardInfo board.BoardInfo
 
 var pinTest = []struct {
 	in   InputStruct
@@ -104,7 +107,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing profile creation",
+		"Testing first profile creation",
 	},
 	{
 		InputStruct{
@@ -148,6 +151,27 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
+			"/board",
+			"/board",
+			"POST",
+			nil,
+			[]byte(`{"userID":0,` +
+				`"title":"exampletitle1",` +
+				`"description":"exampleDescription1"}`),
+			testBoardInfo.HandleCreateBoard,
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			201,
+			nil,
+			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
+		},
+		"Testing add first board",
+	},
+
+	{
+		InputStruct{
 			"/pin/1",
 			"/pin/{id:[0-9]+}",
 			"GET",
@@ -161,6 +185,7 @@ var pinTest = []struct {
 			200,
 			nil,
 			[]byte(`{"id":1,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}`,
@@ -183,10 +208,12 @@ var pinTest = []struct {
 			200,
 			nil,
 			[]byte(`[{"id":0,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"},` +
 				`{"id":1,` +
+				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"}]`,
@@ -196,8 +223,44 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pin/0",
-			"/pin/{id:[0-9]+}",
+			"/pin/add/1",
+			"/pin/add/{id:[0-9]+}",
+			"POST",
+			nil,
+			nil,
+			testPinInfo.HandleSavePin,
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte(`{"pin_id": 1}`),
+		},
+		"Testing saving second pin",
+	},
+	{
+		InputStruct{
+			"/board/0/add/0",
+			"/board/{id:[0-9]+}/add/{pinID:[0-9]+}",
+			"POST",
+			nil,
+			nil,
+			testPinInfo.HandleAddPinToBoard,
+			middleware.AuthMid, // If user is not logged in, they can't access their profile
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte(`{"pin_id": 0}`),
+		},
+		"Testing saving second pin",
+	},
+	{
+		InputStruct{
+			"/board/0/0",
+			"/board/{id:[0-9]+}/{pinID:[0-9]+}",
 			"DELETE",
 			nil,
 			nil,
@@ -232,8 +295,8 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pin/0",
-			"/pin/{id:[0-9]+}",
+			"/board/0/0",
+			"/board/{id:[0-9]+}/{pinID:[0-9]+}",
 			"DELETE",
 			nil,
 			nil,
@@ -252,18 +315,18 @@ var pinTest = []struct {
 
 var successCookies []*http.Cookie
 
-func TestProfileSuccess(t *testing.T) {
+func TestPins(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
-
+	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
 	// TODO: maybe replace this with JSON parsing?
-	expectedUser := entity.User{
+	expectedUserFirst := &entity.User{
 		UserID:    0,
 		Username:  "TestUsername",
 		Password:  "thisisapassword",
@@ -274,47 +337,66 @@ func TestProfileSuccess(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
-	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockUserApp.EXPECT().GetUserByUsername(expectedUserFirst.Username).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUserFirst.UserID, nil).Times(1)
 
-	expectedPinFirst := entity.Pin{
+	expectedPinFirst := &entity.Pin{
 		PinId:       0,
+		UserID:      0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
-	expectedPinSecond := entity.Pin{
+	expectedBoardFirst := &entity.Board{
+		BoardID:     0,
+		UserID:      0,
+		Title:       "exampletitle1",
+		Description: "exampleDescription1",
+	}
+
+	expectedPinSecond := &entity.Pin{
 		PinId:       1,
+		UserID:      0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
 	expectedPinsInBoard := []entity.Pin{
-		expectedPinFirst,
-		expectedPinSecond,
+		*expectedPinFirst,
+		*expectedPinSecond,
 	}
 
-	mockPinApp.EXPECT().CreatePin(expectedUser.UserID, gomock.Any()).Return(expectedPinFirst.PinId, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(expectedUserFirst.UserID, expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
 
-	mockPinApp.EXPECT().AddPin(expectedUser.UserID, gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(expectedUserFirst.UserID, gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
+	mockBoardApp.EXPECT().AddBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
+
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(expectedPinSecond, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(nil).Times(1)
+	mockPinApp.EXPECT().SavePin(expectedUserFirst.UserID, expectedPinSecond.PinId).Return(nil).Times(1)
+
+	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(3)
+	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinId).Return(nil).Times(1)
+
+	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinId).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID, nil).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUserFirst.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
 
+	testBoardInfo = *board.NewBoardInfo(mockBoardApp)
+
 	testPinInfo = PinInfo{
-		pinApp: mockPinApp,
-		s3App:  nil, // S3 is not needed, as we do not currently test file upload
+		pinApp:   mockPinApp,
+		boardApp: mockBoardApp,
+		s3App:    nil, // S3 is not needed, as we do not currently test file upload
 	}
 	for _, tt := range pinTest {
 		tt := tt
@@ -323,7 +405,7 @@ func TestProfileSuccess(t *testing.T) {
 
 			rw := httptest.NewRecorder() // not ResponseWriter because we need to read response
 			m := mux.NewRouter()
-			funcToHandle := tt.in.profileFunc
+			funcToHandle := tt.in.handleFunc
 			if tt.in.middleware != nil { // We don't always need middleware
 				funcToHandle = tt.in.middleware(funcToHandle, cookieApp)
 			}

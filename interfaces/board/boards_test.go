@@ -114,7 +114,7 @@ var boardTest = []struct {
 			[]byte(`{"userID":0,` +
 				`"title":"exampletitle1",` +
 				`"description":"exampleDescription1"}`),
-			testBoardInfo.HandleAddBoard,
+			testBoardInfo.HandleCreateBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -134,7 +134,7 @@ var boardTest = []struct {
 			[]byte(`{"userID":0,` +
 				`"title":"exampletitle2",` +
 				`"description":"exampleDescription2"}`),
-			testBoardInfo.HandleAddBoard,
+			testBoardInfo.HandleCreateBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -250,7 +250,7 @@ var boardTest = []struct {
 
 var successCookies []*http.Cookie
 
-func TestBoardSuccess(t *testing.T) {
+func TestBoards(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -273,7 +273,7 @@ func TestBoardSuccess(t *testing.T) {
 	}
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
-	mockUserApp.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
 	expectedBoardFirst := entity.Board{
 		BoardID:     0,

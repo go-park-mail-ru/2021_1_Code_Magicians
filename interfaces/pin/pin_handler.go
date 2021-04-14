@@ -2,6 +2,7 @@ package pin
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,14 +14,18 @@ import (
 )
 
 type PinInfo struct {
-	pinApp application.PinAppInterface
-	s3App  application.S3AppInterface
+	pinApp   application.PinAppInterface
+	boardApp application.BoardAppInterface
+	s3App    application.S3AppInterface
 }
 
-func NewPinInfo(pinApp application.PinAppInterface, s3App application.S3AppInterface) *PinInfo {
+func NewPinInfo(pinApp application.PinAppInterface,
+	s3App application.S3AppInterface,
+	boardApp application.BoardAppInterface) *PinInfo {
 	return &PinInfo{
-		pinApp: pinApp,
-		s3App:  s3App,
+		pinApp:   pinApp,
+		boardApp: boardApp,
+		s3App:    s3App,
 	}
 }
 
@@ -41,15 +46,16 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
 	resultPin := &entity.Pin{
+		UserID:      userID,
 		Title:       currPin.Title,
 		Description: currPin.Description,
 		ImageLink:   currPin.ImageLink,
 	}
 
-	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-
-	resultPin.PinId, err = pinInfo.pinApp.CreatePin(userId, resultPin)
+	resultPin.PinId, err = pinInfo.pinApp.CreatePin(userID, resultPin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -58,10 +64,46 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	body := `{"pin_id": ` + strconv.Itoa(resultPin.PinId) + `}`
 
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(body))
 }
 
-func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
+func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
+	err = pinInfo.boardApp.CheckBoard(userID, boardID)
+	fmt.Println(err)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	pinID, err := strconv.Atoi(vars["pinID"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = pinInfo.pinApp.AddPin(boardID, pinID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	body := `{"pin_id": ` + strconv.Itoa(pinID) + `}`
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(body))
+}
+
+func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
@@ -73,7 +115,42 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 
 	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
-	err = pinInfo.pinApp.DeletePin(pinId, userId, pinInfo.s3App)
+	err = pinInfo.pinApp.SavePin(userId, pinId)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	body := `{"pin_id": ` + strconv.Itoa(pinId) + `}`
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(body))
+}
+
+func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+	err = pinInfo.boardApp.CheckBoard(userID, boardID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	pinID, err := strconv.Atoi(vars["pinID"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err = pinInfo.pinApp.DeletePin(boardID, pinID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -111,7 +188,6 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
-
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -159,7 +235,7 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 	defer file.Close()
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = pinInfo.pinApp.UploadPicture(userID, file, pinInfo.s3App)
+	err = pinInfo.pinApp.UploadPicture(userID, file)
 
 	if err != nil {
 		log.Println(err)

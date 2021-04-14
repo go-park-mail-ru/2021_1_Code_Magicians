@@ -6,7 +6,6 @@ package mock_application
 
 import (
 	io "io"
-	application "pinterest/application"
 	entity "pinterest/domain/entity"
 	reflect "reflect"
 
@@ -67,32 +66,32 @@ func (mr *MockUserAppInterfaceMockRecorder) CheckUserCredentials(arg0, arg1 inte
 }
 
 // CreateUser mocks base method.
-func (m *MockUserAppInterface) CreateUser(arg0 *entity.User, arg1 application.BoardAppInterface, arg2 application.S3AppInterface) (int, error) {
+func (m *MockUserAppInterface) CreateUser(arg0 *entity.User) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CreateUser", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockUserAppInterfaceMockRecorder) CreateUser(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockUserAppInterfaceMockRecorder) CreateUser(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUser), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUser), arg0)
 }
 
 // DeleteUser mocks base method.
-func (m *MockUserAppInterface) DeleteUser(arg0 int, arg1 application.S3AppInterface) error {
+func (m *MockUserAppInterface) DeleteUser(arg0 int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteUser", arg0, arg1)
+	ret := m.ctrl.Call(m, "DeleteUser", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteUser indicates an expected call of DeleteUser.
-func (mr *MockUserAppInterfaceMockRecorder) DeleteUser(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserAppInterfaceMockRecorder) DeleteUser(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserAppInterface)(nil).DeleteUser), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserAppInterface)(nil).DeleteUser), arg0)
 }
 
 // Follow mocks base method.
@@ -183,15 +182,15 @@ func (mr *MockUserAppInterfaceMockRecorder) Unfollow(arg0, arg1 interface{}) *go
 }
 
 // UpdateAvatar mocks base method.
-func (m *MockUserAppInterface) UpdateAvatar(arg0 int, arg1 io.Reader, arg2 application.S3AppInterface) error {
+func (m *MockUserAppInterface) UpdateAvatar(arg0 int, arg1 io.Reader) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAvatar", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UpdateAvatar", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAvatar indicates an expected call of UpdateAvatar.
-func (mr *MockUserAppInterfaceMockRecorder) UpdateAvatar(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockUserAppInterfaceMockRecorder) UpdateAvatar(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockUserAppInterface)(nil).UpdateAvatar), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockUserAppInterface)(nil).UpdateAvatar), arg0, arg1)
 }

@@ -124,6 +124,9 @@ COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
 --
 -- Name: pins; Type: TABLE; Schema: public; Owner: postgres
 --
+ALTER TABLE public.pins
+    ADD COLUMN  userid integer;
+
 
 CREATE TABLE public.pins (
     pinid integer NOT NULL,
