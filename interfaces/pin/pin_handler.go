@@ -59,7 +59,16 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	currPin.UserID = userID
 
-	currPin.PinId, err = pinInfo.pinApp.CreatePin(userID, &currPin)
+	if currPin.BoardID != 0 {
+		err = pinInfo.boardApp.CheckBoard(userID, currPin.BoardID)
+		fmt.Println(err)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+	}
+
+	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
