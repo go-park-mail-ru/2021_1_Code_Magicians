@@ -129,7 +129,9 @@ var profileTestSuccess = []struct {
 				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
-				`"avatarLink":"avatars/1"}`,
+				`"avatarLink":"avatars/1",` +
+				`"following":0,` +
+				`"followers":0}`,
 			),
 		},
 		"Testing profile output",
@@ -168,9 +170,12 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"ID":0,` +
 				`"username":"TestUsername",` +
+				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
-				`"avatarLink":"avatars/1"}`,
+				`"avatarLink":"avatars/1",` +
+				`"following":0,` +
+				`"followers":0}`,
 			),
 		},
 		"Testing profile output using profile name",
@@ -214,9 +219,12 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"ID":0,` +
 				`"username":"new_User_Name",` +
+				`"email":"new@example.com",` +
 				`"firstName":"new First name",` +
 				`"lastName":"new Last Name",` +
-				`"avatarLink":"avatars/2"}`,
+				`"avatarLink":"avatars/2",` +
+				`"following":0,` +
+				`"followers":0}`,
 			),
 		},
 		"Testing profile output using profile id",
