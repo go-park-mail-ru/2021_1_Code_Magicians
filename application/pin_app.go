@@ -8,9 +8,9 @@ import (
 )
 
 type PinApp struct {
-	p repository.PinRepository
+	p        repository.PinRepository
 	boardApp BoardAppInterface
-	s3App     S3AppInterface
+	s3App    S3AppInterface
 }
 
 func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3AppInterface) *PinApp {
@@ -132,12 +132,7 @@ func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
 // It returns nil on success and error on failure
-func (pn *PinApp) UploadPicture(userID int, file io.Reader) error {
-	pinID, err := pn.GetLastUserPinID(userID)
-	if err != nil {
-		return fmt.Errorf("No pin found to place picture")
-	}
-
+func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	pin, err := pn.GetPin(pinID)
 	if err != nil {
 		return fmt.Errorf("No pin found to place picture")
@@ -145,7 +140,6 @@ func (pn *PinApp) UploadPicture(userID int, file io.Reader) error {
 
 	filenamePrefix, err := GenerateRandomString(40) // generating random image
 	if err != nil {
-		pn.DeletePin(pinID, userID)
 		return fmt.Errorf("Could not generate filename")
 	}
 
