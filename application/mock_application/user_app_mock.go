@@ -36,6 +36,21 @@ func (m *MockUserAppInterface) EXPECT() *MockUserAppInterfaceMockRecorder {
 	return m.recorder
 }
 
+// CheckIfFollowed mocks base method.
+func (m *MockUserAppInterface) CheckIfFollowed(arg0, arg1 int) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfFollowed", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfFollowed indicates an expected call of CheckIfFollowed.
+func (mr *MockUserAppInterfaceMockRecorder) CheckIfFollowed(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfFollowed", reflect.TypeOf((*MockUserAppInterface)(nil).CheckIfFollowed), arg0, arg1)
+}
+
 // CheckUserCredentials mocks base method.
 func (m *MockUserAppInterface) CheckUserCredentials(arg0, arg1 string) (*entity.User, error) {
 	m.ctrl.T.Helper()

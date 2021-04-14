@@ -45,24 +45,29 @@ func init() {
 
 // User is, well, a struct depicting a user
 type User struct {
-	UserID    int
-	Username  string
-	Password  string // TODO: hashing
-	FirstName string
-	LastName  string
-	Email     string
-	Avatar    string // path to avatar
-	Salt      string
+	UserID     int
+	Username   string
+	Password   string // TODO: hashing
+	FirstName  string
+	LastName   string
+	Email      string
+	Avatar     string // path to avatar
+	Salt       string
+	Following  int
+	FollowedBy int
 }
 
 // UserOutput is used to marshal JSON with users' data
 type UserOutput struct {
-	UserID    int    `json:"ID"`
-	Username  string `json:"username,omitempty"`
-	Email     string `json:"email,omitempty"`
-	FirstName string `json:"firstName,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
-	Avatar    string `json:"avatarLink,omitempty"`
+	UserID     int    `json:"ID"`
+	Username   string `json:"username,omitempty"`
+	Email      string `json:"email,omitempty"`
+	FirstName  string `json:"firstName,omitempty"`
+	LastName   string `json:"lastName,omitempty"`
+	Avatar     string `json:"avatarLink,omitempty"`
+	Following  int    `json:"following"`
+	FollowedBy int    `json:"followers"`
+	Followed   *bool  `json:"followed,omitempty"` // pointer because we need to not send this sometimes
 }
 
 // UserRegInput is used when parsing JSON in auth/signup handler
@@ -166,4 +171,6 @@ func (userOutput *UserOutput) FillFromUser(user *User) {
 	userOutput.FirstName = user.FirstName
 	userOutput.LastName = user.LastName
 	userOutput.Avatar = user.Avatar
+	userOutput.Following = user.Following
+	userOutput.FollowedBy = user.FollowedBy
 }

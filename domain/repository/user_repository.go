@@ -11,4 +11,5 @@ type UserRepository interface {
 	GetUserByUsername(string) (*entity.User, error) // Get user by his username
 	Follow(int, int) error                          // Make first user follow second
 	Unfollow(int, int) error                        // Make first user unfollow second
+	CheckIfFollowed(int, int) (bool, error)         // Check if first user follows second
 }

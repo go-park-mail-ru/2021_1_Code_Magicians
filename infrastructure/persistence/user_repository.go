@@ -158,7 +158,8 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 		secondNamePtr := new(string)
 		avatarPtr := new(string)
 
-		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
+		err := rows.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -171,7 +172,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 	return users, nil
 }
 
-const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email, first_name, last_name, avatar\n" +
+const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following\n" +
 	"FROM Users WHERE username=$1"
 
 // GetUserByUsername fetches user with passed username from database
@@ -183,7 +184,8 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	avatarPtr := new(string)
 
 	row := r.db.QueryRow(context.Background(), getUserByUsernameQuery, username)
-	err := row.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &firstNamePtr, &secondNamePtr, &avatarPtr)
+	err := row.Scan(&user.UserID, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No user found with such username")
@@ -200,6 +202,8 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 }
 
 const followQuery string = "INSERT INTO followers(followerID, followedID) VALUES ($1, $2)"
+const updateFollowingQuery string = "UPDATE users SET following = following + 1 WHERE userID=$1"
+const updateFollowedByQuery string = "UPDATE users SET followed_by = followed_by + 1 WHERE userID=$1"
 
 func (r *UserRepo) Follow(followerID int, followedID int) error {
 	_, err := r.db.Exec(context.Background(), followQuery, followerID, followedID)
@@ -207,19 +211,72 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return fmt.Errorf("This follow relation already exists")
 		}
+		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_followed"`) {
+			return fmt.Errorf("User who is followed does not exist")
+		}
+		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_follower"`) { // Actually does not happen because of checks in middleware
+			return fmt.Errorf("User who is following does not exist")
+		}
+
+		return err
 	}
 
-	return err
+	_, err = r.db.Exec(context.Background(), updateFollowingQuery, followerID)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("Could not update user's 'following' count")
+		// The issue of following-followed connection existing despite this error will be dealt with later
+	}
+
+	_, err = r.db.Exec(context.Background(), updateFollowedByQuery, followedID)
+	if err != nil {
+		return fmt.Errorf("Could not update user's 'followed_by' count")
+		// The issue of following-followed connection existing despite this error will be dealt with later
+	}
+
+	return nil
 }
 
 const unfollowQuery string = "DELETE FROM followers WHERE followerID=$1 AND followedID=$2"
+const updateUnfollowingQuery string = "UPDATE users SET following = following - 1 WHERE userID=$1"
+const updateUnfollowedByQuery string = "UPDATE users SET followed_by = followed_by - 1 WHERE userID=$1"
 
 func (r *UserRepo) Unfollow(followerID int, followedID int) error {
-	result, err := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
+	result, _ := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
 
 	if result.RowsAffected() != 1 {
 		return fmt.Errorf("This follow relation does not exist")
 	}
 
+	_, err := r.db.Exec(context.Background(), updateUnfollowingQuery, followerID)
+	if err != nil {
+		return fmt.Errorf("Could not update user's 'following' count")
+		// The issue of following-followed connection not existing despite this error will be dealt with later
+	}
+
+	_, err = r.db.Exec(context.Background(), updateUnfollowedByQuery, followedID)
+	if err != nil {
+		return fmt.Errorf("Could not update user's 'followed_by' count")
+		// The issue of following-followed connection not existing despite this error will be dealt with later
+	}
+
 	return err
+}
+
+const checkIfFollowedQuery string = "SELECT 1 FROM followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, nothing otherwise
+
+func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
+	row := r.db.QueryRow(context.Background(), checkIfFollowedQuery, followerID, followedID)
+
+	var resultingOne int
+	err := row.Scan(&resultingOne)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, nil
+		}
+		// Other errors
+		return false, err
+	}
+
+	return true, nil
 }
