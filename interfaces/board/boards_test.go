@@ -114,7 +114,7 @@ var boardTest = []struct {
 			[]byte(`{"userID":0,` +
 				`"title":"exampletitle1",` +
 				`"description":"exampleDescription1"}`),
-			testBoardInfo.HandleAddBoard,
+			testBoardInfo.HandleCreateBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 
@@ -134,7 +134,7 @@ var boardTest = []struct {
 			[]byte(`{"userID":0,` +
 				`"title":"exampletitle2",` +
 				`"description":"exampleDescription2"}`),
-			testBoardInfo.HandleAddBoard,
+			testBoardInfo.HandleCreateBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
 

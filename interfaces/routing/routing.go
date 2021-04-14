@@ -35,7 +35,7 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 	boardsInfo := board.NewBoardInfo(boardApp)
 	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp)
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
@@ -58,14 +58,16 @@ func CreateRouter(conn *pgx.Conn, sess *session.Session, s3BucketName string) *m
 
 	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, cookieApp)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinByID)).Methods("GET")
-	r.HandleFunc("/pin/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, cookieApp)).Methods("DELETE")
 	r.HandleFunc("/pins/{id:[0-9]+}", mid.JsonContentTypeMid(pinsInfo.HandleGetPinsByBoardID)).Methods("GET")
 	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
+	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, cookieApp)).Methods("POST")
 
-	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleAddBoard, cookieApp)).Methods("POST")
+	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleCreateBoard, cookieApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardByID)).Methods("GET")
 	r.HandleFunc("/boards/{id:[0-9]+}", mid.JsonContentTypeMid(boardsInfo.HandleGetBoardsByUserID)).Methods("GET")
 	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, cookieApp)).Methods("DELETE")
+	r.HandleFunc("/board/{id:[0-9]+}/add/{pinID:[0-9]+}", mid.AuthMid(pinsInfo.HandleAddPinToBoard, cookieApp)).Methods("POST")
+	r.HandleFunc("/board/{id:[0-9]+}/{pinID:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, cookieApp)).Methods("DELETE")
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", mid.JsonContentTypeMid(commentsInfo.HandleGetComments)).Methods("GET")

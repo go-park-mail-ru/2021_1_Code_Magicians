@@ -17,18 +17,22 @@ func NewPinApp(p repository.PinRepository) *PinApp {
 
 type PinAppInterface interface {
 	CreatePin(int, *entity.Pin) (int, error)
+	SavePin(int, int) error
 	AddPin(int, int) error             // Saving user's pin
 	GetPin(int) (*entity.Pin, error)   // Get pin by pinID
 	GetPins(int) ([]entity.Pin, error) // Get pins by boardID
 	GetLastUserPinID(int) (int, error)
-	SavePicture(pin *entity.Pin) error
+	SavePicture(*entity.Pin) error
+	RemovePin(int, int) error
 	DeletePin(int, int, S3AppInterface) error           // Removes pin by ID
 	UploadPicture(int, io.Reader, S3AppInterface) error // Upload pin
 }
 
+// CreatePin creates passed pin and adds it to native user's board
+// It returns pin's assigned ID and nil on success, any number and error on failure
 func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 	boardApp := BoardApp{}
-	initBoard, err := boardApp.GetInitUserBoard(userID)
+	initBoardID, err := boardApp.GetInitUserBoard(userID)
 	if err != nil {
 		return -1, err
 	}
@@ -37,17 +41,34 @@ func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 		return -1, err
 	}
 
-	err = pn.p.AddPin(initBoard.BoardID, pinID)
+	err = pn.p.AddPin(initBoardID, pinID)
 	if err != nil {
-		pn.p.DeletePin(pinID, userID)
+		pn.p.DeletePin(pinID)
 		return -1, err
 	}
 
 	return pinID, nil
 }
 
-// AddPin adds user's pin to database
-// It returns pin's assigned ID and nil on success, any number and error on failure
+// SavePin adds any pin to native user's board
+// It returns nil on success, error on failure
+func (pn *PinApp) SavePin(userID int, pinID int) error {
+	boardApp := BoardApp{}
+	initBoardID, err := boardApp.GetInitUserBoard(userID)
+	if err != nil {
+		return err
+	}
+
+	err = pn.p.AddPin(initBoardID, pinID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddPin adds pin to chosen board
+// It returns nil on success, error on failure
 func (pn *PinApp) AddPin(boardID int, pinID int) error {
 	return pn.p.AddPin(boardID, pinID)
 }
@@ -66,18 +87,35 @@ func (pn *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
 
 // DeletePin deletes pin with passed pinID
 // It returns nil on success and error on failure
-func (pn *PinApp) DeletePin(pinID int, userID int, s3App S3AppInterface) error {
+func (pn *PinApp) DeletePin(boardID int, pinID int, s3App S3AppInterface) error {
 	pin, err := pn.p.GetPin(pinID)
 	if err != nil {
 		return err
 	}
 
-	err = pn.p.DeletePin(pinID, userID)
+	refCount, err := pn.p.PinRefCount(pinID)
+	if err != nil {
+		return err
+	}
+	err = pn.p.RemovePin(boardID, pinID)
 	if err != nil {
 		return err
 	}
 
-	return s3App.DeleteFile(pin.ImageLink)
+	if refCount == 0 {
+		err = pn.p.DeletePin(pinID)
+		if err != nil {
+			return err
+		}
+		return s3App.DeleteFile(pin.ImageLink)
+	}
+	return nil
+}
+
+// RemovePin deletes pin from user's passed board
+// It returns nil on success and error on failure
+func (pn *PinApp) RemovePin(boardID int, pinID int) error {
+	return pn.p.RemovePin(boardID, pinID)
 }
 
 // SavePicture saves path to image of current pin in database
@@ -92,6 +130,8 @@ func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 	return pn.p.GetLastUserPinID(userID)
 }
 
+//UploadPicture uploads picture to pin and saves new picture path in S3
+// It returns nil on success and error on failure
 func (pn *PinApp) UploadPicture(userID int, file io.Reader, s3App S3AppInterface) error {
 	pinID, err := pn.GetLastUserPinID(userID)
 	if err != nil {
@@ -105,6 +145,7 @@ func (pn *PinApp) UploadPicture(userID int, file io.Reader, s3App S3AppInterface
 
 	filenamePrefix, err := GenerateRandomString(40) // generating random image
 	if err != nil {
+		pn.DeletePin(pinID, userID, s3App)
 		return fmt.Errorf("Could not generate filename")
 	}
 

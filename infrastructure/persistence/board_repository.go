@@ -79,14 +79,12 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No boards found in database with passed userID")
 		}
-
-		// Other errors
 		return nil, err
 	}
 
 	for rows.Next() {
 		board := entity.Board{UserID: userID}
-		err := rows.Scan(&board.BoardID, &board.Title, &board.Description)
+		err = rows.Scan(&board.BoardID, &board.Title, &board.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -99,21 +97,38 @@ const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.descriptio
 	"FROM boards AS b1\n" +
 	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
 	"GROUP BY b1.boardID, b2.userID\n" +
-	"ORDER BY b2.userID LIMIT 1\n"
+	"ORDER BY b2.userID LIMIT 1;"
 
 // GetInitUserBoard gets user's first board from database
 // It returns that board and nil on success, nil and error on failure
-func (r *BoardsRepo) GetInitUserBoard(userID int) (*entity.Board, error) {
+func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
 	board := entity.Board{UserID: userID}
 	row := r.db.QueryRow(context.Background(), getInitUserBoardQuery, userID)
 	err := row.Scan(&board.BoardID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No board found")
+			return -1, fmt.Errorf("No board found")
 		}
-
-		// Other errors
-		return nil, err
+		return -1, err
 	}
-	return &board, nil
+	return board.BoardID, nil
+}
+
+const checkBoardQuery string = "SELECT boardID\n" +
+	"FROM boards\n" +
+	"WHERE boardID = $1 AND userID = $2;"
+
+// CheckBoard checking that passed board belongs to passed user
+// It returns that nil on success, error on failure
+func (r *BoardsRepo) CheckBoard(userID int, boardID int) error {
+	id := 0
+	row := r.db.QueryRow(context.Background(), checkBoardQuery, boardID, userID)
+	err := row.Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return fmt.Errorf("That board is not associated with that user")
+		}
+		return err
+	}
+	return nil
 }

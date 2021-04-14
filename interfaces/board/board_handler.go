@@ -22,7 +22,7 @@ func NewBoardInfo(boardApp application.BoardAppInterface) *BoardInfo {
 	}
 }
 
-func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Request) {
+func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	data, err := ioutil.ReadAll(r.Body)
@@ -39,10 +39,10 @@ func (boardInfo *BoardInfo) HandleAddBoard(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	boardInput := &entity.Board{
-		UserID:      userId,
+		UserID:      userID,
 		Title:       currBoard.Title,
 		Description: currBoard.Description,
 	}

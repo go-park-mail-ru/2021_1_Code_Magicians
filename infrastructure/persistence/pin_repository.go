@@ -17,14 +17,14 @@ func NewPinsRepository(db *pgx.Conn) *PinsRepo {
 	return &PinsRepo{db}
 }
 
-const createPinQuery string = "INSERT INTO Pins (title, imageLink, description)\n" +
-	"values ($1, $2, $3)\n" +
+const createPinQuery string = "INSERT INTO Pins (title, imageLink, description, userID)\n" +
+	"values ($1, $2, $3, $4)\n" +
 	"RETURNING pinID;\n"
 
 // CreatePin creates new pin with passed fields
 // It returns pin's assigned ID and nil on success, any number and error on failure
 func (r *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
-	row := r.db.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description)
+	row := r.db.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description, pin.UserID)
 	newPinID := 0
 	err := row.Scan(&newPinID)
 	if err != nil {
@@ -51,12 +51,12 @@ func (r *PinsRepo) AddPin(boardID int, pinID int) error {
 	return nil
 }
 
-const deletePinQuery string = "DELETE FROM pins WHERE pinID=$2"
+const deletePinQuery string = "DELETE FROM pins WHERE pinID=$1"
 
 // DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure
-func (r *PinsRepo) DeletePin(pinID int, userID int) error {
-	commandTag, err := r.db.Exec(context.Background(), deletePinQuery, userID, pinID)
+func (r *PinsRepo) DeletePin(pinID int) error {
+	commandTag, err := r.db.Exec(context.Background(), deletePinQuery, pinID)
 	if err != nil {
 		return err
 	}
@@ -66,25 +66,53 @@ func (r *PinsRepo) DeletePin(pinID int, userID int) error {
 	return err
 }
 
-const getPinQuery string = "SELECT boardID, title, imageLink, description FROM Pins WHERE pinID=$1"
+const deletePairQuery string = "DELETE FROM pairs WHERE pinID = $1 AND boardID = $2;"
+// RemovePin deletes pin with passed ID
+// It returns nil on success and error on failure
+func (r *PinsRepo) RemovePin(boardID int, pinID int) error {
+	commandTag, err := r.db.Exec(context.Background(), deletePairQuery, pinID, boardID)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return errors.New("Pin not found")
+	}
+	return err
+}
+
+const getPinRefCount string = "SELECT COUNT(pinID) FROM pairs WHERE pinID = $1"
+
+func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
+	refCount := 0
+	row := r.db.QueryRow(context.Background(), getPinRefCount, pinID)
+	err := row.Scan(&refCount)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, nil
+		}
+		return -1, err
+	}
+	return refCount, nil
+}
+
+const getPinQuery string = "SELECT pinID, userID, title, imageLink, description FROM Pins WHERE pinID=$1"
 
 // GetPin fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
 func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	pin := entity.Pin{PinId: pinID}
 	row := r.db.QueryRow(context.Background(), getPinQuery, pinID)
-	err := row.Scan(&pin.Title, &pin.ImageLink, &pin.Description)
+	err := row.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("Pin not found")
 		}
-		// Other errors
 		return nil, err
 	}
 	return &pin, nil
 }
 
-const getPinsByBoardQuery string = "SELECT pins.pinID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
 // GetPins fetches all users from database
@@ -94,16 +122,14 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 	rows, err := r.db.Query(context.Background(), getPinsByBoardQuery, boardID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No pins found")
+			return nil, nil
 		}
-
-		// Other errors
 		return nil, err
 	}
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err := rows.Scan(&pin.PinId, &pin.Title, &pin.ImageLink, &pin.Description)
+		err := rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -134,7 +160,7 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"GROUP BY boards.userID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
-// GetLastUserPinId - ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// GetLastUserPinId
 func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	lastPinID := 0
 	row := r.db.QueryRow(context.Background(), getLastUserPinQuery, userID)
