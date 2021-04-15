@@ -16,15 +16,21 @@ type userNotificationsInfo struct {
 	client        *websocket.Conn
 }
 
+func newUserNotificationsInfo() *userNotificationsInfo {
+	return &userNotificationsInfo{notifications: make(map[int]entity.Notification)}
+}
+
 type NotificationApp struct {
 	notifications      map[int]userNotificationsInfo
 	mu                 sync.Mutex
 	lastNotificationID int
+	userApp            UserAppInterface
 }
 
-func NewNotificationApp() *NotificationApp {
+func NewNotificationApp(userApp UserAppInterface) *NotificationApp {
 	return &NotificationApp{
 		notifications: make(map[int]userNotificationsInfo),
+		userApp:       userApp,
 	}
 }
 
@@ -44,10 +50,11 @@ func (notificationApp *NotificationApp) AddNotification(notification *entity.Not
 
 	notificationsInfo, found := notificationApp.notifications[notification.UserID]
 	if !found {
-		notificationsInfo = userNotificationsInfo{}
-	}
-	if notificationsInfo.notifications == nil {
-		notificationsInfo.notifications = make(map[int]entity.Notification)
+		_, err := notificationApp.userApp.GetUser(notification.UserID)
+		if err != nil {
+			return 0, fmt.Errorf("User not found")
+		}
+		notificationsInfo = *newUserNotificationsInfo()
 	}
 
 	notification.NotificationID = notificationApp.lastNotificationID
@@ -116,8 +123,6 @@ func sendMessage(client *websocket.Conn, msg []byte) error {
 	if err != nil {
 		return fmt.Errorf("Could not start writing")
 	}
-
-	log.Println(string(msg))
 
 	w.Write(msg)
 	w.Close()
@@ -189,7 +194,11 @@ func (notificationApp *NotificationApp) ChangeClient(userID int, client *websock
 
 	notificationsInfo, found := notificationApp.notifications[userID]
 	if !found {
-		return fmt.Errorf("User not found")
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return fmt.Errorf("User not found")
+		}
+		notificationsInfo = *newUserNotificationsInfo()
 	}
 
 	if notificationsInfo.client != nil {

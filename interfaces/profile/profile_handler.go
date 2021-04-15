@@ -327,15 +327,18 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		return
 	}
 
-	notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
-		UserID:   followedID,
-		Title:    "New follower!",
-		Category: "followers",
-		Text:     "You have received a new follower: " + followedUser.Username,
-		IsRead:   false,
-	})
-	if err != nil {
-		profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+	followerUser, err := profileInfo.userApp.GetUser(followerID)
+	if err == nil {
+		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+			UserID:   followedID,
+			Title:    "New follower!",
+			Category: "followers",
+			Text:     "You have received a new follower: " + followerUser.Username,
+			IsRead:   false,
+		})
+		if err == nil {
+			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -386,6 +389,20 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	followerUser, err := profileInfo.userApp.GetUser(followerID)
+	if err == nil {
+		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+			UserID:   followedID,
+			Title:    "Follower lost!",
+			Category: "followers",
+			Text:     "You have  lost a follower: " + followerUser.Username,
+			IsRead:   false,
+		})
+		if err == nil {
+			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

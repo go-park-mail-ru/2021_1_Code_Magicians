@@ -31,7 +31,20 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 	}
 
 	// TODO: parse cxrf so that we know user's ID
-	userID := 0
-	notificationInfo.notificationsApp.ChangeClient(userID, ws)
-	notificationInfo.notificationsApp.SendAllNotifications(userID)
+	userID := 74
+	err = notificationInfo.notificationsApp.ChangeClient(userID, ws)
+	if err != nil {
+		log.Println(err)
+		ws.Close()
+		return
+	}
+
+	err = notificationInfo.notificationsApp.SendAllNotifications(userID)
+	if err != nil {
+		log.Println(err)
+		ws.Close()
+		return
+	}
+
+	log.Println("Connected")
 }

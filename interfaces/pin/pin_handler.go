@@ -100,7 +100,6 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	err = pinInfo.boardApp.CheckBoard(userID, boardID)
-	fmt.Println(err)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
