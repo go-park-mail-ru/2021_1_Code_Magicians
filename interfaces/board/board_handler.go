@@ -52,7 +52,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	body := `{"title": "` + boardInput.Title + `", "description": "` + boardInput.Description + `"}`
+	body := `{"ID": ` + strconv.Itoa(boardInput.BoardID) + `}`
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
