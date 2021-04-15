@@ -125,14 +125,14 @@ var pinTest = []struct {
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"` + "\n" +
-				"\n" +
+				`Content-Disposition: form-data; name="pinImage"` +"\n"+
 				`filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
-				`randomStr` + "\n" +
-				`-----------------------------9051914041544843365972754266--` + "\n"),
+				"\n" +
+				`908987789779877123` + "\n" + "\n"+
+				`-----------------------------9051914041544843365972754266--` +"\n"),
 			testPinInfo.HandleAddPin,
-			middleware.AuthMid, // If user is not logged in, they can't post pins
+			middleware.AuthMid, // If user is not logged in, he can't post pins
 		},
 
 		OutputStruct{
@@ -151,18 +151,18 @@ var pinTest = []struct {
 				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
 			},
 			[]byte(`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data;` +
-				`name="pinInfo"` + "\n" +
+				`Content-Disposition: form-data; name="pinInfo"` + "\n" +
+				"\n" +
 				`{"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data;` + "\n" +
-				`name="pinImage"; ` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"`+
 				`filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
-				`randomStr` + "\n" +
-				`-----------------------------9051914041544843365972754266--` + "\n"),
+				"\n" +
+				`"a.txt"` + "\n" +
+				`-----------------------------9051914041544843365972754266--`),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},

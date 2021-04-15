@@ -44,14 +44,12 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(r.Header)
-	fmt.Println(r.Body)
 	r.ParseMultipartForm(bodySize)
 	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
 	currPin := entity.Pin{}
-	fmt.Println(jsonData)
+
 	err := json.Unmarshal([]byte(jsonData), &currPin)
-	fmt.Println(jsonData)
+	fmt.Println(jsonData, err)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -59,7 +57,6 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	currPin.UserID = userID
-	fmt.Println("---------------------------------------------6")
 	if currPin.BoardID != 0 {
 		err = pinInfo.boardApp.CheckBoard(userID, currPin.BoardID)
 		if err != nil {
@@ -67,15 +64,14 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	fmt.Println("---------------------------------------------4")
 	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	fmt.Println("---------------------------------------------3")
 	file, _, err := r.FormFile("pinImage")
+	fmt.Println(file, err)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -89,7 +85,11 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	body := `{"ID": ` + strconv.Itoa(currPin.PinId) + `}`
+
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(body))
 	// TODO: Add pin to specified board
 }
 
