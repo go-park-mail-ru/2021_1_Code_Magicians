@@ -174,8 +174,8 @@ var commentTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"userID":0,"pinID":1,"text":"Hello, my friends!!!"},` +
-				`{"userID":0,"pinID":1,"text":"Welcome to the club, buddy!!!"}]`,
+			[]byte(`{"comments": [{"userID":0,"pinID":1,"text":"Hello, my friends!!!"},` +
+				`{"userID":0,"pinID":1,"text":"Welcome to the club, buddy!!!"}]}`,
 			),
 		},
 		"Testing get comments by pinID",
@@ -194,7 +194,7 @@ var commentTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte("[]"),
+			[]byte(`{"comments": []}`),
 		},
 		"Testing get not existent comments by pinID",
 	},

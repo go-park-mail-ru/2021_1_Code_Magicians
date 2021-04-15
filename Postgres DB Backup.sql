@@ -70,6 +70,7 @@ ALTER SEQUENCE public.boards_boardid_seq OWNED BY public.boards.boardid;
 CREATE TABLE public.comments (
     userid integer NOT NULL,
     pinid integer NOT NULL,
+    id integer NOT NULl,
     text text NOT NULL
 );
 
@@ -208,6 +209,16 @@ CREATE SEQUENCE public.users_userid_seq
     CACHE 1;
 
 
+CREATE SEQUENCE public.comments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.comments_id_seq OWNER TO postgres;
 ALTER TABLE public.users_userid_seq OWNER TO postgres;
 
 --
@@ -215,7 +226,7 @@ ALTER TABLE public.users_userid_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.users_userid_seq OWNED BY public.users.userid;
-
+ALTER SEQUENCE public.comments_id_seq OWNED BY public.comments.id;
 
 --
 -- Name: boards boardid; Type: DEFAULT; Schema: public; Owner: postgres
@@ -223,7 +234,7 @@ ALTER SEQUENCE public.users_userid_seq OWNED BY public.users.userid;
 
 ALTER TABLE ONLY public.boards ALTER COLUMN boardid SET DEFAULT nextval('public.boards_boardid_seq'::regclass);
 
-
+ALTER TABLE ONLY public.comments ALTER COLUMN id SET DEFAULT nextval('public.comments_id_seq'::regclass);
 --
 -- Name: pins pinid; Type: DEFAULT; Schema: public; Owner: postgres
 --
@@ -330,7 +341,8 @@ ALTER TABLE ONLY public.boards
 ALTER TABLE ONLY public.comments
     ADD CONSTRAINT comments_pin_fk FOREIGN KEY (pinid) REFERENCES public.pins(pinid) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_pk_id PRIMARY KEY (id);
 --
 -- Name: comments comments_user_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --

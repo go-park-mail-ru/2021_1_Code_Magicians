@@ -80,8 +80,6 @@ var testPinInfo PinInfo
 var testAuthInfo auth.AuthInfo
 var testBoardInfo board.BoardInfo
 
-//headers := make(map[string][]string, 0)
-//headers["Content-Length"] = []string{"zdes_dlina_tela"}
 var pinTest = []struct {
 	in   InputStruct
 	out  OutputStruct
@@ -116,7 +114,12 @@ var pinTest = []struct {
 			"/pin",
 			"/pin",
 			"POST",
-			nil,
+			map[string][]string {
+				"Content-Type" : "multipart/form-data" ,
+				"boundary" : "=---------------------------9051914041544843365972754266",
+
+
+			},
 			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
 				`Content-Disposition: form-data; name="pinInfo"` +"\n"+
 				`{"title":"exampletitle",` +

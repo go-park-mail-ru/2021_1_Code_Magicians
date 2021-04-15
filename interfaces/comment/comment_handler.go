@@ -94,13 +94,13 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 		return
 	}
 
-	body, err := json.Marshal(pinComments)
+	commentsBody, err := json.Marshal(pinComments)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	body := `{"comments": ` + string(commentsBody) + `}`
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	w.Write([]byte(body))
 }
