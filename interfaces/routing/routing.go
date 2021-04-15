@@ -1,22 +1,19 @@
 package routing
 
 import (
-	"log"
-	"net/http"
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/comment"
 	mid "pinterest/interfaces/middleware"
-	"pinterest/interfaces/notifications"
+	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -35,12 +32,14 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	userApp := application.NewUserApp(repo, boardApp, s3App)
 	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := application.NewCommentApp(repoComments)
+	notificationsApp := application.NewNotificationApp()
 
 	boardsInfo := board.NewBoardInfo(boardApp)
 	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp)
-	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App)
+	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
+	notificationsInfo := notification.NewNotificationInfo(notificationsApp)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -76,20 +75,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
-	r.HandleFunc("/notifications", func(w http.ResponseWriter, r *http.Request) {
-		var upgrader = websocket.Upgrader{
-			ReadBufferSize:  1024 * 1024,
-			WriteBufferSize: 1024 * 1024,
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
-		}
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		go notifications.SendNewMsgNotifications(ws)
-	})
+	r.HandleFunc("/notifications", notificationsInfo.HandleConnect) // TODO: add csrf checking
 
 	return r
 }
