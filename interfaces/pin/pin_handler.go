@@ -47,9 +47,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(bodySize)
 	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
 	currPin := entity.Pin{}
-
 	err := json.Unmarshal([]byte(jsonData), &currPin)
-	fmt.Println(jsonData, err)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -66,19 +64,18 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
+		log.Println(err) // Will be remowed later
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("---------------------------------------------3")
 	file, _, err := r.FormFile("pinImage")
 	fmt.Println(file, err)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	fmt.Println("---------------------------------------------2")
 	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
-	fmt.Println("---------------------------------------------1")
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

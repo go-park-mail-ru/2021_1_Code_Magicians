@@ -125,12 +125,12 @@ var pinTest = []struct {
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"` +"\n"+
-				`filename="a.txt"` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"; filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
 				"\n" +
-				`908987789779877123` + "\n" + "\n"+
-				`-----------------------------9051914041544843365972754266--` +"\n"),
+				`randomStr` + "\n" +
+				"\n" +
+				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, he can't post pins
 		},
@@ -157,7 +157,7 @@ var pinTest = []struct {
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"`+
+				`Content-Disposition: form-data; name="pinImage"` +
 				`filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
 				"\n" +
