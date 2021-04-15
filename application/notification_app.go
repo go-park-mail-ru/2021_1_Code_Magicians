@@ -111,7 +111,7 @@ func (notificationApp *NotificationApp) GetNotification(userID int, notification
 	return &notification, nil
 }
 
-func sendSingleMessage(client *websocket.Conn, msg []byte) error {
+func sendMessage(client *websocket.Conn, msg []byte) error {
 	w, err := client.NextWriter(websocket.TextMessage)
 	if err != nil {
 		return fmt.Errorf("Could not start writing")
@@ -136,12 +136,19 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 		return fmt.Errorf("Notifications client is not set")
 	}
 
+	allNotifications := entity.MessageManyNotifications{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
+
 	for _, notification := range notificationsInfo.notifications {
-		msg, err := json.Marshal(notification)
-		if err == nil {
-			sendSingleMessage(notificationsInfo.client, msg)
-		}
+		allNotifications.Notifications = append(allNotifications.Notifications, notification)
 	}
+
+	msg, err := json.Marshal(allNotifications)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("Could not parse messages into JSON")
+	}
+
+	sendMessage(notificationsInfo.client, msg)
 
 	return nil
 }
@@ -163,10 +170,15 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 		return fmt.Errorf("Notification not found")
 	}
 
-	msg, err := json.Marshal(notification)
-	if err == nil {
-		sendSingleMessage(notificationsInfo.client, msg)
+	notificationMsg := entity.MessageOneNotification{Type: entity.OneNotificationTypeKey, Notification: notification}
+
+	msg, err := json.Marshal(notificationMsg)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("Could not parse messages into JSON")
 	}
+
+	sendMessage(notificationsInfo.client, msg)
 
 	return nil
 }
