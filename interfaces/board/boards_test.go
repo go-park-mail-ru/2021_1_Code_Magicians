@@ -159,7 +159,7 @@ var boardTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"boardID":1,` +
+			[]byte(`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
 				`"description":"exampleDescription2"}`,
@@ -180,11 +180,11 @@ var boardTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"boardID":0,` +
+			[]byte(`[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle1",` +
 				`"description":"exampleDescription1"},` +
-				`{"boardID":1,` +
+				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
 				`"description":"exampleDescription2"}]`,

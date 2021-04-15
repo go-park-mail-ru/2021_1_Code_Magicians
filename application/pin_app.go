@@ -18,7 +18,7 @@ func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3A
 }
 
 type PinAppInterface interface {
-	CreatePin(int, *entity.Pin) (int, error)
+	CreatePin(*entity.Pin) (int, error)
 	SavePin(int, int) error
 	AddPin(int, int) error             // Saving user's pin
 	GetPin(int) (*entity.Pin, error)   // Get pin by pinID
@@ -32,8 +32,8 @@ type PinAppInterface interface {
 
 // CreatePin creates passed pin and adds it to native user's board
 // It returns pin's assigned ID and nil on success, any number and error on failure
-func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
-	initBoardID, err := pn.boardApp.GetInitUserBoard(userID)
+func (pn *PinApp) CreatePin(pin *entity.Pin) (int, error) {
+	initBoardID, err := pn.boardApp.GetInitUserBoard(pin.UserID)
 	if err != nil {
 		return -1, err
 	}
@@ -46,6 +46,14 @@ func (pn *PinApp) CreatePin(userID int, pin *entity.Pin) (int, error) {
 	if err != nil {
 		pn.p.DeletePin(pinID)
 		return -1, err
+	}
+
+	if pin.BoardID != initBoardID && pin.BoardID != 0 {
+		err = pn.p.AddPin(pin.BoardID, pinID)
+		if err != nil {
+			pn.p.DeletePin(pinID)
+			return -1, err
+		}
 	}
 
 	return pinID, nil

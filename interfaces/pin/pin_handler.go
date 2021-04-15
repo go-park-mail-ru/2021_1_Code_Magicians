@@ -46,34 +46,44 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseMultipartForm(bodySize)
 	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
-
+	fmt.Println(r.Body)
 	currPin := entity.Pin{}
-
+	fmt.Println("---------------------------------------------8")
 	err := json.Unmarshal([]byte(jsonData), &currPin)
+	fmt.Println(currPin)
+	fmt.Println(jsonData)
+	fmt.Println(err)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	currPin.UserID = userID
-
-	currPin.PinId, err = pinInfo.pinApp.CreatePin(userID, &currPin)
+	fmt.Println("---------------------------------------------6")
+	if currPin.BoardID != 0 {
+		err = pinInfo.boardApp.CheckBoard(userID, currPin.BoardID)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+	}
+	fmt.Println("---------------------------------------------4")
+	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	fmt.Println("---------------------------------------------3")
 	file, _, err := r.FormFile("pinImage")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	fmt.Println("---------------------------------------------2")
 	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
-
+	fmt.Println("---------------------------------------------1")
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -134,11 +144,7 @@ func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body := `{"pin_id": ` + strconv.Itoa(pinId) + `}`
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
@@ -212,15 +218,17 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	body, err := json.Marshal(boardPins)
+	pinsBody, err := json.Marshal(boardPins)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	body := `{"pins": ` + string(pinsBody) + `}`
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	w.Write([]byte(body))
 }
 
 // HandleUploadPicture takes picture from request and assigns it to current pin
