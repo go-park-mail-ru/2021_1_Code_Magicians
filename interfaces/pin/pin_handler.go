@@ -44,15 +44,14 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println(r.Header)
+	fmt.Println(r.Body)
 	r.ParseMultipartForm(bodySize)
 	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
-	fmt.Println(r.Body)
 	currPin := entity.Pin{}
-	fmt.Println("---------------------------------------------8")
-	err := json.Unmarshal([]byte(jsonData), &currPin)
-	fmt.Println(currPin)
 	fmt.Println(jsonData)
-	fmt.Println(err)
+	err := json.Unmarshal([]byte(jsonData), &currPin)
+	fmt.Println(jsonData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

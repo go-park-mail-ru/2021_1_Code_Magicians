@@ -37,10 +37,11 @@ func (input *InputStruct) toHTTPRequest(cookies []*http.Cookie) *http.Request {
 	reqURL, _ := url.Parse("https://localhost:8080" + input.url) // Scheme (https://) is required for URL parsing
 	reqBody := bytes.NewBuffer(input.postBody)
 	request := &http.Request{
-		Method: input.method,
-		URL:    reqURL,
-		Header: input.headers,
-		Body:   ioutil.NopCloser(reqBody),
+		Method:        input.method,
+		URL:           reqURL,
+		Header:        input.headers,
+		ContentLength: int64(reqBody.Len()),
+		Body:          ioutil.NopCloser(reqBody),
 	}
 
 	if (len(cookies) > 0) && (request.Header == nil) {
@@ -114,25 +115,24 @@ var pinTest = []struct {
 			"/pin",
 			"/pin",
 			"POST",
-			map[string][]string {
-				"Content-Type" : "multipart/form-data" ,
-				"boundary" : "=---------------------------9051914041544843365972754266",
-
-
+			map[string][]string{
+				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
 			},
-			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
-				`Content-Disposition: form-data; name="pinInfo"` +"\n"+
+			[]byte(`-----------------------------9051914041544843365972754266` + "\n" +
+				`Content-Disposition: form-data; name="pinInfo"` + "\n" +
+				"\n" +
 				`{"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
-				`"description":"exampleDescription"}`+"\n" +
-				`-----------------------------9051914041544843365972754266`+"\n" +
-				`Content-Disposition: form-data; name="pinImage";` +"\n"+
-				`filename="a.txt"` +"\n"+
-				`Content-Type: image/jpeg`+"\n" +
-				`randomStr` +"\n"+
-				`-----------------------------9051914041544843365972754266--`+"\n"),
+				`"description":"exampleDescription"}` + "\n" +
+				`-----------------------------9051914041544843365972754266` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"` + "\n" +
+				"\n" +
+				`filename="a.txt"` + "\n" +
+				`Content-Type: image/jpeg` + "\n" +
+				`randomStr` + "\n" +
+				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
-			middleware.AuthMid, // If user is not logged in, they can't access their profile
+			middleware.AuthMid, // If user is not logged in, they can't post pins
 		},
 
 		OutputStruct{
@@ -147,20 +147,22 @@ var pinTest = []struct {
 			"/pin",
 			"/pin",
 			"POST",
-			nil,
-			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
+			map[string][]string{
+				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
+			},
+			[]byte(`-----------------------------9051914041544843365972754266` + "\n" +
 				`Content-Disposition: form-data;` +
-				`name="pinInfo"` +"\n"+
+				`name="pinInfo"` + "\n" +
 				`{"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
-				`"description":"exampleDescription"}`+"\n" +
-				`-----------------------------9051914041544843365972754266`+"\n" +
-				`Content-Disposition: form-data;` +"\n"+
-				`name="pinImage"; ` +"\n"+
-				`filename="a.txt"` +"\n"+
-				`Content-Type: image/jpeg`+"\n" +
-				`randomStr` +"\n"+
-				`-----------------------------9051914041544843365972754266--`+"\n"),
+				`"description":"exampleDescription"}` + "\n" +
+				`-----------------------------9051914041544843365972754266` + "\n" +
+				`Content-Disposition: form-data;` + "\n" +
+				`name="pinImage"; ` + "\n" +
+				`filename="a.txt"` + "\n" +
+				`Content-Type: image/jpeg` + "\n" +
+				`randomStr` + "\n" +
+				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
