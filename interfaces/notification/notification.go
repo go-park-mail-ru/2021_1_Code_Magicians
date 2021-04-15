@@ -1,9 +1,11 @@
 package notification
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"pinterest/application"
+	"pinterest/domain/entity"
 
 	"github.com/gorilla/websocket"
 )
@@ -30,16 +32,25 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 		return
 	}
 
-	// TODO: parse cxrf so that we know user's ID
-	userID := 74
-	err = notificationInfo.notificationsApp.ChangeClient(userID, ws)
+	_, initialMessageBytes, err := ws.ReadMessage() // TODO: add timeout
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	var initialMessage entity.InitialMessage
+	err = json.Unmarshal(initialMessageBytes, &initialMessage)
+	if err != nil {
+		return
+	}
+
+	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws)
 	if err != nil {
 		log.Println(err)
 		ws.Close()
 		return
 	}
 
-	err = notificationInfo.notificationsApp.SendAllNotifications(userID)
+	err = notificationInfo.notificationsApp.SendAllNotifications(initialMessage.UserID)
 	if err != nil {
 		log.Println(err)
 		ws.Close()

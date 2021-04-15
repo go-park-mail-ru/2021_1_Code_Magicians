@@ -18,3 +18,8 @@ type MessageOneNotification struct {
 	Type         string       `json:"type"`
 	Notification Notification `json:"notification"`
 }
+
+type InitialMessage struct {
+	UserID int `json:"userID"`
+	// CSRF token will also be here
+}
