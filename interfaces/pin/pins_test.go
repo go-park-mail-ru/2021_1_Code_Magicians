@@ -117,19 +117,19 @@ var pinTest = []struct {
 			"/pin",
 			"POST",
 			nil,
-			[]byte(`-----------------------------9051914041544843365972754266` +
+			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
 				`Content-Disposition: form-data;` +
-				`name="pinInfo"` +
+				`name="pinInfo"` +"\n"+
 				`{"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
-				`"description":"exampleDescription"}` +
-				`-----------------------------9051914041544843365972754266` +
-				`Content-Disposition: form-data;` +
-				`name="pinImage"; ` +
-				`filename="a.txt"` +
-				`Content-Type: image/jpeg` +
-				`randomStr` +
-				`-----------------------------9051914041544843365972754266--`),
+				`"description":"exampleDescription"}`+"\n" +
+				`-----------------------------9051914041544843365972754266`+"\n" +
+				`Content-Disposition: form-data;` +"\n"+
+				`name="pinImage"; ` +"\n"+
+				`filename="a.txt"` +"\n"+
+				`Content-Type: image/jpeg`+"\n" +
+				`randomStr` +"\n"+
+				`-----------------------------9051914041544843365972754266--`+"\n"),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
@@ -147,9 +147,19 @@ var pinTest = []struct {
 			"/pin",
 			"POST",
 			nil,
-			[]byte(`{"title":"exampletitle",` +
+			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
+				`Content-Disposition: form-data;` +
+				`name="pinInfo"` +"\n"+
+				`{"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
-				`"description":"exampleDescription"}`),
+				`"description":"exampleDescription"}`+"\n" +
+				`-----------------------------9051914041544843365972754266`+"\n" +
+				`Content-Disposition: form-data;` +"\n"+
+				`name="pinImage"; ` +"\n"+
+				`filename="a.txt"` +"\n"+
+				`Content-Type: image/jpeg`+"\n" +
+				`randomStr` +"\n"+
+				`-----------------------------9051914041544843365972754266--`+"\n"),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
 		},
@@ -196,7 +206,7 @@ var pinTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"id":1,` +
+			[]byte(`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
@@ -219,12 +229,12 @@ var pinTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"id":0,` +
+			[]byte(`[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
 				`"description":"exampleDescription"},` +
-				`{"id":1,` +
+				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"pinImage":"example/link",` +
@@ -247,7 +257,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 1}`),
+			[]byte(nil),
 		},
 		"Testing saving second pin",
 	},
@@ -265,7 +275,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"pin_id": 0}`),
+			[]byte(nil),
 		},
 		"Testing saving second pin to board",
 	},
@@ -379,6 +389,7 @@ func TestPins(t *testing.T) {
 		*expectedPinFirst,
 		*expectedPinSecond,
 	}
+	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(2)
 	mockS3App.EXPECT().UploadFile(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	mockPinApp.EXPECT().CreatePin(expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
 
