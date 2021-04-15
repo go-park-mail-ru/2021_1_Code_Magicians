@@ -64,20 +64,17 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
-		log.Println(err) // Will be remowed later
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	file, _, err := r.FormFile("pinImage")
-	fmt.Println(file, err)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

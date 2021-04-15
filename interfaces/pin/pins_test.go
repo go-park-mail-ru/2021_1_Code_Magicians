@@ -190,7 +190,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
+			[]byte(`{"ID": 0}`),
 		},
 		"Testing add first board",
 	},
