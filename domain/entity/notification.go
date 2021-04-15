@@ -10,11 +10,11 @@ type Notification struct {
 }
 
 type MessageManyNotifications struct {
-	Type          string `json:"type"`
-	Notifications []Notification
+	Type          string         `json:"type"`
+	Notifications []Notification `json:"allNotifications"`
 }
 
 type MessageOneNotification struct {
-	Type         string `json:"type"`
-	Notification Notification
+	Type         string       `json:"type"`
+	Notification Notification `json:"notification"`
 }
