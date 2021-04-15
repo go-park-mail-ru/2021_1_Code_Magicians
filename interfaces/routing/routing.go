@@ -1,18 +1,22 @@
 package routing
 
 import (
+	"log"
+	"net/http"
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/comment"
 	mid "pinterest/interfaces/middleware"
+	"pinterest/interfaces/notifications"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -71,6 +75,21 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
+
+	r.HandleFunc("/notifications", func(w http.ResponseWriter, r *http.Request) {
+		var upgrader = websocket.Upgrader{
+			ReadBufferSize:  1024 * 1024,
+			WriteBufferSize: 1024 * 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		}
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go notifications.SendNewMsgNotifications(ws)
+	})
 
 	return r
 }

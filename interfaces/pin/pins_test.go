@@ -126,9 +126,9 @@ var pinTest = []struct {
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
 				`Content-Disposition: form-data; name="pinImage"` + "\n" +
-				"\n" +
 				`filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
+				"\n" +
 				`randomStr` + "\n" +
 				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
