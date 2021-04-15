@@ -5,6 +5,6 @@ type Pin struct {
 	UserID      int    `json:"userID"`
 	BoardID		int	   `json:"boardID,omitempty"`
 	Title       string `json:"title"`
-	ImageLink   string `json:"pinImage"`
+	ImageLink   string `json:"imageLink"`
 	Description string `json:"description"`
 }

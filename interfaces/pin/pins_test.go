@@ -118,14 +118,12 @@ var pinTest = []struct {
 			"POST",
 			nil,
 			[]byte(`-----------------------------9051914041544843365972754266`+"\n" +
-				`Content-Disposition: form-data;` +
-				`name="pinInfo"` +"\n"+
+				`Content-Disposition: form-data; name="pinInfo"` +"\n"+
 				`{"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}`+"\n" +
 				`-----------------------------9051914041544843365972754266`+"\n" +
-				`Content-Disposition: form-data;` +"\n"+
-				`name="pinImage"; ` +"\n"+
+				`Content-Disposition: form-data; name="pinImage";` +"\n"+
 				`filename="a.txt"` +"\n"+
 				`Content-Type: image/jpeg`+"\n" +
 				`randomStr` +"\n"+
@@ -151,7 +149,7 @@ var pinTest = []struct {
 				`Content-Disposition: form-data;` +
 				`name="pinInfo"` +"\n"+
 				`{"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}`+"\n" +
 				`-----------------------------9051914041544843365972754266`+"\n" +
 				`Content-Disposition: form-data;` +"\n"+
@@ -209,7 +207,7 @@ var pinTest = []struct {
 			[]byte(`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}`,
 			),
 		},
@@ -229,16 +227,16 @@ var pinTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"ID":0,` +
+			[]byte(`{"pins": [{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
+				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"pinImage":"example/link",` +
-				`"description":"exampleDescription"}]`,
+				`"imageLink":"example/link",` +
+				`"description":"exampleDescription"}]}`,
 			),
 		},
 		"Testing get pin by board id",

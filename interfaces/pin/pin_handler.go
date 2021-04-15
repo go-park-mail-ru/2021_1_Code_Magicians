@@ -50,6 +50,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	currPin := entity.Pin{}
 	fmt.Println("---------------------------------------------8")
 	err := json.Unmarshal([]byte(jsonData), &currPin)
+	fmt.Println(currPin)
+	fmt.Println(jsonData)
 	fmt.Println(err)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -216,15 +218,17 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	body, err := json.Marshal(boardPins)
+	pinsBody, err := json.Marshal(boardPins)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	body := `{"pins": ` + string(pinsBody) + `}`
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	w.Write([]byte(body))
 }
 
 // HandleUploadPicture takes picture from request and assigns it to current pin
