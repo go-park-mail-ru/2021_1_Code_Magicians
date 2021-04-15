@@ -43,7 +43,7 @@ func newMessage() []byte {
 	data, _ := json.Marshal(map[string]interface{}{
 		"type": "notification",
 		"notification": map[string]interface{}{
-			"id":       123,
+			"ID":       123,
 			"title":    "123title",
 			"category": "some_category_idk",
 			"text":     "Hello darkness my old friend",
@@ -56,9 +56,9 @@ func newMessage() []byte {
 func newInitialMessage() []byte {
 	data, _ := json.Marshal(map[string]interface{}{
 		"type": "all-notifications",
-		"notification": []map[string]interface{}{
+		"allNotifications": []map[string]interface{}{
 			{
-				"id":       123,
+				"ID":       123,
 				"title":    "123title",
 				"category": "some_category_idk",
 				"text":     "Hello darkness my old friend",
