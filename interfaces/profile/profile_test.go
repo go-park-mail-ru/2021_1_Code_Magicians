@@ -299,12 +299,15 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID).Return(nil).Times(1)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need to handle boards in these tests
+	mockNotificationsApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil, mockNotificationsApp) // We don't need to handle boards in these tests
 
 	testProfileInfo = ProfileInfo{
-		userApp:   mockUserApp,
-		cookieApp: cookieApp,
-		s3App:     mockS3App,
+		userApp:         mockUserApp,
+		cookieApp:       cookieApp,
+		s3App:           mockS3App,
+		notificationApp: mockNotificationsApp,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt

@@ -13,10 +13,10 @@ import (
 )
 
 type NotificationInfo struct {
-	notificationsApp application.NotificationsAppInterface
+	notificationsApp application.NotificationAppInterface
 }
 
-func NewNotificationInfo(notificationsApp application.NotificationsAppInterface) *NotificationInfo {
+func NewNotificationInfo(notificationsApp application.NotificationAppInterface) *NotificationInfo {
 	return &NotificationInfo{notificationsApp: notificationsApp}
 }
 
@@ -42,11 +42,16 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 	var initialMessage entity.InitialMessage
 	err = json.Unmarshal(initialMessageBytes, &initialMessage)
 	if err != nil {
-		log.Println(err)
 		return
 	}
 
-	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws, "")
+	err = notificationInfo.notificationsApp.CheckToken(initialMessage.UserID, initialMessage.CSRFToken)
+	if err != nil {
+		ws.Close()
+		return
+	}
+
+	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws)
 	if err != nil {
 		log.Println(err)
 		ws.Close()

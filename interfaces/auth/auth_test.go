@@ -180,11 +180,15 @@ func TestAuthSuccess(t *testing.T) {
 
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	//TODO: fix tests
+
 	testInfo = AuthInfo{
-		userApp:   mockUser,
-		cookieApp: application.NewCookieApp(40, 10*time.Hour),
-		s3App:     nil, // We don't need S3 bucket in these tests
-		boardApp:  nil, // We don't really care about boards in these tests
+		userApp:         mockUser,
+		cookieApp:       application.NewCookieApp(40, 10*time.Hour),
+		s3App:           nil, // We don't need S3 bucket in these tests
+		boardApp:        nil, // We don't really care about boards in these tests
+		notificationApp: mockNotification,
 	}
 	for _, tt := range authTestSuccess {
 		tt := tt

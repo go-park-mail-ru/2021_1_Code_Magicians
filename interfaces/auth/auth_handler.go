@@ -12,19 +12,22 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	userApp   application.UserAppInterface
-	cookieApp application.CookieAppInterface
-	s3App     application.S3AppInterface
-	boardApp  application.BoardAppInterface // For initial user's board
+	userApp         application.UserAppInterface
+	cookieApp       application.CookieAppInterface
+	s3App           application.S3AppInterface
+	boardApp        application.BoardAppInterface        // For initial user's board
+	notificationApp application.NotificationAppInterface // For setting CSRF token during  login
 }
 
 func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, boardApp application.BoardAppInterface) *AuthInfo {
+	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
+	notificationApp application.NotificationAppInterface) *AuthInfo {
 	return &AuthInfo{
-		userApp:   userApp,
-		cookieApp: cookieApp,
-		s3App:     s3App,
-		boardApp:  boardApp,
+		userApp:         userApp,
+		cookieApp:       cookieApp,
+		s3App:           s3App,
+		boardApp:        boardApp,
+		notificationApp: notificationApp,
 	}
 }
 
@@ -85,6 +88,15 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
+
+	// Replacing token in websocket connection info
+	token := r.Header.Get("X-CSRF-Token")
+	err = info.notificationApp.ChangeToken(user.UserID, token)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -130,8 +142,16 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
+
+	// Replacing token in websocket connection info
+	token := r.Header.Get("X-CSRF-Token")
+	err = info.notificationApp.ChangeToken(user.UserID, token)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
-	return
 }
 
 // HandleLogoutUser logs current user out of their session
@@ -148,7 +168,6 @@ func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, userCookie.Cookie)
 
 	w.WriteHeader(http.StatusNoContent)
-	return
 }
 
 // HandleCheckUser checks if current user is logged in

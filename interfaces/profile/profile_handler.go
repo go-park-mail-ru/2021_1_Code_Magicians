@@ -16,19 +16,19 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp          application.UserAppInterface
-	cookieApp        application.CookieAppInterface
-	s3App            application.S3AppInterface
-	notificationsApp application.NotificationsAppInterface
+	userApp         application.UserAppInterface
+	cookieApp       application.CookieAppInterface
+	s3App           application.S3AppInterface
+	notificationApp application.NotificationAppInterface
 }
 
 func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, notificationsApp application.NotificationsAppInterface) *ProfileInfo {
+	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface) *ProfileInfo {
 	return &ProfileInfo{
-		userApp:          userApp,
-		cookieApp:        cookieApp,
-		s3App:            s3App,
-		notificationsApp: notificationsApp,
+		userApp:         userApp,
+		cookieApp:       cookieApp,
+		s3App:           s3App,
+		notificationApp: notificationApp,
 	}
 }
 
@@ -329,7 +329,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 
 	followerUser, err := profileInfo.userApp.GetUser(followerID)
 	if err == nil {
-		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
 			UserID:   followedID,
 			Title:    "New follower!",
 			Category: "followers",
@@ -337,7 +337,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			IsRead:   false,
 		})
 		if err == nil {
-			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+			profileInfo.notificationApp.SendNotification(followedID, notificationID)
 		}
 	}
 
@@ -393,7 +393,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 
 	followerUser, err := profileInfo.userApp.GetUser(followerID)
 	if err == nil {
-		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
 			UserID:   followedID,
 			Title:    "Follower lost!",
 			Category: "followers",
@@ -401,7 +401,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			IsRead:   false,
 		})
 		if err == nil {
-			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+			profileInfo.notificationApp.SendNotification(followedID, notificationID)
 		}
 	}
 

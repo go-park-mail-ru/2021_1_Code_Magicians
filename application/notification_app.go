@@ -3,7 +3,6 @@ package application
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"pinterest/domain/entity"
 	"sync"
 
@@ -31,15 +30,17 @@ func NewNotificationApp(userApp UserAppInterface) *NotificationApp {
 	}
 }
 
-type NotificationsAppInterface interface {
+type NotificationAppInterface interface {
 	AddNotification(notification *entity.Notification) (int, error)               // Add notification to list of user's notifications
 	RemoveNotification(userID int, notificationID int) error                      // Remove notification from list of user's notifications
 	EditNotification(notification *entity.Notification) error                     // Change fields of notification with same user and notification ID
 	GetNotification(userID int, notificationID int) (*entity.Notification, error) // Get notification from db using user's and notification's IDs
 	SendAllNotifications(userID int) error                                        // Send all of the notifications that this user has
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
-	ChangeClient(userID int, client *websocket.Conn, csrfToken string) error      // Switches client  that was assigned to user
 	ReadNotification(userID int, notificationID int) error                        // Changes notification's status to "Read"
+	ChangeClient(userID int, client *websocket.Conn) error                        // Switches client  that was assigned to user
+	ChangeToken(userID int, csrfToken string) error                               // Change user's CRSF token
+	CheckToken(userID int, csrfToken string) error                                // Check if passed token is correct (nil on success)
 }
 
 func (notificationApp *NotificationApp) AddNotification(notification *entity.Notification) (int, error) {
@@ -142,7 +143,12 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 
 	notificationsMap, found := notificationApp.notifications[userID]
 	if !found {
-		return fmt.Errorf("User not found")
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return fmt.Errorf("User not found")
+		}
+
+		notificationsMap = make(map[int]entity.Notification)
 	}
 
 	connection, found := notificationApp.connections[userID]
@@ -159,7 +165,6 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 
 	msg, err := json.Marshal(allNotifications)
 	if err != nil {
-		log.Println(err)
 		return fmt.Errorf("Could not parse messages into JSON")
 	}
 
@@ -192,36 +197,11 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 
 	msg, err := json.Marshal(notificationMsg)
 	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("Could not parse messages into JSON")
+		return fmt.Errorf("Could not parse message into JSON")
 	}
 
 	sendMessage(connection.client, msg)
 
-	return nil
-}
-
-func (notificationApp *NotificationApp) ChangeClient(userID int, client *websocket.Conn, csrfToken string) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(userID)
-		if err != nil {
-			return fmt.Errorf("User not found")
-		}
-
-		connection = connectionInfo{}
-	}
-
-	if connection.client != nil {
-		connection.client.Close()
-	}
-
-	connection.csrfToken = csrfToken
-	connection.client = client
-	notificationApp.connections[userID] = connection
 	return nil
 }
 
@@ -246,5 +226,68 @@ func (notificationApp *NotificationApp) ReadNotification(userID int, notificatio
 	notification.IsRead = true
 	notificationsMap[notificationID] = notification
 	notificationApp.notifications[userID] = notificationsMap
+	return nil
+}
+
+func (notificationApp *NotificationApp) ChangeClient(userID int, client *websocket.Conn) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	connection, found := notificationApp.connections[userID]
+	if !found {
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return fmt.Errorf("User not found")
+		}
+
+		connection = connectionInfo{}
+	}
+
+	if connection.client != nil {
+		connection.client.Close()
+	}
+
+	connection.client = client
+	notificationApp.connections[userID] = connection
+	return nil
+}
+
+func (notificationApp *NotificationApp) ChangeToken(userID int, csrfToken string) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	connection, found := notificationApp.connections[userID]
+	if !found {
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return fmt.Errorf("User not found")
+		}
+
+		connection = connectionInfo{}
+	}
+
+	connection.csrfToken = csrfToken
+	notificationApp.connections[userID] = connection
+	return nil
+}
+
+func (notificationApp *NotificationApp) CheckToken(userID int, csrfToken string) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	connection, found := notificationApp.connections[userID]
+	if !found {
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return fmt.Errorf("User not found")
+		}
+
+		connection = connectionInfo{}
+	}
+
+	if connection.csrfToken != csrfToken {
+		return fmt.Errorf("Incorrect CSRF token")
+	}
+
 	return nil
 }
