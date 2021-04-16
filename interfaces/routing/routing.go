@@ -26,7 +26,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	repoComments := persistence.NewCommentsRepository(conn)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
-	boardApp := application.NewBoardApp(repoBoards)
+	boardApp := application.NewBoardApp(repoBoards, repoPins)
 	s3App := application.NewS3App(sess, s3BucketName)
 	userApp := application.NewUserApp(repo, boardApp, s3App)
 	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
@@ -61,6 +61,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/pins/{id:[0-9]+}", pinsInfo.HandleGetPinsByBoardID).Methods("GET")
 	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
 	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, cookieApp)).Methods("POST")
+	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinsInfo.HandlePinsFeed).Methods("GET")
 
 	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleCreateBoard, cookieApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", boardsInfo.HandleGetBoardByID).Methods("GET")

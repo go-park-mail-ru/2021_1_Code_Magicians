@@ -35,18 +35,18 @@ func (m *MockBoardAppInterface) EXPECT() *MockBoardAppInterfaceMockRecorder {
 }
 
 // AddBoard mocks base method.
-func (m *MockBoardAppInterface) AddBoard(board *entity.Board) (int, error) {
+func (m *MockBoardAppInterface) AddBoard(arg0 *entity.Board) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddBoard", board)
+	ret := m.ctrl.Call(m, "AddBoard", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddBoard indicates an expected call of AddBoard.
-func (mr *MockBoardAppInterfaceMockRecorder) AddBoard(board interface{}) *gomock.Call {
+func (mr *MockBoardAppInterfaceMockRecorder) AddBoard(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).AddBoard), board)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).AddBoard), arg0)
 }
 
 // CheckBoard mocks base method.
@@ -78,10 +78,10 @@ func (mr *MockBoardAppInterfaceMockRecorder) DeleteBoard(arg0, arg1 interface{})
 }
 
 // GetBoard mocks base method.
-func (m *MockBoardAppInterface) GetBoard(arg0 int) (*entity.Board, error) {
+func (m *MockBoardAppInterface) GetBoard(arg0 int) (*entity.BoardInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBoard", arg0)
-	ret0, _ := ret[0].(*entity.Board)
+	ret0, _ := ret[0].(*entity.BoardInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -120,4 +120,18 @@ func (m *MockBoardAppInterface) GetInitUserBoard(arg0 int) (int, error) {
 func (mr *MockBoardAppInterfaceMockRecorder) GetInitUserBoard(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitUserBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).GetInitUserBoard), arg0)
+}
+
+// UploadBoardAvatar mocks base method.
+func (m *MockBoardAppInterface) UploadBoardAvatar(arg0 int, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadBoardAvatar", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadBoardAvatar indicates an expected call of UploadBoardAvatar.
+func (mr *MockBoardAppInterfaceMockRecorder) UploadBoardAvatar(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBoardAvatar", reflect.TypeOf((*MockBoardAppInterface)(nil).UploadBoardAvatar), arg0, arg1)
 }

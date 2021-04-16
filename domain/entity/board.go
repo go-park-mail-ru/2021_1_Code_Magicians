@@ -5,6 +5,16 @@ type Board struct {
 	UserID      int    `json:"userID"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	ImageLInk   string `json:"avatarLink"`
+}
+
+type BoardInfo struct {
+	BoardID     int    `json:"ID"`
+	UserID      int    `json:"userID"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ImageLink   string `json:"avatarLink"`
+	Pins        []Pin  `json:"pins"`
 }
 
 type BoardsOutput struct {
@@ -12,5 +22,5 @@ type BoardsOutput struct {
 }
 
 type BoardID struct {
-	BoardID     int    `json:"ID"`
+	BoardID int `json:"ID"`
 }

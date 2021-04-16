@@ -288,7 +288,13 @@ func TestBoards(t *testing.T) {
 		Title:       "exampletitle2",
 		Description: "exampleDescription2",
 	}
-
+	boardInfo1 := entity.BoardInfo{
+		BoardID:     1,
+		UserID:      0,
+		Title:       "exampletitle2",
+		Description: "exampleDescription2",
+	    Pins: nil,
+	}
 	expectedUserBoards := []entity.Board{
 		expectedBoardFirst,
 		expectedBoardSecond,
@@ -298,7 +304,7 @@ func TestBoards(t *testing.T) {
 
 	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardSecond.BoardID, nil).Times(1)
 
-	mockBoardApp.EXPECT().GetBoard(expectedBoardSecond.BoardID).Return(&expectedBoardSecond, nil).Times(1)
+	mockBoardApp.EXPECT().GetBoard(expectedBoardSecond.BoardID).Return(&boardInfo1, nil).Times(1)
 
 	mockBoardApp.EXPECT().GetBoards(expectedUser.UserID).Return(expectedUserBoards, nil).Times(1)
 

@@ -24,6 +24,8 @@ SET default_table_access_method = heap;
 -- Name: boards; Type: TABLE; Schema: public; Owner: postgres
 --
 
+ALTER TABLE public.boards
+    ADD COLUMN imagelink character varying(50);
 CREATE TABLE public.boards (
     boardid integer NOT NULL,
     userid bigint NOT NULL,

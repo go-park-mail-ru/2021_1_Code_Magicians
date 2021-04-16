@@ -28,6 +28,7 @@ type PinAppInterface interface {
 	RemovePin(int, int) error
 	DeletePin(int, int) error           // Removes pin by ID
 	UploadPicture(int, io.Reader) error // Upload pin
+	GetNumOfPins(int) ([]entity.Pin, error)
 }
 
 // CreatePin creates passed pin and adds it to native user's board
@@ -78,6 +79,22 @@ func (pn *PinApp) SavePin(userID int, pinID int) error {
 // AddPin adds pin to chosen board
 // It returns nil on success, error on failure
 func (pn *PinApp) AddPin(boardID int, pinID int) error {
+	board, err := pn.boardApp.GetBoard(boardID)
+	if err != nil {
+		return err
+	}
+
+	pin, err := pn.GetPin(pinID)
+	if err != nil {
+		return err
+	}
+
+	if board.ImageLink == "" && pin.ImageLink != ""{
+		err = pn.boardApp.UploadBoardAvatar(boardID, pin.ImageLink)
+		if err != nil {
+			return err
+		}
+	}
 	return pn.p.AddPin(boardID, pinID)
 }
 
@@ -157,6 +174,22 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 		return fmt.Errorf("File upload failed")
 	}
 
+	initBoardID, err := pn.boardApp.GetInitUserBoard(pin.UserID)
+	if err != nil {
+		return err
+	}
+
+	board, err := pn.boardApp.GetBoard(initBoardID)
+	if err != nil {
+		return err
+	}
+	if board.ImageLink == "" {
+		err = pn.boardApp.UploadBoardAvatar(initBoardID, picturePath)
+		if err != nil {
+			return err
+		}
+	}
+
 	pin.ImageLink = picturePath
 
 	err = pn.SavePicture(pin)
@@ -166,4 +199,8 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	}
 
 	return nil
+}
+
+func (pn *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
+	return pn.p.GetNumOfPins(numOfPins)
 }

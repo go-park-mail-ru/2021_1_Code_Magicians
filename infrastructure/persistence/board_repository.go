@@ -133,3 +133,18 @@ func (r *BoardsRepo) CheckBoard(userID int, boardID int) error {
 	}
 	return nil
 }
+
+const saveBoardPictureQuery string = "UPDATE boards\n" +
+	"SET imageLink=$1\n" +
+	"WHERE boardID=$2"
+
+func (r *BoardsRepo) UploadBoardAvatar(boardID int, imageLink string) error {
+	commandTag, err := r.db.Exec(context.Background(), saveBoardPictureQuery, imageLink, boardID)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		return errors.New("Board not found")
+	}
+	return nil
+}

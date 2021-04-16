@@ -263,3 +263,30 @@ func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	numOfPins, err := strconv.Atoi(vars["num"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	feedPins, err := pinInfo.pinApp.GetNumOfPins(numOfPins)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	Pins := entity.PinsOutput{feedPins}
+
+	pinsBody, err := json.Marshal(Pins)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(pinsBody)
+}

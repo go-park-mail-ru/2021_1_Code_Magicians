@@ -9,4 +9,5 @@ type BoardRepository interface {
 	DeleteBoard(int, int) error                // Removes user's board by ID
 	GetInitUserBoard(int) (int, error)         // Get initial user's board
 	CheckBoard(int, int) error                 // Checking that passed board belongs to passed user
+	UploadBoardAvatar(int, string) error
 }
