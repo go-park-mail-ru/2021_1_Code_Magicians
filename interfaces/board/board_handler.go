@@ -52,11 +52,16 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	body := `{"title": "` + boardInput.Title + `", "description": "` + boardInput.Description + `"}`
+	boardID := entity.BoardID{boardInput.BoardID}
+	body, err := json.Marshal(boardID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.WriteHeader(http.StatusCreated)
+	w.Write(body)
 }
 
 func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Request) {
@@ -105,8 +110,8 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 
@@ -125,13 +130,15 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	body, err := json.Marshal(resultBoards)
+	boards := entity.BoardsOutput{resultBoards}
+
+	boardsBody, err := json.Marshal(boards)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	w.WriteHeader(http.StatusOK)
+	w.Write(boardsBody)
 }

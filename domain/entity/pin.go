@@ -8,3 +8,12 @@ type Pin struct {
 	ImageLink   string `json:"imageLink"`
 	Description string `json:"description"`
 }
+
+
+type PinsOutput struct {
+	Pins []Pin `json:"pins"`
+}
+
+type PinID struct {
+	PinID     int    `json:"ID"`
+}

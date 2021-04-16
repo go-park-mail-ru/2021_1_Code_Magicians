@@ -67,10 +67,15 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	body := `{"text": "` + resultComment.PinComment + `"}`
+	comment := entity.CommentTextOutput{currComment.PinComment}
+	body, err := json.Marshal(comment)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(body))
 }
 
@@ -94,13 +99,16 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 		return
 	}
 
-	commentsBody, err := json.Marshal(pinComments)
+	comments := entity.CommentsOutput{pinComments}
+
+
+	body, err := json.Marshal(comments)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	body := `{"comments": ` + string(commentsBody) + `}`
-	w.WriteHeader(http.StatusOK)
+
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(body))
 }

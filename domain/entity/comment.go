@@ -5,3 +5,11 @@ type Comment struct {
 	PinID      int    `json:"pinID"`
 	PinComment string `json:"text"`
 }
+
+type CommentTextOutput struct {
+	Text string `json:"text"`
+}
+
+type CommentsOutput struct {
+	Comments []Comment `json:"comments"`
+}

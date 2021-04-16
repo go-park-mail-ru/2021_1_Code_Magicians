@@ -121,7 +121,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first board",
 	},
@@ -141,7 +141,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle2", "description": "exampleDescription2"}`),
+			[]byte(`{"ID":1}`),
 		},
 		"Testing add second board",
 	},
@@ -180,14 +180,14 @@ var boardTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`[{"ID":0,` +
+			[]byte(`{"boards":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle1",` +
 				`"description":"exampleDescription1"},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}]`,
+				`"description":"exampleDescription2"}]}`,
 			),
 		},
 		"Testing get boards by user id",

@@ -125,20 +125,20 @@ var pinTest = []struct {
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"` + "\n" +
-				`filename="a.txt"` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"; filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
 				"\n" +
 				`randomStr` + "\n" +
+				"\n" +
 				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
-			middleware.AuthMid, // If user is not logged in, they can't post pins
+			middleware.AuthMid, // If user is not logged in, he can't post pins
 		},
 
 		OutputStruct{
 			201,
 			nil,
-			nil,
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first pin",
 	},
@@ -151,17 +151,17 @@ var pinTest = []struct {
 				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
 			},
 			[]byte(`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data;` +
-				`name="pinInfo"` + "\n" +
+				`Content-Disposition: form-data; name="pinInfo"` + "\n" +
+				"\n" +
 				`{"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data;` + "\n" +
-				`name="pinImage"; ` + "\n" +
-				`filename="a.txt"` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"; filename="a.txt"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
+				"\n" +
 				`randomStr` + "\n" +
+				"\n" +
 				`-----------------------------9051914041544843365972754266--` + "\n"),
 			testPinInfo.HandleAddPin,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
@@ -170,7 +170,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			nil,
+			[]byte(`{"ID":1}`),
 		},
 		"Testing add second pin",
 	},
@@ -190,7 +190,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"title": "exampletitle1", "description": "exampleDescription1"}`),
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first board",
 	},
@@ -232,7 +232,7 @@ var pinTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"pins": [{"ID":0,` +
+			[]byte(`{"pins":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
@@ -343,7 +343,7 @@ var successCookies []*http.Cookie
 func TestPins(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
@@ -392,10 +392,9 @@ func TestPins(t *testing.T) {
 		*expectedPinFirst,
 		*expectedPinSecond,
 	}
-	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(2)
-	mockS3App.EXPECT().UploadFile(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	mockPinApp.EXPECT().CreatePin(expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
 
+	mockPinApp.EXPECT().CreatePin(expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
+	mockPinApp.EXPECT().UploadPicture(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	mockPinApp.EXPECT().CreatePin(gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
 
 	mockBoardApp.EXPECT().AddBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)

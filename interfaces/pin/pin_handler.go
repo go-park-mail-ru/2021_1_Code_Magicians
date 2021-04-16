@@ -63,30 +63,35 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+
 	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("---------------------------------------------3")
 	file, _, err := r.FormFile("pinImage")
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	fmt.Println("---------------------------------------------2")
+
 	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
-	fmt.Println("---------------------------------------------1")
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	pinID := entity.PinID{currPin.PinId}
+	body, err := json.Marshal(pinID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	// TODO: Add pin to specified board
+	w.Write(body)
 }
 
 func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Request) {
@@ -193,8 +198,8 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 
@@ -212,17 +217,18 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	pinsBody, err := json.Marshal(boardPins)
+	Pins := entity.PinsOutput{boardPins}
+
+	pinsBody, err := json.Marshal(Pins)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"pins": ` + string(pinsBody) + `}`
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.WriteHeader(http.StatusOK)
+	w.Write(pinsBody)
 }
 
 // HandleUploadPicture takes picture from request and assigns it to current pin
