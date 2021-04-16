@@ -2,7 +2,6 @@ package pin
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"pinterest/application"
