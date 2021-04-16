@@ -16,18 +16,19 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp   application.UserAppInterface
-	cookieApp application.CookieAppInterface
-	s3App     application.S3AppInterface
+	userApp          application.UserAppInterface
+	cookieApp        application.CookieAppInterface
+	s3App            application.S3AppInterface
+	notificationsApp application.NotificationsAppInterface
 }
 
-func NewProfileInfo(userApp application.UserAppInterface,
-	cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface) *ProfileInfo {
+func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
+	s3App application.S3AppInterface, notificationsApp application.NotificationsAppInterface) *ProfileInfo {
 	return &ProfileInfo{
-		userApp:   userApp,
-		cookieApp: cookieApp,
-		s3App:     s3App,
+		userApp:          userApp,
+		cookieApp:        cookieApp,
+		s3App:            s3App,
+		notificationsApp: notificationsApp,
 	}
 }
 
@@ -326,6 +327,20 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		return
 	}
 
+	followerUser, err := profileInfo.userApp.GetUser(followerID)
+	if err == nil {
+		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+			UserID:   followedID,
+			Title:    "New follower!",
+			Category: "followers",
+			Text:     "You have received a new follower: " + followerUser.Username,
+			IsRead:   false,
+		})
+		if err == nil {
+			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -374,6 +389,20 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	followerUser, err := profileInfo.userApp.GetUser(followerID)
+	if err == nil {
+		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+			UserID:   followedID,
+			Title:    "Follower lost!",
+			Category: "followers",
+			Text:     "You have  lost a follower: " + followerUser.Username,
+			IsRead:   false,
+		})
+		if err == nil {
+			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

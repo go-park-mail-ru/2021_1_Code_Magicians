@@ -7,6 +7,7 @@ import (
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/comment"
 	mid "pinterest/interfaces/middleware"
+	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"time"
@@ -31,12 +32,14 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	userApp := application.NewUserApp(repo, boardApp, s3App)
 	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := application.NewCommentApp(repoComments)
+	notificationsApp := application.NewNotificationApp(userApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp)
 	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp)
-	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App)
+	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
+	notificationsInfo := notification.NewNotificationInfo(notificationsApp)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -71,6 +74,9 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
+
+	r.HandleFunc("/notifications", notificationsInfo.HandleConnect) // TODO: add csrf checking
+	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
 
 	return r
 }

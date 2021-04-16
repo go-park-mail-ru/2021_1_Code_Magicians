@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.38.15
 	github.com/golang/mock v1.5.0
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.9.0 // indirect

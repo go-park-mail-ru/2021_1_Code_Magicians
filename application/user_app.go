@@ -8,9 +8,9 @@ import (
 )
 
 type UserApp struct {
-	us repository.UserRepository
+	us       repository.UserRepository
 	boardApp BoardAppInterface
-	s3App S3AppInterface
+	s3App    S3AppInterface
 }
 
 func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App S3AppInterface) *UserApp {
@@ -18,17 +18,17 @@ func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App 
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error) // Create user, returns created user's ID
-	SaveUser(*entity.User) error                                             // Save changed user to database
-	DeleteUser(int) error                                    // Delete user with passed userID from database
-	GetUser(int) (*entity.User, error)                                       // Get user by his ID
-	GetUsers() ([]entity.User, error)                                        // Get all users
-	GetUserByUsername(string) (*entity.User, error)                          // Get user by his username
-	CheckUserCredentials(string, string) (*entity.User, error)               // Check if passed username and password are correct
-	UpdateAvatar(int, io.Reader) error                       // Replace user's avatar with one passed as second parameter
-	Follow(int, int) error                                                   // Make first user follow second
-	Unfollow(int, int) error                                                 // Make first user unfollow second
-	CheckIfFollowed(int, int) (bool, error)                                  // Check if first user follows second. Err != nil if those users are the same
+	CreateUser(*entity.User) (int, error)                      // Create user, returns created user's ID
+	SaveUser(*entity.User) error                               // Save changed user to database
+	DeleteUser(int) error                                      // Delete user with passed userID from database
+	GetUser(int) (*entity.User, error)                         // Get user by his ID
+	GetUsers() ([]entity.User, error)                          // Get all users
+	GetUserByUsername(string) (*entity.User, error)            // Get user by his username
+	CheckUserCredentials(string, string) (*entity.User, error) // Check if passed username and password are correct
+	UpdateAvatar(int, io.Reader) error                         // Replace user's avatar with one passed as second parameter
+	Follow(int, int) error                                     // Make first user follow second
+	Unfollow(int, int) error                                   // Make first user unfollow second
+	CheckIfFollowed(int, int) (bool, error)                    // Check if first user follows second. Err != nil if those users are the same
 }
 
 // CreateUser add new user to database with passed fields
@@ -36,7 +36,6 @@ type UserAppInterface interface {
 func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 	userID, err := u.us.CreateUser(user)
 	if err != nil {
-		fmt.Println(err)
 		return -1, err
 	}
 

@@ -62,6 +62,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+
 	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -69,6 +71,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 	file, _, err := r.FormFile("pinImage")
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -102,7 +105,6 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	err = pinInfo.boardApp.CheckBoard(userID, boardID)
-	fmt.Println(err)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
