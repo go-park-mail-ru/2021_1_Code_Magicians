@@ -6,3 +6,11 @@ type Board struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
+
+type BoardsOutput struct {
+	Boards []Board `json:"boards"`
+}
+
+type BoardID struct {
+	BoardID     int    `json:"ID"`
+}

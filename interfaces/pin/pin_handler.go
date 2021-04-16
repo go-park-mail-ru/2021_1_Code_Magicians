@@ -79,11 +79,16 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body := `{"ID": ` + strconv.Itoa(currPin.PinId) + `}`
+	pinID := entity.PinID{currPin.PinId}
+	body, err := json.Marshal(pinID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.Write(body)
 	// TODO: Add pin to specified board
 }
 
@@ -211,17 +216,19 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	pinsBody, err := json.Marshal(boardPins)
+	Pins := entity.PinsOutput{boardPins}
+
+	pinsBody, err := json.Marshal(Pins)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"pins": ` + string(pinsBody) + `}`
+
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.Write([]byte(pinsBody))
 }
 
 // HandleUploadPicture takes picture from request and assigns it to current pin

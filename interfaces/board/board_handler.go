@@ -52,11 +52,16 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	body := `{"ID": ` + strconv.Itoa(boardInput.BoardID) + `}`
+	boardID := entity.BoardID{boardInput.BoardID}
+	body, err := json.Marshal(boardID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.Write(body)
 }
 
 func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Request) {
@@ -125,15 +130,16 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	boardsBody, err := json.Marshal(resultBoards)
+	boards := entity.BoardsOutput{resultBoards}
+
+	boardsBody, err := json.Marshal(boards)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	body := `{"boards": ` + string(boardsBody) + `}`
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	w.Write([]byte(boardsBody))
 }
