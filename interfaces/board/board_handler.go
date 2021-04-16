@@ -125,13 +125,15 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	body, err := json.Marshal(resultBoards)
+	boardsBody, err := json.Marshal(resultBoards)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	body := `{"boards": ` + string(boardsBody) + `}`
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(body)
+	w.Write([]byte(body))
 }
