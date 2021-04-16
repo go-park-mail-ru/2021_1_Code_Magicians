@@ -59,8 +59,8 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
 
@@ -110,8 +110,8 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
 
@@ -138,8 +138,7 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(boardsBody))
+	w.WriteHeader(http.StatusOK)
+	w.Write(boardsBody)
 }
