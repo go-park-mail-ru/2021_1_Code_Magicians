@@ -46,7 +46,7 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 		return
 	}
 
-	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws)
+	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws, "")
 	if err != nil {
 		log.Println(err)
 		ws.Close()
