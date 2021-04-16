@@ -41,7 +41,8 @@ type NotificationsAppInterface interface {
 	GetNotification(userID int, notificationID int) (*entity.Notification, error) // Get notification from db using user's and notification's IDs
 	SendAllNotifications(userID int) error                                        // Send all of the notifications that this user has
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
-	ChangeClient(userID int, client *websocket.Conn) error
+	ChangeClient(userID int, client *websocket.Conn) error                        // Switches client  that was assigned to user
+	ReadNotification(userID int, notificationID int) error                        // Changes notification's status to "Read"
 }
 
 func (notificationApp *NotificationApp) AddNotification(notification *entity.Notification) (int, error) {
@@ -206,6 +207,30 @@ func (notificationApp *NotificationApp) ChangeClient(userID int, client *websock
 	}
 
 	notificationsInfo.client = client
+	notificationApp.notifications[userID] = notificationsInfo
+	return nil
+}
+
+func (notificationApp *NotificationApp) ReadNotification(userID int, notificationID int) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	notificationsInfo, found := notificationApp.notifications[userID]
+	if !found {
+		return fmt.Errorf("User not found")
+	}
+
+	notification, found := notificationsInfo.notifications[notificationID]
+	if !found {
+		return fmt.Errorf("Notification not found")
+	}
+
+	if notification.IsRead {
+		return fmt.Errorf("Notification was already read")
+	}
+
+	notification.IsRead = true
+	notificationsInfo.notifications[notificationID] = notification
 	notificationApp.notifications[userID] = notificationsInfo
 	return nil
 }

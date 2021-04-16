@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
+	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -40,6 +42,7 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 	var initialMessage entity.InitialMessage
 	err = json.Unmarshal(initialMessageBytes, &initialMessage)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -56,6 +59,25 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 		ws.Close()
 		return
 	}
+}
 
-	log.Println("Connected")
+func (notificationInfo *NotificationInfo) HandleReadNotification(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	notificationIDStr := vars[string(entity.IDKey)]
+	notificationID, _ := strconv.Atoi(notificationIDStr)
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+	err := notificationInfo.notificationsApp.ReadNotification(userID, notificationID)
+	if err != nil {
+		switch err.Error() {
+		case "Notification not found":
+			w.WriteHeader(http.StatusNotFound)
+		case "Notification was already read":
+			w.WriteHeader(http.StatusConflict)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

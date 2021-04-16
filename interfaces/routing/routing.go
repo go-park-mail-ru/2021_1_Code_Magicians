@@ -76,6 +76,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
 	r.HandleFunc("/notifications", notificationsInfo.HandleConnect) // TODO: add csrf checking
+	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
 
 	return r
 }
