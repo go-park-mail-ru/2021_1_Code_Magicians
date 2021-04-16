@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"net/http"
 	"os"
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
@@ -88,6 +89,10 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	r.HandleFunc("/notifications", notificationsInfo.HandleConnect)
 	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
+
+	r.HandleFunc("csrf", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	}).Methods("GET")
 
 	return r
 }
