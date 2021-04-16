@@ -121,7 +121,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"ID": 0}`),
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first board",
 	},
@@ -141,7 +141,7 @@ var boardTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"ID": 1}`),
+			[]byte(`{"ID":1}`),
 		},
 		"Testing add second board",
 	},
@@ -180,7 +180,7 @@ var boardTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"boards": [{"ID":0,` +
+			[]byte(`{"boards":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle1",` +
 				`"description":"exampleDescription1"},` +

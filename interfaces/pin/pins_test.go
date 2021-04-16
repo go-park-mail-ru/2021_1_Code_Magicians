@@ -138,7 +138,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"ID": 0}`),
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first pin",
 	},
@@ -170,7 +170,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"ID": 1}`),
+			[]byte(`{"ID":1}`),
 		},
 		"Testing add second pin",
 	},
@@ -190,7 +190,7 @@ var pinTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"ID": 0}`),
+			[]byte(`{"ID":0}`),
 		},
 		"Testing add first board",
 	},
@@ -232,7 +232,7 @@ var pinTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"pins": [{"ID":0,` +
+			[]byte(`{"pins":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"imageLink":"example/link",` +

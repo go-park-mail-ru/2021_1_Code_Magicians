@@ -120,7 +120,7 @@ var commentTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"text": "Hello, my friends!!!"}`),
+			[]byte(`{"text":"Hello, my friends!!!"}`),
 		},
 		"Testing add first comment",
 	},
@@ -138,7 +138,7 @@ var commentTest = []struct {
 		OutputStruct{
 			201,
 			nil,
-			[]byte(`{"text": "Welcome to the club, buddy!!!"}`),
+			[]byte(`{"text":"Welcome to the club, buddy!!!"}`),
 		},
 		"Testing add second comment",
 	},
@@ -174,7 +174,7 @@ var commentTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"comments": [{"userID":0,"pinID":1,"text":"Hello, my friends!!!"},` +
+			[]byte(`{"comments":[{"userID":0,"pinID":1,"text":"Hello, my friends!!!"},` +
 				`{"userID":0,"pinID":1,"text":"Welcome to the club, buddy!!!"}]}`,
 			),
 		},
@@ -194,7 +194,7 @@ var commentTest = []struct {
 		OutputStruct{
 			200,
 			nil,
-			[]byte(`{"comments": []}`),
+			[]byte(`{"comments":[]}`),
 		},
 		"Testing get not existent comments by pinID",
 	},
