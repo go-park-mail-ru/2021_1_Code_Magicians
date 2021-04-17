@@ -50,14 +50,14 @@ func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
 	return err
 }
 
-const getBoardQuery string = "SELECT userID, title, description FROM Boards WHERE boardID=$1"
+const getBoardQuery string = "SELECT userID, title, description, imageLink FROM Boards WHERE boardID=$1"
 
 // GetBoard fetches board with passed ID from database
 // It returns that board, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	board := entity.Board{BoardID: boardID}
 	row := r.db.QueryRow(context.Background(), getBoardQuery, boardID)
-	err := row.Scan(&board.UserID, &board.Title, &board.Description)
+	err := row.Scan(&board.UserID, &board.Title, &board.Description, &board.ImageLInk)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No board found with such id")
@@ -69,7 +69,7 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	return &board, nil
 }
 
-const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boards WHERE userID=$1"
+const getBoardsByUserQuery string = "SELECT boardID, title, description, imageLink FROM Boards WHERE userID=$1"
 
 // GetBoards fetches all boards created by user with specified ID from database
 // It returns slice of these boards, nil on success and nil, error on failure
@@ -94,7 +94,7 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	return boards, nil
 }
 
-const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description\n" +
+const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description, b1.imageLink\n" +
 	"FROM boards AS b1\n" +
 	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
 	"GROUP BY b1.boardID, b2.userID\n" +
