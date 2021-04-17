@@ -79,22 +79,22 @@ func (pn *PinApp) SavePin(userID int, pinID int) error {
 // AddPin adds pin to chosen board
 // It returns nil on success, error on failure
 func (pn *PinApp) AddPin(boardID int, pinID int) error {
-	board, err := pn.boardApp.GetBoard(boardID)
-	if err != nil {
-		return err
-	}
-
-	pin, err := pn.GetPin(pinID)
-	if err != nil {
-		return err
-	}
-
-	if board.ImageLink == "" && pin.ImageLink != ""{
-		err = pn.boardApp.UploadBoardAvatar(boardID, pin.ImageLink)
-		if err != nil {
-			return err
-		}
-	}
+	//board, err := pn.boardApp.GetBoard(boardID)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//pin, err := pn.GetPin(pinID)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if board.ImageLink == "" && pin.ImageLink != ""{
+	//	err = pn.boardApp.UploadBoardAvatar(boardID, pin.ImageLink)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 	return pn.p.AddPin(boardID, pinID)
 }
 

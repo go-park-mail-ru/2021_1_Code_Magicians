@@ -7,11 +7,11 @@ import (
 
 type BoardApp struct {
 	b repository.BoardRepository
-	pinRepo repository.PinRepository
+	//pinRepo repository.PinRepository
 }
 
-func NewBoardApp(b repository.BoardRepository, pinRepo repository.PinRepository) *BoardApp {
-	return &BoardApp{b, pinRepo}
+func NewBoardApp(b repository.BoardRepository/*, pinRepo repository.PinRepository*/) *BoardApp {
+	return &BoardApp{b/*pinRepo*/}
 }
 
 type BoardAppInterface interface {
@@ -33,17 +33,17 @@ func (brd *BoardApp) AddBoard(board *entity.Board) (int, error) {
 // GetBoard returns board with passed boardID
 // It returns that board and nil on success, nil and error on failure
 func (brd *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
-	pins, err := brd.pinRepo.GetPins(boardID)
-	if err != nil {
-		return nil, err
-	}
+	//pins, err := brd.pinRepo.GetPins(boardID)
+	//if err != nil {
+	//	return nil, err
+	//}
 	board, err := brd.b.GetBoard(boardID)
 	if err != nil {
 		return nil, err
 	}
 	boardInfo := &entity.BoardInfo{board.BoardID, board.UserID,
 	board.Title, board.Description, board.ImageLInk,
-	pins}
+	nil}
 	return boardInfo, nil
 }
 

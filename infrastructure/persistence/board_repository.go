@@ -69,7 +69,7 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	return &board, nil
 }
 
-const getBoardsByUserQuery string = "SELECT boardID, title, description, imageLink FROM Boards WHERE userID=$1"
+const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boards WHERE userID=$1"
 
 // GetBoards fetches all boards created by user with specified ID from database
 // It returns slice of these boards, nil on success and nil, error on failure
@@ -85,7 +85,7 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 
 	for rows.Next() {
 		board := entity.Board{UserID: userID}
-		err = rows.Scan(&board.BoardID, &board.Title, &board.Description, &board.ImageLInk)
+		err = rows.Scan(&board.BoardID, &board.Title, &board.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
