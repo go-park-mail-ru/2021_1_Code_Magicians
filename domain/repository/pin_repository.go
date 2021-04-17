@@ -12,4 +12,5 @@ type PinRepository interface {
 	PinRefCount(int) (int, error)
 	RemovePin(int, int) error
 	GetLastUserPinID(int) (int, error)
+	GetNumOfPins(int) ([]entity.Pin, error)
 }

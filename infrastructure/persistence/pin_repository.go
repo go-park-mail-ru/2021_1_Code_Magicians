@@ -175,3 +175,27 @@ func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	}
 	return lastPinID, nil
 }
+
+const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+	"LIMIT $1;"
+
+func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
+	pins := make([]entity.Pin, 0)
+	rows, err := r.db.Query(context.Background(), getNumOfPinsQuery, numOfPins)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		pin := entity.Pin{}
+		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		if err != nil {
+			return nil, err // TODO: error handling
+		}
+		pins = append(pins, pin)
+	}
+	return pins, nil
+}
