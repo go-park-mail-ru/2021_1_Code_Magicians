@@ -42,8 +42,7 @@ func (brd *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
 		return nil, err
 	}
 	boardInfo := &entity.BoardInfo{board.BoardID, board.UserID,
-	board.Title, board.Description, board.ImageLInk,
-	nil}
+	board.Title, board.Description, board.ImageLInk}
 	return boardInfo, nil
 }
 

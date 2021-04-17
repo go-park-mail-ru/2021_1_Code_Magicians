@@ -25,7 +25,7 @@ SET default_table_access_method = heap;
 --
 
 ALTER TABLE public.boards
-    ADD COLUMN imagelink character varying(50);
+    DROP COLUMN imagelink --`character varying(50)``;
 CREATE TABLE public.boards (
     boardid integer NOT NULL,
     userid bigint NOT NULL,

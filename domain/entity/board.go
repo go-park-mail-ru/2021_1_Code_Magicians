@@ -14,7 +14,7 @@ type BoardInfo struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	ImageLink   string `json:"avatarLink"`
-	Pins        []Pin  `json:"pins"`
+	//Pins        []Pin  `json:"pins"`
 }
 
 type BoardsOutput struct {

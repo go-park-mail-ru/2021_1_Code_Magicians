@@ -50,14 +50,14 @@ func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
 	return err
 }
 
-const getBoardQuery string = "SELECT userID, title, description, imageLink FROM Boards WHERE boardID=$1"
+const getBoardQuery string = "SELECT userID, title, description FROM Boards WHERE boardID=$1"
 
 // GetBoard fetches board with passed ID from database
 // It returns that board, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	board := entity.Board{BoardID: boardID}
 	row := r.db.QueryRow(context.Background(), getBoardQuery, boardID)
-	err := row.Scan(&board.UserID, &board.Title, &board.Description, &board.ImageLInk)
+	err := row.Scan(&board.UserID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No board found with such id")
