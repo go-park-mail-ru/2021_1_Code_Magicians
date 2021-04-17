@@ -174,21 +174,21 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 		return fmt.Errorf("File upload failed")
 	}
 
-	initBoardID, err := pn.boardApp.GetInitUserBoard(pin.UserID)
-	if err != nil {
-		return err
-	}
-
-	board, err := pn.boardApp.GetBoard(initBoardID)
-	if err != nil {
-		return err
-	}
-	if board.ImageLink == "" {
-		err = pn.boardApp.UploadBoardAvatar(initBoardID, picturePath)
-		if err != nil {
-			return err
-		}
-	}
+	//initBoardID, err := pn.boardApp.GetInitUserBoard(pin.UserID)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//board, err := pn.boardApp.GetBoard(initBoardID)
+	//if err != nil {
+	//	return err
+	//}
+	//if board.ImageLink == "" {
+	//	err = pn.boardApp.UploadBoardAvatar(initBoardID, picturePath)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	pin.ImageLink = picturePath
 

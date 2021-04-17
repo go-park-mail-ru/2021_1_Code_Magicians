@@ -85,7 +85,7 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 
 	for rows.Next() {
 		board := entity.Board{UserID: userID}
-		err = rows.Scan(&board.BoardID, &board.Title, &board.Description)
+		err = rows.Scan(&board.BoardID, &board.Title, &board.Description, &board.ImageLInk)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
