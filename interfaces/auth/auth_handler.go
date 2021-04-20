@@ -91,7 +91,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Replacing token in websocket connection info
 	token := r.Header.Get("X-CSRF-Token")
-	err = info.notificationApp.ChangeToken(user.UserID, token)
+	err = info.notificationApp.ChangeToken(newUser.UserID, token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
