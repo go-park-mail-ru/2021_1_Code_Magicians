@@ -258,6 +258,7 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+	mockNotificationsApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -273,6 +274,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockNotificationsApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Normal user output using cookie's userID
 
@@ -298,8 +300,6 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp.EXPECT().GetUser(expectedUserEdited.UserID).Return(&expectedUserEdited, nil).Times(1) // Normal user output using userID
 
 	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID).Return(nil).Times(1)
-
-	mockNotificationsApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil, mockNotificationsApp) // We don't need to handle boards in these tests
 

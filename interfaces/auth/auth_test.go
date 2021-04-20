@@ -178,13 +178,11 @@ func TestAuthSuccess(t *testing.T) {
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
 	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Return(nil).Times(1) // Removing notification token during logout
-
-	//TODO: fix tests
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
 
 	testInfo = AuthInfo{
 		userApp:         mockUser,
