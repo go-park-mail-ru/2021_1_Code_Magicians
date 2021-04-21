@@ -338,7 +338,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			IsRead:   false,
 		})
 		if err == nil {
-			profileInfo.notificationApp.SendNotification(followedID, notificationID)
+			profileInfo.notificationApp.SendNotification(followedID, notificationID) // It's alright if notification could not be sent
 		}
 	}
 

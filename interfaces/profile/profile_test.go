@@ -139,6 +139,78 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
+			"/follow/1",
+			"/follow/{id:[0-9]+}",
+			"POST",
+			nil,
+			nil,
+			testProfileInfo.HandleFollowProfile,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			204,
+			nil,
+			nil,
+		},
+		"Testing following other profile using profile id",
+	},
+	{
+		profileInputStruct{
+			"/follow/1",
+			"/follow/{id:[0-9]+}",
+			"DELETE",
+			nil,
+			nil,
+			testProfileInfo.HandleUnfollowProfile,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			204,
+			nil,
+			nil,
+		},
+		"Testing unfollowing other profile using profile id",
+	},
+	{
+		profileInputStruct{
+			"/follow/OtherUsername",
+			"/follow/{username}",
+			"POST",
+			nil,
+			nil,
+			testProfileInfo.HandleFollowProfile,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			204,
+			nil,
+			nil,
+		},
+		"Testing following other profile using profile username",
+	},
+	{
+		profileInputStruct{
+			"/follow/OtherUsername",
+			"/follow/{username}",
+			"DELETE",
+			nil,
+			nil,
+			testProfileInfo.HandleUnfollowProfile,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			204,
+			nil,
+			nil,
+		},
+		"Testing unfollowing other profile using profile username",
+	},
+	{
+		profileInputStruct{
 			"/profile/password",
 			"/profile/password",
 			"PUT",
@@ -304,6 +376,43 @@ func TestProfileSuccess(t *testing.T) {
 	mockNotificationApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Normal user output using cookie's userID
+
+	expectedSecondUser := entity.User{
+		UserID:    1,
+		Username:  "OtherUsername",
+		Password:  "thisisapassword",
+		FirstName: "Other first name",
+		LastName:  "Other last name",
+		Email:     "other@example.com",
+		Avatar:    "avatars/someotherpath",
+		Salt:      "",
+	}
+
+	notificationID := 0
+
+	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleFollowProfile checks if followed profile exists
+	mockUserApp.EXPECT().Follow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleFollowProfile requests current user's username
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(notificationID, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
+
+	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleUnfollowProfile checks if followed profile exists
+	mockUserApp.EXPECT().Unfollow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleUnfollowProfile requests current user's username
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(notificationID, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
+
+	mockUserApp.EXPECT().GetUserByUsername(expectedSecondUser.Username).Return(&expectedSecondUser, nil).Times(1) // HandleFollowProfile checks if followed profile exists
+	mockUserApp.EXPECT().Follow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleFollowProfile requests current user's username
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
+
+	mockUserApp.EXPECT().GetUserByUsername(expectedSecondUser.Username).Return(&expectedSecondUser, nil).Times(1) // HandleUnfollowProfile checks if followed profile exists
+	mockUserApp.EXPECT().Unfollow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleUnfollowProfile requests current user's username
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(notificationID, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Before changing password, handler requests user data
 	expectedUser.Password = "New Password"
