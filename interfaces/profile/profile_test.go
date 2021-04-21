@@ -299,7 +299,7 @@ func TestProfileSuccess(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockNotificationApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
@@ -479,6 +479,29 @@ var profileTestFailure = []struct {
 			"/profile/edit",
 			"PUT",
 			nil,
+			[]byte(`{"username": "incorrect_username ;-",` + // This username is invalid
+				`"firstName": "new First name",` +
+				`"lastName": "new Last Name",` +
+				`"email": "new@example.com",` +
+				`"avatarLink": "avatars/2"}`,
+			),
+			testProfileInfo.HandleEditProfile,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing profile edit if JSON is invalid",
+	},
+	{
+		profileInputStruct{
+			"/profile/edit",
+			"/profile/edit",
+			"PUT",
+			nil,
 			[]byte(`{"username": "new_User_Name",` +
 				`"firstName": "new First name",` +
 				`"lastName": "new Last Name",` +
@@ -520,14 +543,14 @@ func TestProfileFailure(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockNotificationApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	// During password change, if anything is wrong with JSON input, handler does not interact with database, hence no mocks
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1)
-	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(fmt.Errorf("Username or email is already taken")).Times(1)
+	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(entity.UsernameEmailDuplicateError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,

@@ -60,7 +60,7 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	err := row.Scan(&board.UserID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No board found with such id")
+			return nil, entity.UserNotFoundError
 		}
 
 		// Other errors

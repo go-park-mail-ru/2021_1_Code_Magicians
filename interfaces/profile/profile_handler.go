@@ -106,7 +106,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 	err = profileInfo.userApp.SaveUser(newUser)
 	if err != nil {
 		switch err.Error() {
-		case "Username or email is already taken":
+		case entity.UsernameEmailDuplicateError.Error():
 			w.WriteHeader(http.StatusConflict)
 		default:
 			log.Println(err)
@@ -155,7 +155,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			id, _ := strconv.Atoi(idStr)
 			user, err = profileInfo.userApp.GetUser(id)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -172,7 +172,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				{
 					user, err = profileInfo.userApp.GetUserByUsername(username)
 					if err != nil {
-						if err.Error() == "No user found with such username" {
+						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -192,7 +192,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 					user, err = profileInfo.userApp.GetUser(userCookie.UserID)
 					if err != nil {
-						if err.Error() == "No user found with such id" {
+						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -292,7 +292,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -305,7 +305,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -356,7 +356,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -369,7 +369,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}

@@ -62,22 +62,20 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser.UserID, err = info.userApp.CreateUser(&newUser)
-	if err != nil {
-		if err.Error() == "Username or email is already taken" {
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-		info.userApp.DeleteUser(newUser.UserID)
+	newUser.UserID, err = info.userApp.CreateUser(&newUser)
+	if err != nil {
+		if err.Error() == entity.UsernameEmailDuplicateError.Error() {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -115,9 +113,9 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		switch err.Error() {
-		case "Password does not match":
+		case entity.IncorrectPasswordError.Error():
 			w.WriteHeader(http.StatusUnauthorized)
-		case "No user found with such username":
+		case string(entity.UserNotFoundError):
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			{

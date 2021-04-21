@@ -408,9 +408,9 @@ func TestAuthFailure(t *testing.T) {
 		Avatar:    entity.AvatarDefaultPath,
 		Salt:      "",
 	}
-	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, fmt.Errorf("Password does not match")).Times(1)          // Checking incorrect username/password pair
-	mockUser.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Checking incorrect username/password pair
-	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                                   // CreateUser handler checks user uniqueness
+	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
+	mockUser.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1)      // Checking incorrect username/password pair
+	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
 
 	testInfo = AuthInfo{
 		userApp:         mockUser,

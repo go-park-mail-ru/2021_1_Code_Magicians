@@ -362,7 +362,7 @@ func TestPins(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(expectedUserFirst.Username).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().GetUserByUsername(expectedUserFirst.Username).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUserFirst.UserID, nil).Times(1)
 
 	expectedPinFirst := &entity.Pin{
