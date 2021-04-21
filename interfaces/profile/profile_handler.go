@@ -262,6 +262,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	r.ParseMultipartForm(bodySize)
 	file, _, err := r.FormFile("avatarImage")
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
