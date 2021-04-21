@@ -250,7 +250,7 @@ var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
 // HandlePostAvatar takes avatar from request and assigns it to current user
 func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
 	bodySize := r.ContentLength
-	if bodySize < 0 { // No avatar was passed
+	if bodySize <= 0 { // No avatar was passed
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

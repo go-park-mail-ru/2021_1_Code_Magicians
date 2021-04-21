@@ -519,6 +519,88 @@ var profileTestFailure = []struct {
 		},
 		"Testing profile edit if username is not unique", // Username not being unique is entirely mock's prerogative
 	},
+	{
+		profileInputStruct{
+			"/profile/123",
+			"/profile/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testProfileInfo.HandleGetProfile,
+			nil,
+		},
+
+		profileOutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing unexisting profile output using profile id",
+	},
+	{
+		profileInputStruct{
+			"/profile/unexisting_username",
+			"/profile/{username}",
+			"GET",
+			nil,
+			nil,
+			testProfileInfo.HandleGetProfile,
+			nil,
+		},
+
+		profileOutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing unexisting profile output using username",
+	},
+	{
+		profileInputStruct{
+			"/profile/avatar",
+			"/profile/avatar",
+			"PUT",
+			map[string][]string{
+				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
+			},
+			[]byte(`hwrfhdgofhdrsiohdkgjxfljgiudhrosgjfdxhfdjhguifhdgijfgdjgxhj`),
+			testProfileInfo.HandlePostAvatar,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing trying to change avatar with incorrect body",
+	},
+	{
+		profileInputStruct{
+			"/profile/avatar",
+			"/profile/avatar",
+			"PUT",
+			map[string][]string{
+				"Content-Type": {"multipart/form-data; boundary=---------------------------9051914041544843365972754266"},
+			},
+			[]byte(`-----------------------------9051914041544843365972754266` + "\n" +
+				`Content-Disposition: form-data; name="avatarImage"; filename="a.txt"` + "\n" +
+				`Content-Type: image/jpeg` + "\n" +
+				"\n" +
+				`randomImage` + "\n" +
+				"\n" +
+				`-----------------------------9051914041544843365972754266--` + "\n"),
+			testProfileInfo.HandlePostAvatar,
+			middleware.AuthMid,
+		},
+
+		profileOutputStruct{
+			500,
+			nil,
+			nil,
+		},
+		"Testing avatar change with simulated avatar saving failure",
+	},
 }
 
 var failureCookies []*http.Cookie
@@ -551,6 +633,11 @@ func TestProfileFailure(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1)
 	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(entity.UsernameEmailDuplicateError).Times(1)
+
+	mockUserApp.EXPECT().GetUser(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
+
+	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any()).Return(entity.FilenameGenerationError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
