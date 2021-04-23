@@ -272,7 +272,7 @@ func TestBoards(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, fmt.Errorf("No user found with such username")).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 
 	expectedBoardFirst := entity.Board{

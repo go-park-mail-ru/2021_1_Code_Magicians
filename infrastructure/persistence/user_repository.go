@@ -2,8 +2,6 @@ package persistence
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log"
 	"pinterest/domain/entity"
 	"strings"
@@ -63,7 +61,7 @@ func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
 	if err != nil {
 		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
-			return -1, fmt.Errorf("Username or email is already taken")
+			return -1, entity.UsernameEmailDuplicateError
 		}
 
 		// Other errors
@@ -85,7 +83,7 @@ func (r *UserRepo) SaveUser(user *entity.User) error {
 	if err != nil {
 		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
-			return fmt.Errorf("Username or email is already taken")
+			return entity.UsernameEmailDuplicateError
 		}
 
 		// Other errors
@@ -105,7 +103,7 @@ func (r *UserRepo) DeleteUser(userID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("User not found")
+		return entity.UserNotFoundError
 	}
 	return nil
 }
@@ -126,7 +124,7 @@ func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
 		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No user found with such id")
+			return nil, entity.UserNotFoundError
 		}
 		// Other errors
 		return nil, err
@@ -148,7 +146,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 	rows, err := r.db.Query(context.Background(), getUsersQuery)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No users found in database")
+			return nil, entity.UserNotFoundError
 		}
 
 		// Other errors
@@ -191,7 +189,7 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No user found with such username")
+			return nil, entity.UserNotFoundError
 		}
 
 		// Other errors
@@ -212,13 +210,13 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 	_, err := r.db.Exec(context.Background(), followQuery, followerID, followedID)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
-			return fmt.Errorf("This follow relation already exists")
+			return entity.FollowAlreadyExistsError
 		}
 		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_followed"`) {
-			return fmt.Errorf("User who is followed does not exist")
+			return entity.UserNotFoundError
 		}
 		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_follower"`) { // Actually does not happen because of checks in middleware
-			return fmt.Errorf("User who is following does not exist")
+			return entity.UserNotFoundError
 		}
 
 		return err
@@ -227,13 +225,13 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 	_, err = r.db.Exec(context.Background(), updateFollowingQuery, followerID)
 	if err != nil {
 		log.Println(err)
-		return fmt.Errorf("Could not update user's 'following' count")
+		return entity.FollowCountUpdateError
 		// The issue of following-followed connection existing despite this error will be dealt with later
 	}
 
 	_, err = r.db.Exec(context.Background(), updateFollowedByQuery, followedID)
 	if err != nil {
-		return fmt.Errorf("Could not update user's 'followed_by' count")
+		return entity.FollowCountUpdateError
 		// The issue of following-followed connection existing despite this error will be dealt with later
 	}
 
@@ -248,18 +246,18 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	result, _ := r.db.Exec(context.Background(), unfollowQuery, followerID, followedID)
 
 	if result.RowsAffected() != 1 {
-		return fmt.Errorf("This follow relation does not exist")
+		return entity.FollowNotFoundError
 	}
 
 	_, err := r.db.Exec(context.Background(), updateUnfollowingQuery, followerID)
 	if err != nil {
-		return fmt.Errorf("Could not update user's 'following' count")
+		return entity.FollowCountUpdateError
 		// The issue of following-followed connection not existing despite this error will be dealt with later
 	}
 
 	_, err = r.db.Exec(context.Background(), updateUnfollowedByQuery, followedID)
 	if err != nil {
-		return fmt.Errorf("Could not update user's 'followed_by' count")
+		return entity.FollowCountUpdateError
 		// The issue of following-followed connection not existing despite this error will be dealt with later
 	}
 

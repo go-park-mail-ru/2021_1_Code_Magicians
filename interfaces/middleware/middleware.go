@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+
 	"pinterest/application"
 	"pinterest/domain/entity"
+
+	"github.com/gorilla/csrf"
 )
 
 func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
@@ -48,7 +51,17 @@ func PanicMid(next http.Handler) http.Handler {
 	})
 }
 
-var sessions entity.SessionMap = entity.SessionMap{Sessions: make(map[string]entity.CookieInfo)}
+func CSRFSettingMid(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r != nil {
+			if r.Header.Get("X-CSRF-Token") == "" {
+				token := csrf.Token(r)
+				w.Header().Set("X-CSRF-Token", token)
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
 func CheckCookies(r *http.Request, cookieApp application.CookieAppInterface) (*entity.CookieInfo, bool) {

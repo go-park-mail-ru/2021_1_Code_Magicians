@@ -3,66 +3,64 @@ package application
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"pinterest/domain/entity"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
-// TODO: renaming
-type userNotificationsInfo struct {
-	notifications map[int]entity.Notification
-	client        *websocket.Conn
-}
-
-func newUserNotificationsInfo() *userNotificationsInfo {
-	return &userNotificationsInfo{notifications: make(map[int]entity.Notification)}
+type connectionInfo struct {
+	csrfToken string
+	client    *websocket.Conn
 }
 
 type NotificationApp struct {
-	notifications      map[int]userNotificationsInfo
-	mu                 sync.Mutex
+	notifications      map[int]map[int]entity.Notification
 	lastNotificationID int
+	connections        map[int]connectionInfo
+	mu                 sync.Mutex
 	userApp            UserAppInterface
 }
 
 func NewNotificationApp(userApp UserAppInterface) *NotificationApp {
 	return &NotificationApp{
-		notifications: make(map[int]userNotificationsInfo),
+		notifications: make(map[int]map[int]entity.Notification),
+		connections:   make(map[int]connectionInfo),
 		userApp:       userApp,
 	}
 }
 
-type NotificationsAppInterface interface {
+type NotificationAppInterface interface {
 	AddNotification(notification *entity.Notification) (int, error)               // Add notification to list of user's notifications
 	RemoveNotification(userID int, notificationID int) error                      // Remove notification from list of user's notifications
 	EditNotification(notification *entity.Notification) error                     // Change fields of notification with same user and notification ID
 	GetNotification(userID int, notificationID int) (*entity.Notification, error) // Get notification from db using user's and notification's IDs
 	SendAllNotifications(userID int) error                                        // Send all of the notifications that this user has
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
-	ChangeClient(userID int, client *websocket.Conn) error                        // Switches client  that was assigned to user
 	ReadNotification(userID int, notificationID int) error                        // Changes notification's status to "Read"
+	ChangeClient(userID int, client *websocket.Conn) error                        // Switches client  that was assigned to user
+	ChangeToken(userID int, csrfToken string) error                               // Change user's CRSF token
+	CheckToken(userID int, csrfToken string) error                                // Check if passed token is correct (nil on success)
 }
 
 func (notificationApp *NotificationApp) AddNotification(notification *entity.Notification) (int, error) {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[notification.UserID]
+	notificationsMap, found := notificationApp.notifications[notification.UserID]
 	if !found {
 		_, err := notificationApp.userApp.GetUser(notification.UserID)
 		if err != nil {
-			return 0, fmt.Errorf("User not found")
+			return 0, entity.UserNotFoundError
 		}
-		notificationsInfo = *newUserNotificationsInfo()
+		notificationsMap = make(map[int]entity.Notification)
 	}
 
 	notification.NotificationID = notificationApp.lastNotificationID
 	notificationApp.lastNotificationID++
 
-	notificationsInfo.notifications[notification.NotificationID] = *notification
-	notificationApp.notifications[notification.UserID] = notificationsInfo
+	notificationsMap[notification.NotificationID] = *notification
+	notificationApp.notifications[notification.UserID] = notificationsMap
 	return notification.NotificationID, nil
 }
 
@@ -70,18 +68,21 @@ func (notificationApp *NotificationApp) RemoveNotification(userID int, notificat
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	notificationsMap, found := notificationApp.notifications[userID]
 	if !found {
-		return fmt.Errorf("User not found")
+		return entity.UserNotFoundError
+	}
+	if notificationsMap == nil {
+		return entity.NoNotificationsError
 	}
 
-	_, found = notificationsInfo.notifications[notificationID]
+	_, found = notificationsMap[notificationID]
 	if !found {
-		return fmt.Errorf("Notification not found")
+		return entity.NotificationNotFoundError
 	}
 
-	delete(notificationsInfo.notifications, notificationID)
-	notificationApp.notifications[userID] = notificationsInfo
+	delete(notificationsMap, notificationID)
+	notificationApp.notifications[userID] = notificationsMap
 	return nil
 }
 
@@ -89,17 +90,20 @@ func (notificationApp *NotificationApp) EditNotification(notification *entity.No
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[notification.UserID]
+	notificationsMap, found := notificationApp.notifications[notification.UserID]
 	if !found {
-		return fmt.Errorf("User not found")
+		return entity.UserNotFoundError
+	}
+	if notificationsMap == nil {
+		return entity.NoNotificationsError
 	}
 
-	_, found = notificationsInfo.notifications[notification.NotificationID]
+	_, found = notificationsMap[notification.NotificationID]
 	if !found {
-		return fmt.Errorf("Notification not found")
+		return entity.NotificationNotFoundError
 	}
 
-	notificationApp.notifications[notification.UserID].notifications[notification.NotificationID] = *notification
+	notificationApp.notifications[notification.UserID][notification.NotificationID] = *notification
 	return nil
 }
 
@@ -107,14 +111,17 @@ func (notificationApp *NotificationApp) GetNotification(userID int, notification
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	notificationsMap, found := notificationApp.notifications[userID]
 	if !found {
-		return nil, fmt.Errorf("User not found")
+		return nil, entity.UserNotFoundError
+	}
+	if notificationsMap == nil {
+		return nil, entity.NoNotificationsError
 	}
 
-	notification, found := notificationsInfo.notifications[notificationID]
+	notification, found := notificationsMap[notificationID]
 	if !found {
-		return nil, fmt.Errorf("Notification not found")
+		return nil, entity.NotificationNotFoundError
 	}
 	return &notification, nil
 }
@@ -134,58 +141,90 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	notificationsMap, found := notificationApp.notifications[userID]
 	if !found {
-		return fmt.Errorf("User not found")
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return entity.UserNotFoundError
+		}
+
+		notificationsMap = make(map[int]entity.Notification)
 	}
-	if notificationsInfo.client == nil {
-		return fmt.Errorf("Notifications client is not set")
+
+	connection, found := notificationApp.connections[userID]
+	if !found {
+		return entity.NotificationsClientNotSetError
 	}
 
 	allNotifications := entity.MessageManyNotifications{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
 
-	for _, notification := range notificationsInfo.notifications {
+	for _, notification := range notificationsMap {
 		allNotifications.Notifications = append(allNotifications.Notifications, notification)
 	}
 
+	// TODO: maybe move sending notifications to handler???
 	msg, err := json.Marshal(allNotifications)
 	if err != nil {
-		log.Println(err)
 		return fmt.Errorf("Could not parse messages into JSON")
 	}
 
-	sendMessage(notificationsInfo.client, msg)
+	err = sendMessage(connection.client, msg)
 
-	return nil
+	return err
 }
 
 func (notificationApp *NotificationApp) SendNotification(userID int, notificationID int) error {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	notificationsMap, found := notificationApp.notifications[userID]
 	if !found {
-		return fmt.Errorf("User not found")
-	}
-	if notificationsInfo.client == nil {
-		return fmt.Errorf("Notifications client is not set")
+		return entity.UserNotFoundError
 	}
 
-	notification, found := notificationsInfo.notifications[notificationID]
+	notification, found := notificationsMap[notificationID]
 	if !found {
-		return fmt.Errorf("Notification not found")
+		return entity.NotificationNotFoundError
+	}
+
+	connection, found := notificationApp.connections[userID]
+	if !found {
+		return entity.NotificationsClientNotSetError
 	}
 
 	notificationMsg := entity.MessageOneNotification{Type: entity.OneNotificationTypeKey, Notification: notification}
 
 	msg, err := json.Marshal(notificationMsg)
 	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("Could not parse messages into JSON")
+		return fmt.Errorf("Could not parse message into JSON")
 	}
 
-	sendMessage(notificationsInfo.client, msg)
+	err = sendMessage(connection.client, msg)
 
+	return err
+}
+
+func (notificationApp *NotificationApp) ReadNotification(userID int, notificationID int) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	notificationsMap, found := notificationApp.notifications[userID]
+	if !found {
+		return entity.UserNotFoundError
+	}
+
+	notification, found := notificationsMap[notificationID]
+	if !found {
+		return entity.NotificationNotFoundError
+	}
+
+	if notification.IsRead {
+		return entity.NotificationAlreadyReadError
+	}
+
+	notification.IsRead = true
+	notificationsMap[notificationID] = notification
+	notificationApp.notifications[userID] = notificationsMap
 	return nil
 }
 
@@ -193,44 +232,61 @@ func (notificationApp *NotificationApp) ChangeClient(userID int, client *websock
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	connection, found := notificationApp.connections[userID]
 	if !found {
 		_, err := notificationApp.userApp.GetUser(userID)
 		if err != nil {
-			return fmt.Errorf("User not found")
+			return entity.UserNotFoundError
 		}
-		notificationsInfo = *newUserNotificationsInfo()
+
+		connection = connectionInfo{}
 	}
 
-	if notificationsInfo.client != nil {
-		notificationsInfo.client.Close()
+	if connection.client != nil {
+		connection.client.Close()
 	}
 
-	notificationsInfo.client = client
-	notificationApp.notifications[userID] = notificationsInfo
+	connection.client = client
+	notificationApp.connections[userID] = connection
 	return nil
 }
 
-func (notificationApp *NotificationApp) ReadNotification(userID int, notificationID int) error {
+func (notificationApp *NotificationApp) ChangeToken(userID int, csrfToken string) error {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
 
-	notificationsInfo, found := notificationApp.notifications[userID]
+	connection, found := notificationApp.connections[userID]
 	if !found {
-		return fmt.Errorf("User not found")
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return entity.UserNotFoundError
+		}
+
+		connection = connectionInfo{}
 	}
 
-	notification, found := notificationsInfo.notifications[notificationID]
+	connection.csrfToken = csrfToken
+	notificationApp.connections[userID] = connection
+	return nil
+}
+
+func (notificationApp *NotificationApp) CheckToken(userID int, csrfToken string) error {
+	notificationApp.mu.Lock()
+	defer notificationApp.mu.Unlock()
+
+	connection, found := notificationApp.connections[userID]
 	if !found {
-		return fmt.Errorf("Notification not found")
+		_, err := notificationApp.userApp.GetUser(userID)
+		if err != nil {
+			return entity.UserNotFoundError
+		}
+
+		connection = connectionInfo{}
 	}
 
-	if notification.IsRead {
-		return fmt.Errorf("Notification was already read")
+	if connection.csrfToken != csrfToken {
+		return fmt.Errorf("Incorrect CSRF token")
 	}
 
-	notification.IsRead = true
-	notificationsInfo.notifications[notificationID] = notification
-	notificationApp.notifications[userID] = notificationsInfo
 	return nil
 }

@@ -103,7 +103,7 @@ func (u *UserApp) CheckUserCredentials(username string, password string) (*entit
 		return nil, err
 	}
 	if user.Password != password { // TODO: hashing
-		return nil, fmt.Errorf("Password does not match")
+		return nil, entity.IncorrectPasswordError
 	}
 
 	return user, nil
@@ -112,18 +112,18 @@ func (u *UserApp) CheckUserCredentials(username string, password string) (*entit
 func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 	user, err := u.GetUser(userID)
 	if err != nil {
-		return fmt.Errorf("Could not find user in database")
+		return entity.UserNotFoundError
 	}
 
 	filenamePrefix, err := GenerateRandomString(40) // generating random image
 	if err != nil {
-		return fmt.Errorf("Could not generate filename")
+		return entity.FilenameGenerationError
 	}
 
 	newAvatarPath := "avatars/" + filenamePrefix + ".jpg" // TODO: avatars folder sharding by date
 	err = u.s3App.UploadFile(file, newAvatarPath)
 	if err != nil {
-		return fmt.Errorf("File upload failed")
+		return entity.FileUploadError
 	}
 
 	oldAvatarPath := user.Avatar
@@ -131,15 +131,14 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 	err = u.SaveUser(user)
 	if err != nil {
 		u.s3App.DeleteFile(newAvatarPath)
-		return fmt.Errorf("User saving failed")
+		return entity.UserSavingError
 	}
 
 	if oldAvatarPath != entity.AvatarDefaultPath {
 		err = u.s3App.DeleteFile(oldAvatarPath)
 
 		if err != nil {
-			u.s3App.DeleteFile(newAvatarPath) // deleting newly uploaded avatar
-			return fmt.Errorf("Old avatar deletion failed")
+			return entity.FileDeletionError
 		}
 	}
 

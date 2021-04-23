@@ -16,19 +16,19 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp          application.UserAppInterface
-	cookieApp        application.CookieAppInterface
-	s3App            application.S3AppInterface
-	notificationsApp application.NotificationsAppInterface
+	userApp         application.UserAppInterface
+	cookieApp       application.CookieAppInterface
+	s3App           application.S3AppInterface
+	notificationApp application.NotificationAppInterface
 }
 
 func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, notificationsApp application.NotificationsAppInterface) *ProfileInfo {
+	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface) *ProfileInfo {
 	return &ProfileInfo{
-		userApp:          userApp,
-		cookieApp:        cookieApp,
-		s3App:            s3App,
-		notificationsApp: notificationsApp,
+		userApp:         userApp,
+		cookieApp:       cookieApp,
+		s3App:           s3App,
+		notificationApp: notificationApp,
 	}
 }
 
@@ -106,7 +106,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 	err = profileInfo.userApp.SaveUser(newUser)
 	if err != nil {
 		switch err.Error() {
-		case "Username or email is already taken":
+		case entity.UsernameEmailDuplicateError.Error():
 			w.WriteHeader(http.StatusConflict)
 		default:
 			log.Println(err)
@@ -155,7 +155,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			id, _ := strconv.Atoi(idStr)
 			user, err = profileInfo.userApp.GetUser(id)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -172,7 +172,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				{
 					user, err = profileInfo.userApp.GetUserByUsername(username)
 					if err != nil {
-						if err.Error() == "No user found with such username" {
+						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -192,7 +192,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 					user, err = profileInfo.userApp.GetUser(userCookie.UserID)
 					if err != nil {
-						if err.Error() == "No user found with such id" {
+						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -250,7 +250,7 @@ var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
 // HandlePostAvatar takes avatar from request and assigns it to current user
 func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
 	bodySize := r.ContentLength
-	if bodySize < 0 { // No avatar was passed
+	if bodySize <= 0 { // No avatar was passed
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -262,6 +262,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	r.ParseMultipartForm(bodySize)
 	file, _, err := r.FormFile("avatarImage")
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -291,7 +292,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -304,7 +305,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -329,7 +330,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 
 	followerUser, err := profileInfo.userApp.GetUser(followerID)
 	if err == nil {
-		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
 			UserID:   followedID,
 			Title:    "New follower!",
 			Category: "followers",
@@ -337,7 +338,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			IsRead:   false,
 		})
 		if err == nil {
-			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+			profileInfo.notificationApp.SendNotification(followedID, notificationID) // It's alright if notification could not be sent
 		}
 	}
 
@@ -355,7 +356,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -368,7 +369,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
-				if err.Error() == "No user found with such id" {
+				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -393,7 +394,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 
 	followerUser, err := profileInfo.userApp.GetUser(followerID)
 	if err == nil {
-		notificationID, err := profileInfo.notificationsApp.AddNotification(&entity.Notification{
+		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
 			UserID:   followedID,
 			Title:    "Follower lost!",
 			Category: "followers",
@@ -401,7 +402,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			IsRead:   false,
 		})
 		if err == nil {
-			profileInfo.notificationsApp.SendNotification(followedID, notificationID)
+			profileInfo.notificationApp.SendNotification(followedID, notificationID)
 		}
 	}
 

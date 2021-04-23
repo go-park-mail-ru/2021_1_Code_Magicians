@@ -164,6 +164,7 @@ func TestAuthSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -177,14 +178,18 @@ func TestAuthSuccess(t *testing.T) {
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
 	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
+
 	testInfo = AuthInfo{
-		userApp:   mockUser,
-		cookieApp: application.NewCookieApp(40, 10*time.Hour),
-		s3App:     nil, // We don't need S3 bucket in these tests
-		boardApp:  nil, // We don't really care about boards in these tests
+		userApp:         mockUser,
+		cookieApp:       application.NewCookieApp(40, 10*time.Hour),
+		s3App:           nil, // We don't need S3 bucket in these tests
+		boardApp:        nil, // We don't really care about boards in these tests
+		notificationApp: mockNotification,
 	}
 	for _, tt := range authTestSuccess {
 		tt := tt
@@ -256,6 +261,28 @@ var authTestFailure = []struct {
 	},
 	{
 		authInputStruct{
+			"/auth/create",
+			"POST",
+			nil,
+			[]byte(`{"username": "TestUsername ;~",` + // username should contain only alphanumeric characters and underscore
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
+				`"email": "test@example.com",` +
+				`"password": "thisisapassword"}`,
+			),
+			testInfo.HandleCreateUser,
+			middleware.NoAuthMid,
+		},
+
+		authOutputStruct{
+			400,
+			nil,
+			nil,
+		},
+		"Testing invalid JSON fields when creating user",
+	},
+	{
+		authInputStruct{
 			"/auth/login",
 			"POST",
 			nil,
@@ -270,6 +297,40 @@ var authTestFailure = []struct {
 			nil,
 		},
 		"Testing wrong JSON when logging user in",
+	},
+	{
+		authInputStruct{
+			"/auth/login",
+			"POST",
+			nil,
+			[]byte(`{"username": "TestUsername","password": "thisisanincorrectpassword"}`),
+			testInfo.HandleLoginUser,
+			middleware.NoAuthMid,
+		},
+
+		authOutputStruct{
+			401,
+			nil,
+			nil,
+		},
+		"Testing incorrect password when logging user in", // "incorrectness" is created artificially using mocks
+	},
+	{
+		authInputStruct{
+			"/auth/login",
+			"POST",
+			nil,
+			[]byte(`{"username": "UnexistingTestUsername","password": "thisisapassword"}`),
+			testInfo.HandleLoginUser,
+			middleware.NoAuthMid,
+		},
+
+		authOutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing unexisting username when logging user in", // "incorrectness" is created artificially using mocks
 	},
 	{
 		authInputStruct{
@@ -305,6 +366,28 @@ var authTestFailure = []struct {
 		},
 		"Testing checking if user is logged in when they aren't",
 	},
+	{
+		authInputStruct{
+			"/auth/signup",
+			"POST",
+			nil,
+			[]byte(`{"username": "TestUsername",` +
+				`"firstName": "TestFirstName",` +
+				`"lastName": "TestLastname",` +
+				`"email": "test@example.com",` +
+				`"password": "thisisapassword"}`,
+			),
+			testInfo.HandleCreateUser,
+			middleware.NoAuthMid,
+		},
+
+		authOutputStruct{
+			409,
+			nil,
+			nil,
+		},
+		"Testing user creation with username conflict", // Username conflict is made artifitially using mocks
+	},
 }
 
 var failureCookies []*http.Cookie
@@ -313,13 +396,28 @@ func TestAuthFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
-	// No functions in this test actually make request to the database
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+
+	expectedUser := entity.User{
+		UserID:    0,
+		Username:  "TestUsername",
+		Password:  "thisisapassword",
+		FirstName: "TestFirstName",
+		LastName:  "TestLastName",
+		Email:     "test@example.com",
+		Avatar:    entity.AvatarDefaultPath,
+		Salt:      "",
+	}
+	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
+	mockUser.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1)      // Checking incorrect username/password pair
+	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
 
 	testInfo = AuthInfo{
-		userApp:   mockUser,
-		cookieApp: application.NewCookieApp(40, 10*time.Hour),
-		s3App:     nil, // We don't need S3 bucket in these tests
-		boardApp:  nil, // We don't really care about boards in these tests
+		userApp:         mockUser,
+		cookieApp:       application.NewCookieApp(40, 10*time.Hour),
+		s3App:           nil, // We don't need S3 bucket in these tests
+		boardApp:        nil, // We don't really care about boards in these tests
+		notificationApp: mockNotification,
 	}
 	for _, tt := range authTestFailure {
 		tt := tt

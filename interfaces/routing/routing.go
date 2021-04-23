@@ -1,6 +1,8 @@
 package routing
 
 import (
+	"net/http"
+	"os"
 	"pinterest/application"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
@@ -13,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -20,6 +23,15 @@ import (
 func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
+
+	csrfMid := csrf.Protect(
+		[]byte(os.Getenv("CSRF_KEY")),
+		csrf.Path("/"),
+		csrf.Secure(false), // REMOVE IN PROD!!!!
+	)
+	r.Use(csrfMid)
+
+	r.Use(mid.CSRFSettingMid)
 
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
@@ -35,7 +47,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	notificationsApp := application.NewNotificationApp(userApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp)
-	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp)
+	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, notificationsApp)
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
@@ -76,8 +88,12 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
-	r.HandleFunc("/notifications", notificationsInfo.HandleConnect) // TODO: add csrf checking
+	r.HandleFunc("/notifications", notificationsInfo.HandleConnect)
 	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
+
+	r.HandleFunc("/csrf", func(w http.ResponseWriter, r *http.Request) { // Is used only for getting csrf key
+		w.WriteHeader(http.StatusCreated)
+	}).Methods("GET")
 
 	return r
 }

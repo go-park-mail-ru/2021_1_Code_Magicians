@@ -57,7 +57,7 @@ func GenerateRandomString(s int) (string, error) {
 func (c *CookieApp) GenerateCookie() (*http.Cookie, error) {
 	sessionValue, err := GenerateRandomString(c.cookieLength) // cookie value - random string
 	if err != nil {
-		return nil, err
+		return nil, entity.CookieGenerationError
 	}
 
 	expirationTime := time.Now().Add(c.duration)
