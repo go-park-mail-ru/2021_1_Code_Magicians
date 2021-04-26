@@ -14,10 +14,11 @@ import (
 
 type NotificationInfo struct {
 	notificationsApp application.NotificationAppInterface
+	csrfOn           bool
 }
 
-func NewNotificationInfo(notificationsApp application.NotificationAppInterface) *NotificationInfo {
-	return &NotificationInfo{notificationsApp: notificationsApp}
+func NewNotificationInfo(notificationsApp application.NotificationAppInterface, csrfOn bool) *NotificationInfo {
+	return &NotificationInfo{notificationsApp: notificationsApp, csrfOn: csrfOn}
 }
 
 func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r *http.Request) {
@@ -45,10 +46,12 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 		return
 	}
 
-	err = notificationInfo.notificationsApp.CheckToken(initialMessage.UserID, initialMessage.CSRFToken)
-	if err != nil {
-		ws.Close()
-		return
+	if notificationInfo.csrfOn {
+		err = notificationInfo.notificationsApp.CheckToken(initialMessage.UserID, initialMessage.CSRFToken)
+		if err != nil {
+			ws.Close()
+			return
+		}
 	}
 
 	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws)

@@ -20,18 +20,19 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string) *mux.Router {
+func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
-	csrfMid := csrf.Protect(
-		[]byte(os.Getenv("CSRF_KEY")),
-		csrf.Path("/"),
-		csrf.Secure(false), // REMOVE IN PROD!!!!
-	)
-	r.Use(csrfMid)
-
-	r.Use(mid.CSRFSettingMid)
+	if csrfOn {
+		csrfMid := csrf.Protect(
+			[]byte(os.Getenv("CSRF_KEY")),
+			csrf.Path("/"),
+			csrf.Secure(false), // REMOVE IN PROD!!!!
+		)
+		r.Use(csrfMid)
+		r.Use(mid.CSRFSettingMid)
+	}
 
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
@@ -51,7 +52,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
-	notificationsInfo := notification.NewNotificationInfo(notificationsApp)
+	notificationsInfo := notification.NewNotificationInfo(notificationsApp, csrfOn)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -91,9 +92,11 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/notifications", notificationsInfo.HandleConnect)
 	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
 
-	r.HandleFunc("/csrf", func(w http.ResponseWriter, r *http.Request) { // Is used only for getting csrf key
-		w.WriteHeader(http.StatusCreated)
-	}).Methods("GET")
+	if csrfOn {
+		r.HandleFunc("/csrf", func(w http.ResponseWriter, r *http.Request) { // Is used only for getting csrf key
+			w.WriteHeader(http.StatusCreated)
+		}).Methods("GET")
+	}
 
 	return r
 }

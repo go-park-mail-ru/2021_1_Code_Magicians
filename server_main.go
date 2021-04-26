@@ -66,7 +66,7 @@ func runServer(addr string) {
 
 	defer conn.Close()
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"))
+	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {
