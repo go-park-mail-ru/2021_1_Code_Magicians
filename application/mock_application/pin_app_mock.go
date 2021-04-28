@@ -93,6 +93,21 @@ func (mr *MockPinAppInterfaceMockRecorder) GetLastUserPinID(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastUserPinID", reflect.TypeOf((*MockPinAppInterface)(nil).GetLastUserPinID), arg0)
 }
 
+// GetNumOfPins mocks base method.
+func (m *MockPinAppInterface) GetNumOfPins(arg0 int) ([]entity.Pin, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNumOfPins", arg0)
+	ret0, _ := ret[0].([]entity.Pin)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNumOfPins indicates an expected call of GetNumOfPins.
+func (mr *MockPinAppInterfaceMockRecorder) GetNumOfPins(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumOfPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetNumOfPins), arg0)
+}
+
 // GetPin mocks base method.
 func (m *MockPinAppInterface) GetPin(arg0 int) (*entity.Pin, error) {
 	m.ctrl.T.Helper()

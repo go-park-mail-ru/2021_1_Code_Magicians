@@ -310,6 +310,9 @@ ALTER TABLE ONLY public.users
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_un_email UNIQUE (email);
 
+ALTER TABLE ONLY public.boards
+    ADD CONSTRAINT users_un_boards UNIQUE (userid, title);
+
 
 --
 -- Name: users users_un_username; Type: CONSTRAINT; Schema: public; Owner: postgres
