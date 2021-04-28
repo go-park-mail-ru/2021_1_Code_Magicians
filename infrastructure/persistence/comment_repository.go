@@ -21,7 +21,13 @@ const addCommentQuery string = "INSERT INTO comments (userID, pinID, text)\n" +
 	"values ($1, $2, $3);"
 
 func (r *CommentsRepo) AddComment(comment *entity.Comment) error {
-	commandTag, err := r.db.Exec(context.Background(),
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	commandTag, err := tx.Exec(context.Background(),
 		addCommentQuery,
 		comment.UserID,
 		comment.PinID,
@@ -32,6 +38,11 @@ func (r *CommentsRepo) AddComment(comment *entity.Comment) error {
 	if commandTag.RowsAffected() != 1 {
 		return errors.New("Error during posting the comment")
 	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
+	}
 	return nil
 }
 
@@ -39,8 +50,14 @@ const getCommentsByPinQuery string = "SELECT userID, pinID, text FROM comments\n
 	"WHERE pinID=$1;"
 
 func (r *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
 	comments := make([]entity.Comment, 0)
-	rows, err := r.db.Query(context.Background(), getCommentsByPinQuery, pinID)
+	rows, err := tx.Query(context.Background(), getCommentsByPinQuery, pinID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -56,13 +73,38 @@ func (r *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
 		}
 		comments = append(comments, comment)
 	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
 	return comments, nil
 }
 
 func (r *CommentsRepo) DeleteComment(*entity.Comment) error {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
+	}
 	return nil
 }
 
 func (r *CommentsRepo) EditComment(*entity.Comment) error {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
+	}
 	return nil
 }
