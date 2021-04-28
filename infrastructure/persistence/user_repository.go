@@ -277,7 +277,7 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 	if err != nil {
 		return entity.TransactionBeginError
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(context.Background()) // Will help if one of updateX queries fails
 
 	_, err = tx.Exec(context.Background(), followQuery, followerID, followedID)
 	if err != nil {
@@ -287,7 +287,7 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_followed"`) {
 			return entity.UserNotFoundError
 		}
-		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_follower"`) { // Actually does not happen because of checks in middleware
+		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_follower"`) { // Actually does not usually happen because of checks in middleware
 			return entity.UserNotFoundError
 		}
 
@@ -298,13 +298,11 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 	if err != nil {
 		log.Println(err)
 		return entity.FollowCountUpdateError
-		// The issue of following-followed connection existing despite this error will be dealt with later
 	}
 
 	_, err = tx.Exec(context.Background(), updateFollowedByQuery, followedID)
 	if err != nil {
 		return entity.FollowCountUpdateError
-		// The issue of following-followed connection existing despite this error will be dealt with later
 	}
 
 	err = tx.Commit(context.Background())
@@ -315,8 +313,6 @@ func (r *UserRepo) Follow(followerID int, followedID int) error {
 }
 
 const unfollowQuery string = "DELETE FROM Followers WHERE followerID=$1 AND followedID=$2"
-
-// TODO: Replace with database triggers - they are much safer
 const updateUnfollowingQuery string = "UPDATE Users SET following = following - 1 WHERE userID=$1"
 const updateUnfollowedByQuery string = "UPDATE Users SET followed_by = followed_by - 1 WHERE userID=$1"
 
@@ -325,7 +321,8 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	if err != nil {
 		return entity.TransactionBeginError
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(context.Background()) // Will help if one of updateX queries fails
+
 	result, _ := tx.Exec(context.Background(), unfollowQuery, followerID, followedID)
 
 	if result.RowsAffected() != 1 {
@@ -335,13 +332,11 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	_, err = tx.Exec(context.Background(), updateUnfollowingQuery, followerID)
 	if err != nil {
 		return entity.FollowCountUpdateError
-		// The issue of following-followed connection not existing despite this error will be dealt with later
 	}
 
 	_, err = tx.Exec(context.Background(), updateUnfollowedByQuery, followedID)
 	if err != nil {
 		return entity.FollowCountUpdateError
-		// The issue of following-followed connection not existing despite this error will be dealt with later
 	}
 
 	err = tx.Commit(context.Background())
@@ -351,7 +346,7 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 	return err
 }
 
-const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, nothing otherwise
+const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, no rows otherwise
 
 func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	tx, err := r.db.Begin(context.Background())
