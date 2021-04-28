@@ -2,6 +2,9 @@ package entity
 
 type customError string
 
+const TransactionBeginError customError = "Could not start transaction"
+const TransactionCommitError customError = "Could not commit transaction"
+
 const UserNotFoundError customError = "User not found"
 const UsernameEmailDuplicateError customError = "Username or email is already taken"
 const IncorrectPasswordError customError = "Password is incorrect"
