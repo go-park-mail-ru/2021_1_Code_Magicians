@@ -1,0 +1,1 @@
+This layer contains interfaces for DB handling - wrappers around various SELECTs, INSERTs, etc
