@@ -118,11 +118,12 @@ func (pn *PinApp) DeletePin(boardID int, pinID int) error {
 		return err
 	}
 
-	refCount, err := pn.p.PinRefCount(pinID)
+	err = pn.p.RemovePin(boardID, pinID)
 	if err != nil {
 		return err
 	}
-	err = pn.p.RemovePin(boardID, pinID)
+
+	refCount, err := pn.p.PinRefCount(pinID)
 	if err != nil {
 		return err
 	}

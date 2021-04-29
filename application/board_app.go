@@ -1,6 +1,8 @@
 package application
 
 import (
+	"errors"
+	"log"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
 )
@@ -55,6 +57,16 @@ func (brd *BoardApp) GetBoards(authorID int) ([]entity.Board, error) {
 // DeleteBoard deletes user's board with passed boardID
 // It returns nil on success and error on failure
 func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
+	initBoardID, err := brd.b.GetInitUserBoard(userID)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	if boardID == initBoardID {
+		return errors.New("Can not delete user's first Board")
+	}
+
 	return brd.b.DeleteBoard(boardID, userID)
 }
 
