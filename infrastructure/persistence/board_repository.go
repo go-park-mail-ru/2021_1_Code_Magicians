@@ -138,7 +138,7 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	return boards, nil
 }
 
-const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description, b1.imageLink\n" +
+const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description\n" +
 	"FROM boards AS b1\n" +
 	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
 	"GROUP BY b1.boardID, b2.userID\n" +

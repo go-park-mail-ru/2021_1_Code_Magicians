@@ -343,15 +343,15 @@ var successCookies []*http.Cookie
 func TestPins(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
-	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
 	// TODO: maybe replace this with JSON parsing?
-	expectedUserFirst := &entity.User{
+	expectedUser := &entity.User{
 		UserID:    0,
 		Username:  "TestUsername",
 		Password:  "thisisapassword",
@@ -360,10 +360,12 @@ func TestPins(t *testing.T) {
 		Email:     "test@example.com",
 		Avatar:    "avatars/1",
 		Salt:      "",
+
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(expectedUserFirst.Username).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUserFirst.UserID, nil).Times(1)
+	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	expectedPinFirst := &entity.Pin{
 		PinId:       0,
@@ -403,7 +405,7 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
 
-	mockPinApp.EXPECT().SavePin(expectedUserFirst.UserID, expectedPinSecond.PinId).Return(nil).Times(1)
+	mockPinApp.EXPECT().SavePin(expectedUser.UserID, expectedPinSecond.PinId).Return(nil).Times(1)
 
 	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(3)
 	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinId).Return(nil).Times(1)
@@ -412,9 +414,9 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUserFirst.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil, mockNotification) // We don't need S3 or board in these tests
 
 	testBoardInfo = *board.NewBoardInfo(mockBoardApp)
 

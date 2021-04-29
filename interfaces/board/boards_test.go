@@ -183,11 +183,11 @@ var boardTest = []struct {
 			[]byte(`{"boards":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle1",` +
-				`"description":"exampleDescription1"},` +
+				`"description":"exampleDescription1","avatarLink":""},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}]}`,
+				`"description":"exampleDescription2","avatarLink":""}]}`,
 			),
 		},
 		"Testing get boards by user id",
@@ -256,6 +256,7 @@ func TestBoards(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
@@ -274,6 +275,7 @@ func TestBoards(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	expectedBoardFirst := entity.Board{
 		BoardID:     0,
@@ -288,12 +290,12 @@ func TestBoards(t *testing.T) {
 		Title:       "exampletitle2",
 		Description: "exampleDescription2",
 	}
+
 	boardInfo1 := entity.BoardInfo{
 		BoardID:     1,
 		UserID:      0,
 		Title:       "exampletitle2",
 		Description: "exampleDescription2",
-	    Pins: nil,
 	}
 	expectedUserBoards := []entity.Board{
 		expectedBoardFirst,
@@ -314,7 +316,7 @@ func TestBoards(t *testing.T) {
 
 	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, mockBoardApp) // We don't need S3 in these tests
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, mockBoardApp, mockNotification) // We don't need S3 in these tests
 
 	testBoardInfo = BoardInfo{
 		boardApp: mockBoardApp,

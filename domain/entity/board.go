@@ -13,7 +13,7 @@ type BoardInfo struct {
 	UserID      int    `json:"userID"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	ImageLink   string `json:"avatarLink"`
+	ImageLink   string `json:"avatarLink,omitempty"`
 	//Pins        []Pin  `json:"pins"`
 }
 
