@@ -209,7 +209,7 @@ func TestComments(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	mockCommentApp := mock_application.NewMockCommentAppInterface(mockCtrl)
-	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
@@ -227,7 +227,8 @@ func TestComments(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-
+	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	
 	expectedPinFirst := entity.Pin{
 		PinId:       1,
 		Title:       "exampletitle",
@@ -267,7 +268,7 @@ func TestComments(t *testing.T) {
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
 	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinId).Return([]entity.Comment{}, nil)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil) // We don't need S3 or board in these tests
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil, mockNotification) // We don't need S3 or board in these tests
 
 	testCommentInfo = CommentInfo{
 		pinApp:     mockPinApp,
