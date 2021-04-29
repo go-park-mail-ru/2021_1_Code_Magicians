@@ -25,12 +25,23 @@ const createBoardQuery string = "INSERT INTO Boards (userID, title, description)
 // AddBoard add new board to database with passed fields
 // It returns board's assigned ID and nil on success, any number and error on failure
 func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
-	row := r.db.QueryRow(context.Background(), createBoardQuery, board.UserID, board.Title, board.Description)
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return -1, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	row := tx.QueryRow(context.Background(), createBoardQuery, board.UserID, board.Title, board.Description)
 	newBoardID := 0
-	err := row.Scan(&newBoardID)
+	err = row.Scan(&newBoardID)
 	if err != nil {
 		// Other errors
 		return -1, err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return -1, entity.TransactionCommitError
 	}
 	return newBoardID, nil
 }
@@ -40,12 +51,23 @@ const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1 AND userID=
 // DeleteBoard deletes board with passed id belonging to passed user.
 // It returns error if board is not found or if there were problems with database
 func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
-	commandTag, err := r.db.Exec(context.Background(), deleteBoardQuery, boardID, userID)
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	commandTag, err := tx.Exec(context.Background(), deleteBoardQuery, boardID, userID)
 	if err != nil {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
 		return errors.New("Board not found")
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
 	}
 	return err
 }
@@ -55,9 +77,15 @@ const getBoardQuery string = "SELECT userID, title, description FROM Boards WHER
 // GetBoard fetches board with passed ID from database
 // It returns that board, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
 	board := entity.Board{BoardID: boardID}
-	row := r.db.QueryRow(context.Background(), getBoardQuery, boardID)
-	err := row.Scan(&board.UserID, &board.Title, &board.Description)
+	row := tx.QueryRow(context.Background(), getBoardQuery, boardID)
+	err = row.Scan(&board.UserID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
@@ -65,6 +93,11 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 
 		// Other errors
 		return nil, err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
 	}
 	return &board, nil
 }
@@ -74,8 +107,14 @@ const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boa
 // GetBoards fetches all boards created by user with specified ID from database
 // It returns slice of these boards, nil on success and nil, error on failure
 func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
 	boards := make([]entity.Board, 0)
-	rows, err := r.db.Query(context.Background(), getBoardsByUserQuery, userID)
+	rows, err := tx.Query(context.Background(), getBoardsByUserQuery, userID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("No boards found in database with passed userID")
@@ -91,6 +130,11 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 		}
 		boards = append(boards, board)
 	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
 	return boards, nil
 }
 
@@ -103,14 +147,25 @@ const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.descriptio
 // GetInitUserBoard gets user's first board from database
 // It returns that board and nil on success, nil and error on failure
 func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return -1, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
 	board := entity.Board{UserID: userID}
-	row := r.db.QueryRow(context.Background(), getInitUserBoardQuery, userID)
-	err := row.Scan(&board.BoardID, &board.Title, &board.Description)
+	row := tx.QueryRow(context.Background(), getInitUserBoardQuery, userID)
+	err = row.Scan(&board.BoardID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return -1, fmt.Errorf("No board found")
 		}
 		return -1, err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return -1, entity.TransactionCommitError
 	}
 	return board.BoardID, nil
 }
@@ -122,14 +177,25 @@ const checkBoardQuery string = "SELECT boardID\n" +
 // CheckBoard checking that passed board belongs to passed user
 // It returns that nil on success, error on failure
 func (r *BoardsRepo) CheckBoard(userID int, boardID int) error {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
 	id := 0
-	row := r.db.QueryRow(context.Background(), checkBoardQuery, boardID, userID)
-	err := row.Scan(&id)
+	row := tx.QueryRow(context.Background(), checkBoardQuery, boardID, userID)
+	err = row.Scan(&id)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return fmt.Errorf("That board is not associated with that user")
 		}
 		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
 	}
 	return nil
 }
@@ -139,12 +205,23 @@ const saveBoardPictureQuery string = "UPDATE boards\n" +
 	"WHERE boardID=$2"
 
 func (r *BoardsRepo) UploadBoardAvatar(boardID int, imageLink string) error {
-	commandTag, err := r.db.Exec(context.Background(), saveBoardPictureQuery, imageLink, boardID)
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	commandTag, err := tx.Exec(context.Background(), saveBoardPictureQuery, imageLink, boardID)
 	if err != nil {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
 		return errors.New("Board not found")
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return entity.TransactionCommitError
 	}
 	return nil
 }
