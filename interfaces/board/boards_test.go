@@ -3,6 +3,7 @@ package board
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -257,7 +258,7 @@ func TestBoards(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
-	//mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
+	testLogger := zaptest.NewLogger(t)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
@@ -314,12 +315,17 @@ func TestBoards(t *testing.T) {
 
 	mockBoardApp.EXPECT().GetBoard(3).Return(nil, fmt.Errorf("No board found")).Times(1)
 
-	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockBoardApp.EXPECT().DeleteBoard(
+		expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, mockBoardApp, mockNotification) // We don't need S3 in these tests
+	testAuthInfo = *auth.NewAuthInfo(
+		mockUserApp, cookieApp,
+		nil, mockBoardApp,
+		mockNotification, testLogger) // We don't need S3 in these tests
 
 	testBoardInfo = BoardInfo{
 		boardApp: mockBoardApp,
+		logger: testLogger,
 	}
 	for _, tt := range boardTest {
 		tt := tt

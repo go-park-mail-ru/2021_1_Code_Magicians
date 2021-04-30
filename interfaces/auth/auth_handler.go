@@ -2,7 +2,7 @@ package auth
 
 import (
 	"encoding/json"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
@@ -17,17 +17,19 @@ type AuthInfo struct {
 	s3App           application.S3AppInterface
 	boardApp        application.BoardAppInterface        // For initial user's board
 	notificationApp application.NotificationAppInterface // For setting CSRF token during  login
+	logger          *zap.Logger
 }
 
 func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
 	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
-	notificationApp application.NotificationAppInterface) *AuthInfo {
+	notificationApp application.NotificationAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
 		userApp:         userApp,
 		cookieApp:       cookieApp,
 		s3App:           s3App,
 		boardApp:        boardApp,
 		notificationApp: notificationApp,
+		logger:          logger,
 	}
 }
 
@@ -38,12 +40,16 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	userInput := new(entity.UserRegInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	valid, _ := userInput.Validate()
 	if !valid {
+		info.logger.Info(entity.ValidationError.Error(),
+			zap.String("url", r.RequestURI),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -51,26 +57,30 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser entity.User
 	err = newUser.UpdateFrom(userInput)
 	if err != nil {
-		log.Println(err)
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	user, _ := info.userApp.GetUserByUsername(newUser.Username)
 	if user != nil {
+		info.logger.Info(entity.UsernameEmailDuplicateError.Error(),
+			zap.String("url", r.RequestURI),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
 	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
-		log.Println(err)
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	newUser.UserID, err = info.userApp.CreateUser(&newUser)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		if err.Error() == entity.UsernameEmailDuplicateError.Error() {
 			w.WriteHeader(http.StatusConflict)
 			return
@@ -81,6 +91,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err = info.cookieApp.AddCookie(&entity.CookieInfo{newUser.UserID, cookie})
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -91,6 +102,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("X-CSRF-Token")
 	err = info.notificationApp.ChangeToken(newUser.UserID, token)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -105,6 +117,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	userInput := new(entity.UserLoginInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -112,6 +125,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	user, err := info.userApp.CheckUserCredentials(userInput.Username, userInput.Password)
 
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err.Error() {
 		case entity.IncorrectPasswordError.Error():
 			w.WriteHeader(http.StatusUnauthorized)
@@ -119,7 +133,6 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			{
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
@@ -128,13 +141,18 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
-		log.Println(err)
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", user.UserID),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = info.cookieApp.AddCookie(&entity.CookieInfo{user.UserID, cookie})
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", user.UserID),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -145,6 +163,9 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("X-CSRF-Token")
 	err = info.notificationApp.ChangeToken(user.UserID, token)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", user.UserID),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -154,10 +175,15 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser logs current user out of their session
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
 	err := info.cookieApp.RemoveCookie(userCookie)
 	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userCookie.UserID),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -172,6 +198,9 @@ func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
 	_, found := middleware.CheckCookies(r, info.cookieApp)
 	if !found {
+		info.logger.Info(entity.UnauthorizedError.Error(),
+			zap.String("url", r.RequestURI),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

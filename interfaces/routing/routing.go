@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"pinterest/application"
@@ -33,6 +34,8 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 		r.Use(csrfMid)
 		r.Use(mid.CSRFSettingMid)
 	}
+	zapLogger, _ := zap.NewDevelopment()
+	defer zapLogger.Sync()
 
 	repo := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
@@ -47,12 +50,12 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	commentApp := application.NewCommentApp(repoComments)
 	notificationsApp := application.NewNotificationApp(userApp)
 
-	boardsInfo := board.NewBoardInfo(boardApp)
-	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, notificationsApp)
-	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp)
-	commentsInfo := comment.NewCommentInfo(commentApp, pinApp)
-	notificationsInfo := notification.NewNotificationInfo(notificationsApp, csrfOn)
+	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
+	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, notificationsApp, zapLogger)
+	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp, zapLogger)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
+	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
+	notificationsInfo := notification.NewNotificationInfo(notificationsApp, csrfOn, zapLogger)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -75,7 +78,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, cookieApp)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", pinsInfo.HandleGetPinByID).Methods("GET")
 	r.HandleFunc("/pins/{id:[0-9]+}", pinsInfo.HandleGetPinsByBoardID).Methods("GET")
-	r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
+	//r.HandleFunc("/pin/picture", mid.AuthMid(pinsInfo.HandleUploadPicture, cookieApp)).Methods("PUT")
 	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, cookieApp)).Methods("POST")
 	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinsInfo.HandlePinsFeed).Methods("GET")
 

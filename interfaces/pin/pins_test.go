@@ -3,6 +3,7 @@ package pin
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -360,12 +361,12 @@ func TestPins(t *testing.T) {
 		Email:     "test@example.com",
 		Avatar:    "avatars/1",
 		Salt:      "",
-
 	}
 
 	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	testLogger := zaptest.NewLogger(t)
 
 	expectedPinFirst := &entity.Pin{
 		PinId:       0,
@@ -416,14 +417,17 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
-	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp, nil, nil, mockNotification) // We don't need S3 or board in these tests
+	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
+		nil, nil,
+		mockNotification, testLogger) // We don't need S3 or board in these tests
 
-	testBoardInfo = *board.NewBoardInfo(mockBoardApp)
+	testBoardInfo = *board.NewBoardInfo(mockBoardApp, testLogger)
 
 	testPinInfo = PinInfo{
 		pinApp:   mockPinApp,
 		boardApp: mockBoardApp,
 		s3App:    nil, // S3 is not needed, as we do not currently test file upload
+		logger:   testLogger,
 	}
 	for _, tt := range pinTest {
 		tt := tt

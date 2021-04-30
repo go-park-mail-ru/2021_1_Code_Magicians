@@ -2,8 +2,8 @@ package profile
 
 import (
 	"encoding/json"
+	"go.uber.org/zap"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
@@ -20,15 +20,18 @@ type ProfileInfo struct {
 	cookieApp       application.CookieAppInterface
 	s3App           application.S3AppInterface
 	notificationApp application.NotificationAppInterface
+	logger          *zap.Logger
 }
 
 func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface) *ProfileInfo {
+	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface,
+	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
 		cookieApp:       cookieApp,
 		s3App:           s3App,
 		notificationApp: notificationApp,
+		logger:          logger,
 	}
 }
 
@@ -43,18 +46,24 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 	userInput := new(entity.UserPassChangeInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	valid, _ := userInput.Validate()
 	if !valid {
+		profileInfo.logger.Info(entity.ValidationError.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	user, err := profileInfo.userApp.GetUser(userID)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -62,7 +71,8 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 	user.Password = userInput.Password
 	err = profileInfo.userApp.SaveUser(user)
 	if err != nil {
-		log.Println(err)
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -81,35 +91,44 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 	userInput := new(entity.UserEditInput)
 	err := json.Unmarshal(body, userInput)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	valid, _ := userInput.Validate()
 	if !valid {
+		profileInfo.logger.Info(entity.ValidationError.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	newUser, err := profileInfo.userApp.GetUser(userID)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = newUser.UpdateFrom(userInput)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = profileInfo.userApp.SaveUser(newUser)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		switch err.Error() {
 		case entity.UsernameEmailDuplicateError.Error():
 			w.WriteHeader(http.StatusConflict)
 		default:
-			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
@@ -125,7 +144,8 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 	err := profileInfo.cookieApp.RemoveCookie(userCookie)
 	if err != nil {
-		log.Println(err)
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userCookie.UserID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -135,7 +155,8 @@ func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *ht
 
 	err = profileInfo.userApp.DeleteUser(userCookie.UserID)
 	if err != nil {
-		log.Println(err)
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userCookie.UserID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -149,17 +170,20 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
+
 	switch passedID {
 	case true:
 		{
 			id, _ := strconv.Atoi(idStr)
 			user, err = profileInfo.userApp.GetUser(id)
 			if err != nil {
+				profileInfo.logger.Info(err.Error(),
+					zap.String("url", r.RequestURI),
+					zap.String("method", r.Method))
 				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -172,11 +196,13 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				{
 					user, err = profileInfo.userApp.GetUserByUsername(username)
 					if err != nil {
+						profileInfo.logger.Info(err.Error(),
+							zap.String("url", r.RequestURI),
+							zap.String("method", r.Method))
 						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
-						log.Println(err)
 						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
@@ -184,19 +210,26 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 			case false: // Username was also not passed
 				{
+					defer r.Body.Close()
+
 					userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 					if userCookie == nil {
+						profileInfo.logger.Info(entity.GetCookieFromContextError.Error(),
+							zap.String("url", r.RequestURI),
+							zap.String("method", r.Method))
 						w.WriteHeader(http.StatusBadRequest)
 						return
 					}
 
 					user, err = profileInfo.userApp.GetUser(userCookie.UserID)
 					if err != nil {
+						profileInfo.logger.Info(err.Error(),
+							zap.String("url", r.RequestURI),
+							zap.String("method", r.Method))
 						if err.Error() == string(entity.UserNotFoundError) {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
-						log.Println(err)
 						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
@@ -213,6 +246,9 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		userOutput.Email = ""
 		responseBody, err := json.Marshal(userOutput)
 		if err != nil {
+			profileInfo.logger.Info(err.Error(),
+				zap.String("url", r.RequestURI),
+				zap.String("method", r.Method))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -228,6 +264,9 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		userOutput.Email = ""
 		followed, err := profileInfo.userApp.CheckIfFollowed(currentUserID, otherUserID)
 		if err != nil {
+			profileInfo.logger.Info(err.Error(),
+				zap.String("url", r.RequestURI),
+				zap.String("method", r.Method))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -237,6 +276,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 	responseBody, err := json.Marshal(userOutput)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -250,11 +290,18 @@ var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
 // HandlePostAvatar takes avatar from request and assigns it to current user
 func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.Request) {
 	bodySize := r.ContentLength
+
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
 	if bodySize <= 0 { // No avatar was passed
+		profileInfo.logger.Info(entity.NoPicturePassed.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if bodySize > int64(maxPostAvatarBodySize) { // Avatar is too large
+		profileInfo.logger.Info(entity.TooLargePicture.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -262,18 +309,18 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	r.ParseMultipartForm(bodySize)
 	file, _, err := r.FormFile("avatarImage")
 	if err != nil {
-		log.Println(err)
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	defer file.Close()
 
-	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	err = profileInfo.userApp.UpdateAvatar(userID, file)
-
 	if err != nil {
-		log.Println(err)
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -286,17 +333,20 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	var err error // Maybe move this line into switch?
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
+	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
 	switch passedID {
 	case true:
 		{
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
+				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+					zap.Int("for user", followerID), zap.String("method", r.Method))
 				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
@@ -305,25 +355,26 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
+				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+					zap.Int("for user", followerID), zap.String("method", r.Method))
 				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
 	}
 
-	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	followedID := followedUser.UserID
 	err = profileInfo.userApp.Follow(followerID, followedID)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", followerID), zap.String("method", r.Method))
 		if err.Error() == "This follow relation already exists" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -339,7 +390,13 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 		})
 		if err == nil {
 			profileInfo.notificationApp.SendNotification(followedID, notificationID) // It's alright if notification could not be sent
+		} else {
+			profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+				zap.Int("for user", followerID), zap.String("method", r.Method))
 		}
+	} else {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", followerID), zap.String("method", r.Method))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -350,17 +407,20 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
+	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
 	switch passedID {
 	case true:
 		{
 			followedID, _ := strconv.Atoi(idStr)
 			followedUser, err = profileInfo.userApp.GetUser(followedID)
 			if err != nil {
+				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+					zap.Int("for user", followerID), zap.String("method", r.Method))
 				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
@@ -369,25 +429,26 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			followedUsername := vars[string(entity.UsernameKey)]
 			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
 			if err != nil {
+				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+					zap.Int("for user", followerID), zap.String("method", r.Method))
 				if err.Error() == string(entity.UserNotFoundError) {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}
 	}
 
-	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 	followedID := followedUser.UserID
 	err = profileInfo.userApp.Unfollow(followerID, followedID)
 	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", followerID), zap.String("method", r.Method))
 		if err.Error() == "That follow relation does not exist" {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
-		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -403,7 +464,13 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 		})
 		if err == nil {
 			profileInfo.notificationApp.SendNotification(followedID, notificationID)
+		} else {
+			profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+				zap.Int("for user", followerID), zap.String("method", r.Method))
 		}
+	} else {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", followerID), zap.String("method", r.Method))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
