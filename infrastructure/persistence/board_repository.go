@@ -2,8 +2,6 @@ package persistence
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"pinterest/domain/entity"
 
 	"github.com/jackc/pgx/v4"
@@ -35,8 +33,7 @@ func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
 	newBoardID := 0
 	err = row.Scan(&newBoardID)
 	if err != nil {
-		// Other errors
-		return -1, err
+		return -1, entity.CreateBoardError
 	}
 
 	err = tx.Commit(context.Background())
@@ -62,7 +59,7 @@ func (r *BoardsRepo) DeleteBoard(boardID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Board not found")
+		return entity.DeleteBoardError
 	}
 
 	err = tx.Commit(context.Background())
@@ -88,7 +85,7 @@ func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
 	err = row.Scan(&board.UserID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, entity.UserNotFoundError
+			return nil, entity.BoardNotFoundError
 		}
 
 		// Other errors
@@ -117,7 +114,7 @@ func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
 	rows, err := tx.Query(context.Background(), getBoardsByUserQuery, userID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("No boards found in database with passed userID")
+			return nil, entity.GetBoardsByUserIDError
 		}
 		return nil, err
 	}
@@ -158,7 +155,7 @@ func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
 	err = row.Scan(&board.BoardID, &board.Title, &board.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return -1, fmt.Errorf("No board found")
+			return -1, entity.NotFoundInitUserBoard
 		}
 		return -1, err
 	}
@@ -168,36 +165,6 @@ func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
 		return -1, entity.TransactionCommitError
 	}
 	return board.BoardID, nil
-}
-
-const checkBoardQuery string = "SELECT boardID\n" +
-	"FROM boards\n" +
-	"WHERE boardID = $1 AND userID = $2;"
-
-// CheckBoard checking that passed board belongs to passed user
-// It returns that nil on success, error on failure
-func (r *BoardsRepo) CheckBoard(userID int, boardID int) error {
-	tx, err := r.db.Begin(context.Background())
-	if err != nil {
-		return entity.TransactionBeginError
-	}
-	defer tx.Rollback(context.Background())
-
-	id := 0
-	row := tx.QueryRow(context.Background(), checkBoardQuery, boardID, userID)
-	err = row.Scan(&id)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return fmt.Errorf("That board is not associated with that user")
-		}
-		return err
-	}
-
-	err = tx.Commit(context.Background())
-	if err != nil {
-		return entity.TransactionCommitError
-	}
-	return nil
 }
 
 const saveBoardPictureQuery string = "UPDATE boards\n" +
@@ -216,7 +183,7 @@ func (r *BoardsRepo) UploadBoardAvatar(boardID int, imageLink string) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Board not found")
+		return entity.FileUploadError
 	}
 
 	err = tx.Commit(context.Background())

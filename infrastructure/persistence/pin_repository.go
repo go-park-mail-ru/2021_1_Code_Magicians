@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"pinterest/domain/entity"
 
@@ -35,7 +34,7 @@ func (r *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
 	newPinID := 0
 	err = row.Scan(&newPinID)
 	if err != nil {
-		return -1, err
+		return -1, entity.CreatePinError
 	}
 
 	err = tx.Commit(context.Background())
@@ -62,7 +61,7 @@ func (r *PinsRepo) AddPin(boardID int, pinID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Pin not found")
+		return entity.AddPinToBoardError
 	}
 
 	err = tx.Commit(context.Background())
@@ -88,7 +87,7 @@ func (r *PinsRepo) DeletePin(pinID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Pin not found")
+		return entity.DeletePinError
 	}
 
 	err = tx.Commit(context.Background())
@@ -100,7 +99,7 @@ func (r *PinsRepo) DeletePin(pinID int) error {
 
 const deletePairQuery string = "DELETE FROM pairs WHERE pinID = $1 AND boardID = $2;"
 
-// RemovePin deletes pin with passed ID
+// RemovePin removes pin with passed boardID
 // It returns nil on success and error on failure
 func (r *PinsRepo) RemovePin(boardID int, pinID int) error {
 	tx, err := r.db.Begin(context.Background())
@@ -114,7 +113,7 @@ func (r *PinsRepo) RemovePin(boardID int, pinID int) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Pin not found")
+		return entity.RemovePinError
 	}
 
 	err = tx.Commit(context.Background())
@@ -126,7 +125,8 @@ func (r *PinsRepo) RemovePin(boardID int, pinID int) error {
 
 const getPinRefCount string = "SELECT COUNT(pinID) FROM pairs WHERE pinID = $1"
 
-// TODO: Naum, add explanation for that func
+// PinRefCount count the number of pin references
+// It returns number of references and nil on success and any number and error on failure
 func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -141,7 +141,7 @@ func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
 		if err == pgx.ErrNoRows {
 			return 0, nil
 		}
-		return -1, err
+		return -1, entity.GetPinReferencesCount
 	}
 
 	err = tx.Commit(context.Background())
@@ -167,7 +167,7 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	err = row.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("Pin not found")
+			return nil, entity.PinNotFoundError
 		}
 		return nil, err
 	}
@@ -182,8 +182,8 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
-// GetPins fetches all users from database
-// It returns slice of all users, nil on success and nil, error on failure
+// GetPins fetches all pins from board
+// It returns slice of all pins in board, nil on success and nil, error on failure
 func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -197,7 +197,7 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
-		return nil, err
+		return nil, entity.GetPinsByBoardIdError
 	}
 
 	for rows.Next() {
@@ -232,7 +232,7 @@ func (r *PinsRepo) SavePicture(pin *entity.Pin) error {
 	_, err = tx.Exec(context.Background(), savePictureQuery, pin.ImageLink, pin.PinId)
 	if err != nil {
 		// Other errors
-		return err
+		return entity.PinSavingError
 	}
 
 	err = tx.Commit(context.Background())
@@ -278,7 +278,8 @@ func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
 	"LIMIT $1;"
 
-// TODO: Nau, add  this function explanation too
+// GetNumOfPins generates the main feed
+// It returns numOfPins pins and nil on success, any number and nil on failure
 func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -299,7 +300,7 @@ func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 		pin := entity.Pin{}
 		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 		if err != nil {
-			return nil, err // TODO: error handling
+			return nil, entity.FeedLoadingError
 		}
 		pins = append(pins, pin)
 	}

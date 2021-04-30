@@ -1,8 +1,6 @@
 package application
 
 import (
-	"errors"
-	"log"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
 )
@@ -59,12 +57,11 @@ func (brd *BoardApp) GetBoards(authorID int) ([]entity.Board, error) {
 func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
 	initBoardID, err := brd.b.GetInitUserBoard(userID)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	if boardID == initBoardID {
-		return errors.New("Can not delete user's first Board")
+		return entity.DeleteInitBoardError
 	}
 
 	err = brd.CheckBoard(userID, boardID)
@@ -80,7 +77,15 @@ func (brd *BoardApp) GetInitUserBoard(userID int) (int, error) {
 }
 
 func (brd *BoardApp) CheckBoard(userID int, boardID int) error {
-	return brd.b.CheckBoard(userID, boardID)
+	board, err := brd.b.GetBoard(boardID)
+	if err != nil {
+		return err
+	}
+
+	if board.UserID != userID {
+		return entity.CheckBoardOwnerError
+	}
+	return nil
 }
 
 func (brd *BoardApp) UploadBoardAvatar(boardID int, imageLink string) error {

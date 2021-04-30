@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"context"
-	"errors"
 	"pinterest/domain/entity"
 
 	"github.com/jackc/pgx/v4"
@@ -36,7 +35,7 @@ func (r *CommentsRepo) AddComment(comment *entity.Comment) error {
 		return err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return errors.New("Error during posting the comment")
+		return entity.AddCommentError
 	}
 
 	err = tx.Commit(context.Background())
@@ -62,14 +61,14 @@ func (r *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
 		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
-		return nil, err
+		return nil, entity.GetCommentsError
 	}
 
 	for rows.Next() {
 		comment := entity.Comment{}
-		err := rows.Scan(&comment.UserID, &comment.PinID, &comment.PinComment)
+		err = rows.Scan(&comment.UserID, &comment.PinID, &comment.PinComment)
 		if err != nil {
-			return nil, err // TODO: error handling
+			return nil, entity.ReturnCommentsError
 		}
 		comments = append(comments, comment)
 	}
