@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"pinterest/interfaces/routing"
@@ -37,21 +37,25 @@ func connectAws() *session.Session {
 }
 
 func runServer(addr string) {
+	logger, _ := zap.NewDevelopment()
+	defer logger.Sync()
+
+	sugarLogger := logger.Sugar()
+
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Println(err)
-		fmt.Println("Could not load .env file")
+		sugarLogger.Fatal("Could not load .env file", zap.String("error", err.Error()))
 	}
+
 	err = godotenv.Load("s3.env")
 	if err != nil {
-		log.Println(err)
-		fmt.Println("Could not load s3.env file")
+		sugarLogger.Fatal("Could not load s3.env file", zap.String("error", err.Error()))
 	}
 	// TODO: check if all needed variables are present
 
 	dbPrefix := os.Getenv("DB_PREFIX")
 	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {
-		log.Fatalf("Wrong prefix: %s , should be AMAZON or LOCAL", dbPrefix)
+		sugarLogger.Fatalf("Wrong prefix: %s , should be AMAZON or LOCAL", dbPrefix)
 	}
 
 	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
@@ -59,8 +63,7 @@ func runServer(addr string) {
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	conn, err := pgxpool.Connect(context.Background(), connectionString)
 	if err != nil {
-		log.Println(err)
-		fmt.Println("Could not connect to database. Closing...")
+		sugarLogger.Fatal("Could not load .env file", zap.String("error", err.Error()))
 		return
 	}
 
@@ -75,7 +78,7 @@ func runServer(addr string) {
 	case "false":
 		allowedOrigins = append(allowedOrigins, "http://www.pinter-best.com:8081", "http://www.pinter-best.com", "http://127.0.0.1:8081")
 	default:
-		log.Fatal("HTTPS_ON variable is not set")
+		sugarLogger.Fatal("HTTPS_ON variable is not set")
 	}
 
 	c := cors.New(cors.Options{
@@ -89,9 +92,9 @@ func runServer(addr string) {
 
 	switch os.Getenv("HTTPS_ON") {
 	case "true":
-		log.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
+		sugarLogger.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
 	case "false":
-		log.Fatal(http.ListenAndServe(addr, handler))
+		sugarLogger.Fatal(http.ListenAndServe(addr, handler))
 	}
 }
 

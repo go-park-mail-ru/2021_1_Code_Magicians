@@ -2,6 +2,7 @@ package board
 
 import (
 	"encoding/json"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"pinterest/application"
@@ -14,11 +15,13 @@ import (
 
 type BoardInfo struct {
 	boardApp application.BoardAppInterface
+	logger *zap.Logger
 }
 
-func NewBoardInfo(boardApp application.BoardAppInterface) *BoardInfo {
+func NewBoardInfo(boardApp application.BoardAppInterface, logger *zap.Logger) *BoardInfo {
 	return &BoardInfo{
 		boardApp: boardApp,
+		logger: logger,
 	}
 }
 
@@ -48,7 +51,10 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 	}
 	boardInput.BoardID, err = boardInfo.boardApp.AddBoard(boardInput)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		boardInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -68,15 +74,18 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
-	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
+	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	userId := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = boardInfo.boardApp.DeleteBoard(boardId, userId)
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+	err = boardInfo.boardApp.DeleteBoard(boardID, userID)
 	if err != nil {
+		boardInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -95,11 +104,9 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 
 	resultBoard, err := boardInfo.boardApp.GetBoard(boardId)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	if resultBoard == nil {
+		boardInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
+			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -117,15 +124,18 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 
 func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userId, err := strconv.Atoi(vars[string(entity.IDKey)])
+	userID, err := strconv.Atoi(vars[string(entity.IDKey)])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resultBoards, err := boardInfo.boardApp.GetBoards(userId)
+	resultBoards, err := boardInfo.boardApp.GetBoards(userID)
 	if err != nil {
+		boardInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

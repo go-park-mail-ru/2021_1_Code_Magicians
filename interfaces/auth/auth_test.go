@@ -3,6 +3,7 @@ package auth
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -395,8 +396,10 @@ var failureCookies []*http.Cookie
 func TestAuthFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
+
 	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	testLogger := zaptest.NewLogger(t)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -418,6 +421,7 @@ func TestAuthFailure(t *testing.T) {
 		s3App:           nil, // We don't need S3 bucket in these tests
 		boardApp:        nil, // We don't really care about boards in these tests
 		notificationApp: mockNotification,
+		logger: testLogger,
 	}
 	for _, tt := range authTestFailure {
 		tt := tt

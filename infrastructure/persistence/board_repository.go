@@ -46,18 +46,18 @@ func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
 	return newBoardID, nil
 }
 
-const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1 AND userID=$2"
+const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1"
 
 // DeleteBoard deletes board with passed id belonging to passed user.
 // It returns error if board is not found or if there were problems with database
-func (r *BoardsRepo) DeleteBoard(boardID int, userID int) error {
+func (r *BoardsRepo) DeleteBoard(boardID int) error {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
 
-	commandTag, err := tx.Exec(context.Background(), deleteBoardQuery, boardID, userID)
+	commandTag, err := tx.Exec(context.Background(), deleteBoardQuery, boardID)
 	if err != nil {
 		return err
 	}

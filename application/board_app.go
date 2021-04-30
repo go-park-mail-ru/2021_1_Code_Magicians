@@ -67,7 +67,12 @@ func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
 		return errors.New("Can not delete user's first Board")
 	}
 
-	return brd.b.DeleteBoard(boardID, userID)
+	err = brd.CheckBoard(userID, boardID)
+	if err != nil {
+		return err
+	}
+
+	return brd.b.DeleteBoard(boardID)
 }
 
 func (brd *BoardApp) GetInitUserBoard(userID int) (int, error) {

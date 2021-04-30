@@ -3,6 +3,7 @@ package profile
 import (
 	"bytes"
 	"fmt"
+	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"pinterest/application"
 	"pinterest/application/mock_application"
@@ -358,6 +359,7 @@ func TestProfileSuccess(t *testing.T) {
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
@@ -445,6 +447,7 @@ func TestProfileSuccess(t *testing.T) {
 		nil,
 		nil,
 		mockNotificationApp,
+		testLogger,
 	)
 
 	testProfileInfo = ProfileInfo{
@@ -452,6 +455,7 @@ func TestProfileSuccess(t *testing.T) {
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
+		logger: testLogger,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt
@@ -722,6 +726,7 @@ func TestProfileFailure(t *testing.T) {
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	testLogger := zaptest.NewLogger(t)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -754,12 +759,14 @@ func TestProfileFailure(t *testing.T) {
 		nil, // We don't need S3 bucket in these tests
 		nil, // We don't really care about boards in these tests
 		mockNotificationApp,
+		testLogger,
 	)
 	testProfileInfo = ProfileInfo{
 		userApp:         mockUserApp,
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
+		logger: testLogger,
 	}
 
 	for _, tt := range profileTestFailure {
