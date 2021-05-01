@@ -1,0 +1,10 @@
+FROM postgres
+
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD ohhibitchitsme
+ENV POSTGRES_DB postgres
+
+COPY Postgres_DB_Backup.sql backup.sql
+COPY pg_restore.sh /docker-entrypoint-initdb.d/
+
+EXPOSE 5432/tcp
