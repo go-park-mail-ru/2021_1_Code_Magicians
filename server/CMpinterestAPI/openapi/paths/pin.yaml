@@ -1,0 +1,45 @@
+post:
+  operationId: createPin
+  tags:
+    - pin
+  summary: Create new pin
+  description: This can only bo done by authorized user
+  requestBody:
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          properties:
+            pinInfo:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                boardID:
+                  type: integer
+            pinImage:
+              type: string
+              format: binary
+    description: New pin
+    required: true
+  responses:
+    '201':
+      description: Successfully created pin
+      content:
+        application/json:
+          schema:
+            properties:
+              ID:
+                type: integer
+    '400':
+      description: Failed to creaet pin due to invalid data
+    '403':
+      description: Can't create pin while not logged in
+    '404':
+      description: Board didn't found to place pin

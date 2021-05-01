@@ -1,0 +1,11 @@
+FROM golang:1.16
+
+WORKDIR /app
+
+COPY . .
+RUN go mod download
+RUN go build server_main.go
+
+EXPOSE 8080/tcp
+
+CMD ["/app/server_main"]

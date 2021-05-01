@@ -22,3 +22,8 @@ To get AWS access key id and AWS secret access key, visit https://docs.aws.amazo
 
 Finally, to start your server, run:
 - $go run server_main.go
+
+
+- $docker build -t postgresdb:0.0.1 -f postgres/dockerfile ./postgres/
+- $docker tag postgresdb:0.0.1 postgresdb:latest
+- $docker run postgresdb -p 5432:5432
