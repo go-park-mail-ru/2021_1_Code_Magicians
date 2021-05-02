@@ -3,6 +3,8 @@
 #sleep 0.0001s
 WAITFORIT_cmdname=${0##*/}
 
+sleep 0.0000001s
+
 echoerr() { if [[ $WAITFORIT_QUIET -ne 1 ]]; then echo "$@" 1>&2; fi }
 
 usage()
