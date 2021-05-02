@@ -78,8 +78,6 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 }
 
 func (notificationInfo *NotificationInfo) HandleReadNotification(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	vars := mux.Vars(r)
 	notificationIDStr := vars[string(entity.IDKey)]
 	notificationID, _ := strconv.Atoi(notificationIDStr)

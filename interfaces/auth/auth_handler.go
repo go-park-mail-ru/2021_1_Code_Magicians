@@ -35,8 +35,6 @@ func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.Coo
 
 // HandleCreateUser creates user with parameters passed in JSON
 func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userInput := new(entity.UserRegInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
@@ -112,8 +110,6 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLoginUser logs user in using provided username and password
 func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userInput := new(entity.UserLoginInput)
 	err := json.NewDecoder(r.Body).Decode(userInput)
 	if err != nil {
@@ -175,8 +171,6 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogoutUser logs current user out of their session
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
 	err := info.cookieApp.RemoveCookie(userCookie)

@@ -29,8 +29,6 @@ func NewCommentInfo(commentApp application.CommentAppInterface,
 }
 
 func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	vars := mux.Vars(r)
 	pinID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {

@@ -26,8 +26,6 @@ func NewBoardInfo(boardApp application.BoardAppInterface, logger *zap.Logger) *B
 }
 
 func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -71,8 +69,6 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 }
 
 func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	vars := mux.Vars(r)
 	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
