@@ -249,6 +249,34 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
+			"/pins/feed/10",
+			"/pins/feed/{num:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testPinInfo.HandlePinsFeed,
+			middleware.AuthMid,
+		},
+
+		OutputStruct{
+			200,
+			nil,
+			[]byte(`{"pins":[{"ID":0,` +
+				`"userID":0,` +
+				`"title":"exampletitle",` +
+				`"imageLink":"example/link",` +
+				`"description":"exampleDescription"},` +
+				`{"ID":1,` +
+				`"userID":0,` +
+				`"title":"exampletitle",` +
+				`"imageLink":"example/link",` +
+				`"description":"exampleDescription"}]}`,
+			),
+		},
+		"Testing get pins for feed", // I don't know right now how to easily check if password changed
+	},
+	{
+		InputStruct{
 			"/pin/add/1",
 			"/pin/add/{id:[0-9]+}",
 			"POST",
@@ -405,6 +433,8 @@ func TestPins(t *testing.T) {
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(expectedPinSecond, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
+
+	mockPinApp.EXPECT().GetNumOfPins(10).Return(expectedPinsInBoard, nil).Times(1)
 
 	mockPinApp.EXPECT().SavePin(expectedUser.UserID, expectedPinSecond.PinId).Return(nil).Times(1)
 

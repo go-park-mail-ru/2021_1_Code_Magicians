@@ -269,41 +269,6 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 	w.Write(pinsBody)
 }
 
-//// HandleUploadPicture takes picture from request and assigns it to current pin
-//func (pinInfo *PinInfo) HandleUploadPicture(w http.ResponseWriter, r *http.Request) {
-//	defer r.Body.Close()
-//
-//	bodySize := r.ContentLength
-//	if bodySize < 0 { // No picture was passed
-//		w.WriteHeader(http.StatusBadRequest)
-//		return
-//	}
-//	if bodySize > int64(maxPostPictureBodySize) { // Picture is too large
-//		w.WriteHeader(http.StatusBadRequest)
-//		return
-//	}
-//
-//	r.ParseMultipartForm(bodySize)
-//	file, _, err := r.FormFile("pinImage")
-//	if err != nil {
-//		w.WriteHeader(http.StatusBadRequest)
-//		return
-//	}
-//
-//	defer file.Close()
-//
-//	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-//	err = pinInfo.pinApp.UploadPicture(userID, file) // TODO: change userID to pinID
-//
-//	if err != nil {
-//		log.Println(err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	w.WriteHeader(http.StatusNoContent)
-//}
-
 func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	numOfPins, err := strconv.Atoi(vars["num"])
