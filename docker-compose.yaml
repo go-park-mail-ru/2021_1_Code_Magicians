@@ -1,16 +1,17 @@
 version: "3.7"
 
 services:
-  postgres:
-    build: postgres
-    # volumes:
-    #   - './_postgres/:/docker-entrypoint-initdb.d/'
-    ports:
-      - 5432:5432
-
   go:
     build: server
     ports:
       - 8080:8080
     depends_on:
-      - "postgres"
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "./server_main"]
+        
+  
+  postgres:
+    build: postgres
+    ports:
+      - 5432:5432
+    
