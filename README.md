@@ -9,7 +9,7 @@ Instructions with docker:
 - $docker-compose -f docker-compose.yaml up
 - To stop server, press Ctrl+C
 
-NOTE: right now to start server properly you need to run docker-compose, then stop it and run it again.
+NOTE: right now to start server properly you may need to run docker-compose, then stop it and run it again.
 
 If you need to clear container (for example), run:
 - $docker container prune -f
