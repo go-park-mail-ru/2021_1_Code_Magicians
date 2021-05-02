@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  go:
+    build: server
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "./server_main"]
+        
+  
+  postgres:
+    build: postgres
+    ports:
+      - 5432:5432
+    

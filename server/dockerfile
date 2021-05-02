@@ -1,0 +1,13 @@
+FROM golang:1.16
+
+WORKDIR /app
+
+COPY . .
+ADD wait-for-it.sh .
+RUN chmod +x wait-for-it.sh
+RUN go mod download
+RUN go build server_main.go
+
+EXPOSE 8080/tcp
+
+CMD ["/app/server_main"]

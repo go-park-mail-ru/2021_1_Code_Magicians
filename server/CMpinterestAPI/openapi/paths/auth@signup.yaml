@@ -1,0 +1,31 @@
+post:
+  operationId: signupUser
+  tags:
+    - auth
+  summary: Create profile
+  description: This can only be done by the unlogged user
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+              format: email
+            password:
+              type: string
+              format: password
+          description: New profile object
+    required: true
+  responses:
+    '201':
+      description: Successfully created profile
+    '400':
+      description: Invalid credentials supplied
+    '403':
+      description: You are already authorized. Log out first
+    '409':
+      description: User already exists

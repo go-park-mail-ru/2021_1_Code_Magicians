@@ -1,0 +1,28 @@
+post:
+  tags:
+    - auth
+  summary: Logs user into the system
+  operationId: loginUser
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+    required: true
+  responses:
+    '204':
+      description: Successful operation
+    '401':
+      description: Wrong password
+    '400':
+      description: Invalid username or password supplied
+    '403':
+      description: You are already authorized. Log out first
+    '404':
+      description: User not found

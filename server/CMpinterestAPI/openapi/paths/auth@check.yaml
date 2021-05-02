@@ -1,0 +1,10 @@
+get:
+  operationId: checkUserAuth
+  tags:
+    - auth
+  summary: Checks if current user is logged in
+  responses:
+    '204':
+      description: User is authorized
+    '401':
+      description: User is unauthorized

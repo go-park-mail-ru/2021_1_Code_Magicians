@@ -1,0 +1,10 @@
+post:
+  operationId: logoutUser
+  tags:
+    - auth
+  summary: Log out from current session
+  responses:
+    '204':
+      description: Logged out
+    '401':
+      description: User unauthorized

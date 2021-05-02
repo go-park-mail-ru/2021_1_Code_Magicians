@@ -1,0 +1,11 @@
+delete:
+  operationId: deleteSelfProfile
+  tags:
+    - profile
+  summary: Delete profile
+  description: This can only be done by authorized user
+  responses:
+    '204':
+      description: Succesful operation
+    '401':
+      description: User unauthorized

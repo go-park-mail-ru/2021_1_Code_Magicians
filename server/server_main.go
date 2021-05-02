@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"pinterest/interfaces/routing"
+
+	"go.uber.org/zap"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -63,7 +64,7 @@ func runServer(addr string) {
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	conn, err := pgxpool.Connect(context.Background(), connectionString)
 	if err != nil {
-		sugarLogger.Fatal("Could not load .env file", zap.String("error", err.Error()))
+		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
 		return
 	}
 
