@@ -37,8 +37,6 @@ func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.
 
 //HandleChangePassword changes password of current user
 func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
@@ -82,8 +80,6 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 
 // HandleEditProfile edits profile of current user
 func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	body, _ := ioutil.ReadAll(r.Body)
@@ -138,8 +134,6 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 
 // HandleDeleteProfile deletes profile of current user, logging them out automatically
 func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
 	err := profileInfo.cookieApp.RemoveCookie(userCookie)
@@ -210,8 +204,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 
 			case false: // Username was also not passed
 				{
-					defer r.Body.Close()
-
 					userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 					if userCookie == nil {
 						profileInfo.logger.Info(entity.GetCookieFromContextError.Error(),

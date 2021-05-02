@@ -33,8 +33,6 @@ func NewPinInfo(pinApp application.PinAppInterface,
 const maxPostPictureBodySize int = 8 * 1024 * 1024 // 8 mB
 
 func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	bodySize := r.ContentLength
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
@@ -113,7 +111,6 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	vars := mux.Vars(r)
 	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
@@ -153,8 +150,6 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 }
 
 func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	vars := mux.Vars(r)
 	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
@@ -178,8 +173,6 @@ func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	vars := mux.Vars(r)
 	boardID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
