@@ -3,6 +3,7 @@ package pin
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
@@ -82,7 +83,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	file, _, err := r.FormFile("pinImage")
+	file, header, err := r.FormFile("pinImage")
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -90,7 +91,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = pinInfo.pinApp.UploadPicture(currPin.PinID, file)
+	extension := filepath.Ext(header.Filename)
+	err = pinInfo.pinApp.UploadPicture(currPin.PinID, file, extension)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))

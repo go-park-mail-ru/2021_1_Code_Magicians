@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
@@ -47,8 +48,8 @@ type PinAppInterface interface {
 	GetLastUserPinID(int) (int, error)
 	SavePicture(*entity.Pin) error
 	RemovePin(int, int) error
-	DeletePin(int, int) error           // Removes pin by ID
-	UploadPicture(int, io.Reader) error // Upload pin
+	DeletePin(int, int) error                   // Removes pin by ID
+	UploadPicture(int, io.Reader, string) error // Upload pin
 	GetNumOfPins(int) ([]entity.Pin, error)
 }
 
@@ -179,7 +180,7 @@ func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
 // It returns nil on success and error on failure
-func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
+func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) error {
 	pin, err := pn.GetPin(pinID)
 	if err != nil {
 		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
@@ -198,7 +199,7 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 		return fmt.Errorf("Could not generate filename")
 	}
 
-	picturePath := "pins/" + filenamePrefix + ".jpg"
+	picturePath := "pins/" + filenamePrefix + extension
 	err = pn.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
 	if err != nil {
 		return fmt.Errorf("File upload failed")
