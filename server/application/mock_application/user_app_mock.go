@@ -167,6 +167,21 @@ func (mr *MockUserAppInterfaceMockRecorder) SaveUser(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUser", reflect.TypeOf((*MockUserAppInterface)(nil).SaveUser), arg0)
 }
 
+// SearchUsers mocks base method.
+func (m *MockUserAppInterface) SearchUsers(arg0 string) ([]entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchUsers", arg0)
+	ret0, _ := ret[0].([]entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchUsers indicates an expected call of SearchUsers.
+func (mr *MockUserAppInterfaceMockRecorder) SearchUsers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUsers", reflect.TypeOf((*MockUserAppInterface)(nil).SearchUsers), arg0)
+}
+
 // Unfollow mocks base method.
 func (m *MockUserAppInterface) Unfollow(arg0, arg1 int) error {
 	m.ctrl.T.Helper()

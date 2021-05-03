@@ -312,9 +312,9 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	Pins := entity.PinsOutput{resultPins}
+	pins := entity.PinsOutput{resultPins}
 
-	pinsBody, err := json.Marshal(Pins)
+	responseBody, err := json.Marshal(pins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -323,5 +323,5 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(pinsBody)
+	w.Write(responseBody)
 }

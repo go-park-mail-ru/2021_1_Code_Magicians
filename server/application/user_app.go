@@ -29,6 +29,7 @@ type UserAppInterface interface {
 	Follow(int, int) error                                     // Make first user follow second
 	Unfollow(int, int) error                                   // Make first user unfollow second
 	CheckIfFollowed(int, int) (bool, error)                    // Check if first user follows second. Err != nil if those users are the same
+	SearchUsers(string) ([]entity.User, error)                 // Get all users by passed keywords
 }
 
 // CreateUser add new user to database with passed fields
@@ -161,7 +162,13 @@ func (u *UserApp) Unfollow(followerID int, followedID int) error {
 
 func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	if followerID == followedID {
-		return false, fmt.Errorf("Users can't follow themselves")
+		return false, entity.FollowThemselfError
 	}
 	return u.us.CheckIfFollowed(followerID, followedID)
+}
+
+// SearchUsers fetches all users from database suitable with passed keywords
+// It returns slice of users and nil on success, nil and error on failure
+func (u *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
+	return u.us.SearchUsers(keyWords)
 }

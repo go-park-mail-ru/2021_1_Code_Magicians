@@ -337,7 +337,7 @@ func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
 		pin := entity.Pin{}
 		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 		if err != nil {
-			return nil, entity.FeedLoadingError
+			return nil, entity.SearchingError
 		}
 		pins = append(pins, pin)
 	}

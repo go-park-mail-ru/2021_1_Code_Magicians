@@ -99,6 +99,11 @@ type UserEditInput struct {
 	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
 }
 
+// UsersListOutput is used to marshal JSON with users' data in the search feed
+type UserListOutput struct {
+	Users []User `json:"profiles"`
+}
+
 // Validate validates UserRegInput struct according to following rules:
 // Username - 2-42 alphanumeric, "_" or " " characters
 // Password - 8-30 characters

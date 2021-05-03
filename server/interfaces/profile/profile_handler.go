@@ -9,6 +9,7 @@ import (
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -466,4 +467,30 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWriter, r *http.Request) {
+	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+
+	keyString = strings.NewReplacer("+", " ").Replace(keyString)
+
+	users, err := profileInfo.userApp.SearchUsers(strings.ToLower(keyString))
+	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	usersOutput := entity.UserListOutput{Users: users}
+
+	responseBody, err := json.Marshal(usersOutput)
+	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
 }

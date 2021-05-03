@@ -256,6 +256,34 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
+			"/profiles/Test",
+			"/profiles/{searchKey}",
+			"GET",
+			nil,
+			nil,
+			testProfileInfo.HandleGetProfilesByKeyWords,
+			nil,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			[]byte(`{"profiles":[{"UserID":0,` +
+				`"Username":"TestUsername",` +
+				`"Password":"",` +
+				`"FirstName":"",` +
+				`"LastName":"",` +
+				`"Email":"",` +
+				`"Avatar":"avatars/1",` +
+				`"Salt":"",` +
+				`"Following":0,` +
+				`"FollowedBy":0}]}`,
+			),
+		},
+		"Testing searching profiles using keywords",
+	},
+	{
+		profileInputStruct{
 			"/profile/edit",
 			"/profile/edit",
 			"PUT",
@@ -390,6 +418,13 @@ func TestProfileSuccess(t *testing.T) {
 		Salt:      "",
 	}
 
+	expectedUserSearch := entity.User {
+		Username: expectedUser.Username,
+		UserID: expectedUser.UserID,
+		Avatar: expectedUser.Avatar,
+	}
+	expectedUsers := []entity.User {expectedUserSearch}
+
 	notificationID := 0
 
 	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleFollowProfile checks if followed profile exists
@@ -397,6 +432,8 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleFollowProfile requests current user's username
 	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(notificationID, nil).Times(1)
 	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
+
+	mockUserApp.EXPECT().SearchUsers("test").Return(expectedUsers, nil).Times(1)
 
 	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleUnfollowProfile checks if followed profile exists
 	mockUserApp.EXPECT().Unfollow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)
@@ -455,7 +492,7 @@ func TestProfileSuccess(t *testing.T) {
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
-		logger: testLogger,
+		logger:          testLogger,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt
@@ -766,7 +803,7 @@ func TestProfileFailure(t *testing.T) {
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
-		logger: testLogger,
+		logger:          testLogger,
 	}
 
 	for _, tt := range profileTestFailure {
