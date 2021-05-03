@@ -3,7 +3,6 @@ package comment
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"go.uber.org/zap/zaptest"
 
 	"github.com/golang/mock/gomock"
 
@@ -231,16 +232,16 @@ func TestComments(t *testing.T) {
 	// Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	
+
 	expectedPinFirst := entity.Pin{
-		PinId:       1,
+		PinID:       1,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
 	expectedPinSecond := entity.Pin{
-		PinId:       2,
+		PinID:       2,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
@@ -260,16 +261,16 @@ func TestComments(t *testing.T) {
 
 	expectedComments := []entity.Comment{comment1, comment2}
 
-	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinId).Return(&expectedPinFirst, nil).Times(3)
+	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinID).Return(&expectedPinFirst, nil).Times(3)
 
 	mockCommentApp.EXPECT().AddComment(gomock.Any()).Return(nil).Times(2)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinId).Return(expectedComments, nil)
+	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinID).Return(expectedComments, nil)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
-	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinId).Return([]entity.Comment{}, nil)
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinID).Return(&expectedPinSecond, nil).Times(1)
+	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinID).Return([]entity.Comment{}, nil)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,
@@ -278,7 +279,7 @@ func TestComments(t *testing.T) {
 	testCommentInfo = CommentInfo{
 		pinApp:     mockPinApp,
 		commentApp: mockCommentApp,
-		logger: testLogger,
+		logger:     testLogger,
 	}
 	for _, tt := range commentTest {
 		tt := tt

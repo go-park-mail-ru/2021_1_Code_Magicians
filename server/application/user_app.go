@@ -115,7 +115,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 		return entity.UserNotFoundError
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random image
+	filenamePrefix, err := GenerateRandomString(40) // generating random filename
 	if err != nil {
 		return entity.FilenameGenerationError
 	}

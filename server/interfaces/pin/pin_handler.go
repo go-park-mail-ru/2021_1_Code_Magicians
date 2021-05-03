@@ -2,11 +2,12 @@ package pin
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 )
@@ -73,7 +74,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
+	currPin.PinID, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
@@ -89,7 +90,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
+	err = pinInfo.pinApp.UploadPicture(currPin.PinID, file)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -97,7 +98,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pinID := entity.PinID{currPin.PinId}
+	pinID := entity.PinID{currPin.PinID}
 	body, err := json.Marshal(pinID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))

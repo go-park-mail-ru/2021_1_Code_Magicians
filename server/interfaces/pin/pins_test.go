@@ -3,7 +3,6 @@ package pin
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +15,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"go.uber.org/zap/zaptest"
 
 	"github.com/golang/mock/gomock"
 
@@ -397,7 +398,7 @@ func TestPins(t *testing.T) {
 	testLogger := zaptest.NewLogger(t)
 
 	expectedPinFirst := &entity.Pin{
-		PinId:       0,
+		PinID:       0,
 		UserID:      0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
@@ -412,7 +413,7 @@ func TestPins(t *testing.T) {
 	}
 
 	expectedPinSecond := &entity.Pin{
-		PinId:       1,
+		PinID:       1,
 		UserID:      0,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
@@ -424,28 +425,28 @@ func TestPins(t *testing.T) {
 		*expectedPinSecond,
 	}
 
-	mockPinApp.EXPECT().CreatePin(expectedPinFirst).Return(expectedPinFirst.PinId, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(expectedPinFirst).Return(expectedPinFirst.PinID, nil).Times(1)
 	mockPinApp.EXPECT().UploadPicture(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	mockPinApp.EXPECT().CreatePin(gomock.Any()).Return(expectedPinSecond.PinId, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(gomock.Any()).Return(expectedPinSecond.PinID, nil).Times(1)
 
 	mockBoardApp.EXPECT().AddBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(expectedPinSecond, nil).Times(1)
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinID).Return(expectedPinSecond, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
 
 	mockPinApp.EXPECT().GetNumOfPins(10).Return(expectedPinsInBoard, nil).Times(1)
 
-	mockPinApp.EXPECT().SavePin(expectedUser.UserID, expectedPinSecond.PinId).Return(nil).Times(1)
+	mockPinApp.EXPECT().SavePin(expectedUser.UserID, expectedPinSecond.PinID).Return(nil).Times(1)
 
 	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(3)
-	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinId).Return(nil).Times(1)
+	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinID).Return(nil).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinId).Return(nil).Times(1)
+	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinID).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinId, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,

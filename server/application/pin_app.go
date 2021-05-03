@@ -2,6 +2,8 @@ package application
 
 import (
 	"fmt"
+	"image"
+	_ "image/jpeg"
 	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
@@ -11,6 +13,24 @@ type PinApp struct {
 	p        repository.PinRepository
 	boardApp BoardAppInterface
 	s3App    S3AppInterface
+}
+
+type imageInfo struct {
+	height       int
+	width        int
+	averageColor string
+}
+
+func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
+	image, _, err := image.Decode(imageFile)
+	if err != nil {
+		return err
+	}
+
+	imageStruct.height, imageStruct.width = image.Bounds().Dy(), image.Bounds().Dx()
+	imageStruct.averageColor = "FFFFFF" // TODO: replace with dominating color calculation
+
+	return nil
 }
 
 func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3AppInterface) *PinApp {
@@ -161,10 +181,16 @@ func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	pin, err := pn.GetPin(pinID)
 	if err != nil {
-		return fmt.Errorf("No pin found to place picture")
+		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random image
+	imageStruct := new(imageInfo)
+	err = imageStruct.fillFromImage(file)
+	if err != nil {
+		return fmt.Errorf("Image parsing failed")
+	}
+
+	filenamePrefix, err := GenerateRandomString(40) // generating random filename
 	if err != nil {
 		return fmt.Errorf("Could not generate filename")
 	}
@@ -192,6 +218,9 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	//}
 
 	pin.ImageLink = picturePath
+	pin.ImageHeight = imageStruct.height
+	pin.ImageWidth = imageStruct.width
+	pin.ImageAvgColor = imageStruct.averageColor
 
 	err = pn.SavePicture(pin)
 	if err != nil {
