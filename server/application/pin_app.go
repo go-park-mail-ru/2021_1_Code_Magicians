@@ -9,6 +9,8 @@ import (
 	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
+
+	"github.com/EdlinOrg/prominentcolor"
 )
 
 type PinApp struct {
@@ -26,11 +28,16 @@ type imageInfo struct {
 func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
 	image, _, err := image.Decode(imageFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("Image decoding failed")
 	}
 
 	imageStruct.height, imageStruct.width = image.Bounds().Dy(), image.Bounds().Dx()
-	imageStruct.averageColor = "FFFFFF" // TODO: replace with dominating color calculation
+
+	colors, err := prominentcolor.Kmeans(image)
+	if err != nil {
+		return fmt.Errorf("Could not determine image's most prominent color")
+	}
+	imageStruct.averageColor = colors[0].AsString()
 
 	return nil
 }
