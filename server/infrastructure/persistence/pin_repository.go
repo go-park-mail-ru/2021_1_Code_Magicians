@@ -18,7 +18,7 @@ func NewPinsRepository(db *pgxpool.Pool) *PinsRepo {
 }
 
 const createPinQuery string = "INSERT INTO Pins (title, imageLink, imageHeight, imageWidth, ImageAvgColor, description, userID)\n" +
-	"values ($1, $2, $3, $4, $5, %6, $7)\n" +
+	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING pinID;\n"
 
 // CreatePin creates new pin with passed fields
@@ -153,7 +153,9 @@ func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
 	return refCount, nil
 }
 
-const getPinQuery string = "SELECT pinID, userID, title, imageLink, description FROM Pins WHERE pinID=$1"
+const getPinQuery string = "SELECT pinID, userID, title," +
+	"imageLink, imageHeight, imageWidth, ImageAvgColor, description\n" +
+	"FROM Pins WHERE pinID=$1"
 
 // GetPin fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
@@ -166,7 +168,9 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 
 	pin := entity.Pin{PinID: pinID}
 	row := tx.QueryRow(context.Background(), getPinQuery, pinID)
-	err = row.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+	err = row.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+		&pin.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.PinNotFoundError
@@ -181,8 +185,9 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	return &pin, nil
 }
 
-const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, " +
-	"pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description FROM Pins\n" +
+const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
 // GetPins fetches all pins from board
@@ -205,7 +210,9 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -220,10 +227,10 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 }
 
 const savePictureQuery string = "UPDATE pins\n" +
-	"SET imageLink=$1,\n" +
-	"imageHeight=$2,\n" +
-	"imageWidth=$3,\n" +
-	"imageAvgColor=$4,\n" +
+	"SET imageLink=$1, " +
+	"imageHeight=$2, " +
+	"imageWidth=$3, " +
+	"imageAvgColor=$4\n" +
 	"WHERE pinID=$5"
 
 // SavePicture saves pin's picture to database
@@ -281,8 +288,9 @@ func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	return lastPinID, nil
 }
 
-const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, " +
-	"pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description FROM Pins\n" +
+const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
 	"LIMIT $1;"
 
 // GetNumOfPins generates the main feed
@@ -305,7 +313,9 @@ func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return nil, entity.FeedLoadingError
 		}
