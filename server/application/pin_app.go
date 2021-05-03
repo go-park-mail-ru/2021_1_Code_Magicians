@@ -1,6 +1,7 @@
 package application
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -184,8 +185,10 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
 	}
 
+	fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
+
 	imageStruct := new(imageInfo)
-	err = imageStruct.fillFromImage(file)
+	err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
 	if err != nil {
 		return fmt.Errorf("Image parsing failed")
 	}
@@ -196,7 +199,7 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	}
 
 	picturePath := "pins/" + filenamePrefix + ".jpg"
-	err = pn.s3App.UploadFile(file, picturePath)
+	err = pn.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
 	if err != nil {
 		return fmt.Errorf("File upload failed")
 	}
