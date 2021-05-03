@@ -6,9 +6,9 @@ type Pin struct {
 	BoardID       int    `json:"boardID,omitempty"`
 	Title         string `json:"title"`
 	ImageLink     string `json:"imageLink"`
-	ImageHeight   int    `json:"height"`
-	ImageWidth    int    `json:"width"`
-	ImageAvgColor string `json:"avgColor"`
+	ImageHeight   int    `json:"imageHeight"`
+	ImageWidth    int    `json:"imageWidth"`
+	ImageAvgColor string `json:"imageAvgColor"`
 	Description   string `json:"description"`
 }
 
