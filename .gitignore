@@ -1,4 +1,4 @@
 .idea/*
-s3.env
+server/s3.env
 *.pem
 .vscode/
