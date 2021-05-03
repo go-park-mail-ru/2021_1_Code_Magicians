@@ -1,0 +1,3 @@
+[submodule "server/CMpinterestAPI"]
+	path = server/CMpinterestAPI
+	url = git@github.com:GrateJastes/CMpinterestAPI.git
