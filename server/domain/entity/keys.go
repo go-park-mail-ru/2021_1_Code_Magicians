@@ -7,6 +7,7 @@ const CookieNameKey = "session_id"
 
 const IDKey key = "id"
 const UsernameKey key = "username"
+const SearchKeyQuery key = "searchKey"
 
 const AvatarDefaultPath string = "assets/img/default-avatar.jpg"
 

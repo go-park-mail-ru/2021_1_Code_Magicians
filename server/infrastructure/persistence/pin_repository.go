@@ -279,7 +279,7 @@ const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pi
 	"LIMIT $1;"
 
 // GetNumOfPins generates the main feed
-// It returns numOfPins pins and nil on success, any number and nil on failure
+// It returns numOfPins pins and nil on success, nil and error on failure
 func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -289,6 +289,43 @@ func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 
 	pins := make([]entity.Pin, 0)
 	rows, err := tx.Query(context.Background(), getNumOfPinsQuery, numOfPins)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		pin := entity.Pin{}
+		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		if err != nil {
+			return nil, entity.FeedLoadingError
+		}
+		pins = append(pins, pin)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return pins, nil
+}
+
+const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+	"WHERE LOWER(pins.title) LIKE $1;"
+
+// SearchPins returns pins by keywords
+// It returns suitable pins and nil on success, nil and error on failure
+func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	pins := make([]entity.Pin, 0)
+	rows, err := tx.Query(context.Background(), SearchPinsQuery,"%" + keyWords + "%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

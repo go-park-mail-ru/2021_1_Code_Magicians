@@ -13,4 +13,5 @@ type PinRepository interface {
 	RemovePin(int, int) error
 	GetLastUserPinID(int) (int, error)
 	GetNumOfPins(int) ([]entity.Pin, error)
+	SearchPins(string) ([]entity.Pin, error)
 }

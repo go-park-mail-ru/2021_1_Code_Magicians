@@ -7,6 +7,7 @@ import (
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -286,6 +287,32 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Pins := entity.PinsOutput{feedPins}
+
+	pinsBody, err := json.Marshal(Pins)
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(pinsBody)
+}
+
+func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request) {
+	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+
+	keyString = strings.NewReplacer("+", " ").Replace(keyString)
+
+	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString))
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	Pins := entity.PinsOutput{resultPins}
 
 	pinsBody, err := json.Marshal(Pins)
 	if err != nil {

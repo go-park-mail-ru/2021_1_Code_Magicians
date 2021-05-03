@@ -29,6 +29,7 @@ type PinAppInterface interface {
 	DeletePin(int, int) error           // Removes pin by ID
 	UploadPicture(int, io.Reader) error // Upload pin
 	GetNumOfPins(int) ([]entity.Pin, error)
+	SearchPins(string) ([]entity.Pin, error)
 }
 
 // CreatePin creates passed pin and adds it to native user's board
@@ -202,6 +203,14 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	return nil
 }
 
+// GetNumOfPins generates the main feed
+// It returns numOfPins pins and nil on success, nil and error on failure
 func (pn *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	return pn.p.GetNumOfPins(numOfPins)
+}
+
+// SearchPins returns pins by keywords
+// It returns suitable pins and nil on success, nil and error on failure
+func (pn *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
+	return pn.p.SearchPins(keyWords)
 }
