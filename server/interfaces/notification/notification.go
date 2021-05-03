@@ -2,11 +2,12 @@ package notification
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -14,6 +15,7 @@ import (
 
 type NotificationInfo struct {
 	notificationsApp application.NotificationAppInterface
+	websocketApp     application.WebsocketAppInterface
 	csrfOn           bool
 	logger           *zap.Logger
 }
@@ -54,7 +56,7 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 	}
 
 	if notificationInfo.csrfOn {
-		err = notificationInfo.notificationsApp.CheckToken(initialMessage.UserID, initialMessage.CSRFToken)
+		err = notificationInfo.websocketApp.CheckToken(initialMessage.UserID, initialMessage.CSRFToken)
 		if err != nil {
 			notificationInfo.logger.Info(err.Error(), zap.Int("from user", initialMessage.UserID))
 			ws.Close()
@@ -62,7 +64,7 @@ func (notificationInfo *NotificationInfo) HandleConnect(w http.ResponseWriter, r
 		}
 	}
 
-	err = notificationInfo.notificationsApp.ChangeClient(initialMessage.UserID, ws)
+	err = notificationInfo.websocketApp.ChangeClient(initialMessage.UserID, ws)
 	if err != nil {
 		notificationInfo.logger.Info(err.Error(), zap.Int("from user", initialMessage.UserID))
 		ws.Close()

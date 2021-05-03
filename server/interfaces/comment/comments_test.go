@@ -3,7 +3,6 @@ package comment
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"testing"
 	"time"
+
+	"go.uber.org/zap/zaptest"
 
 	"github.com/golang/mock/gomock"
 
@@ -210,7 +211,7 @@ func TestComments(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	mockCommentApp := mock_application.NewMockCommentAppInterface(mockCtrl)
-	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
@@ -230,8 +231,8 @@ func TestComments(t *testing.T) {
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
 	// Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	
+	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+
 	expectedPinFirst := entity.Pin{
 		PinId:       1,
 		Title:       "exampletitle",
@@ -273,12 +274,12 @@ func TestComments(t *testing.T) {
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,
-		mockNotification, testLogger) // We don't need S3 or board in these tests
+		mockWebsocket, testLogger) // We don't need S3 or board in these tests
 
 	testCommentInfo = CommentInfo{
 		pinApp:     mockPinApp,
 		commentApp: mockCommentApp,
-		logger: testLogger,
+		logger:     testLogger,
 	}
 	for _, tt := range commentTest {
 		tt := tt

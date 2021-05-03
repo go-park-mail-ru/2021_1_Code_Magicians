@@ -3,10 +3,11 @@ package auth
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"testing"
 	"time"
+
+	"go.uber.org/zap/zaptest"
 
 	"net/http"
 	"net/http/httptest"
@@ -165,7 +166,7 @@ func TestAuthSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
-	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -179,18 +180,18 @@ func TestAuthSuccess(t *testing.T) {
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
 	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
+	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
 
 	testInfo = AuthInfo{
-		userApp:         mockUser,
-		cookieApp:       application.NewCookieApp(40, 10*time.Hour),
-		s3App:           nil, // We don't need S3 bucket in these tests
-		boardApp:        nil, // We don't really care about boards in these tests
-		notificationApp: mockNotification,
+		userApp:      mockUser,
+		cookieApp:    application.NewCookieApp(40, 10*time.Hour),
+		s3App:        nil, // We don't need S3 bucket in these tests
+		boardApp:     nil, // We don't really care about boards in these tests
+		websocketApp: mockWebsocket,
 	}
 	for _, tt := range authTestSuccess {
 		tt := tt
@@ -398,7 +399,7 @@ func TestAuthFailure(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUser := mock_application.NewMockUserAppInterface(mockCtrl)
-	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	expectedUser := entity.User{
@@ -416,12 +417,12 @@ func TestAuthFailure(t *testing.T) {
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
 
 	testInfo = AuthInfo{
-		userApp:         mockUser,
-		cookieApp:       application.NewCookieApp(40, 10*time.Hour),
-		s3App:           nil, // We don't need S3 bucket in these tests
-		boardApp:        nil, // We don't really care about boards in these tests
-		notificationApp: mockNotification,
-		logger: testLogger,
+		userApp:      mockUser,
+		cookieApp:    application.NewCookieApp(40, 10*time.Hour),
+		s3App:        nil, // We don't need S3 bucket in these tests
+		boardApp:     nil, // We don't really care about boards in these tests
+		websocketApp: mockWebsocket,
+		logger:       testLogger,
 	}
 	for _, tt := range authTestFailure {
 		tt := tt

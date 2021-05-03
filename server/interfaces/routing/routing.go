@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"pinterest/application"
@@ -14,6 +13,8 @@ import (
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/csrf"
@@ -48,10 +49,11 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	userApp := application.NewUserApp(repo, boardApp, s3App)
 	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := application.NewCommentApp(repoComments)
-	notificationsApp := application.NewNotificationApp(userApp)
+	websocketApp := application.NewWebsocketApp(userApp)
+	notificationsApp := application.NewNotificationApp(userApp, websocketApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
-	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, notificationsApp, zapLogger)
+	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)

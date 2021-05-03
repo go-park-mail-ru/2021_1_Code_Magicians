@@ -23,9 +23,10 @@ const FilenameGenerationError customError = "Could not generate filename"
 const FileUploadError customError = "File upload failed"
 const FileDeletionError customError = "File deletion failed"
 
+const ClientNotSetError customError = "Websocket client not set"
+
 const NoNotificationsError customError = "No notifications found"
 const NotificationNotFoundError customError = "Notification not found"
-const NotificationsClientNotSetError customError = "Notifications client not set"
 const NotificationAlreadyReadError customError = "Notification was already read"
 
 const NotFoundInitUserBoard customError = "Could not find user's initial board"
