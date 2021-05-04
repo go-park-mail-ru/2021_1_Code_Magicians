@@ -59,46 +59,54 @@ func (websocketApp *WebsocketApp) ChangeClient(userID int, client *websocket.Con
 	return nil
 }
 
-func (websocketApp *WebsocketApp) GetClient(userID int) (*websocket.Conn, error) {
+func (websocketApp *WebsocketApp) getConnection(userID int) (*websocketInfo, error) {
+	websocketApp.mu.Lock()
+	defer websocketApp.mu.Unlock()
+
 	connection, found := websocketApp.connections[userID]
 	if !found {
+		_, err := websocketApp.userApp.GetUser(userID)
+		if err != nil {
+			return nil, entity.UserNotFoundError
+		}
+
 		return nil, entity.ClientNotSetError
+	}
+
+	return &connection, nil
+}
+
+func (websocketApp *WebsocketApp) GetClient(userID int) (*websocket.Conn, error) {
+	connection, err := websocketApp.getConnection(userID)
+	if err != nil {
+		return nil, err
 	}
 
 	return connection.client, nil
 }
 
 func (websocketApp *WebsocketApp) ChangeToken(userID int, csrfToken string) error {
-	websocketApp.mu.Lock()
-	defer websocketApp.mu.Unlock()
-
-	connection, found := websocketApp.connections[userID]
-	if !found {
-		_, err := websocketApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
+	connection, err := websocketApp.getConnection(userID)
+	if err != nil {
+		switch err {
+		case entity.ClientNotSetError:
+			connection = &websocketInfo{}
+		default:
+			return err
 		}
-
-		connection = websocketInfo{}
 	}
 
 	connection.csrfToken = csrfToken
-	websocketApp.connections[userID] = connection
+	websocketApp.mu.Lock()
+	websocketApp.connections[userID] = *connection
+	websocketApp.mu.Unlock()
 	return nil
 }
 
 func (websocketApp *WebsocketApp) CheckToken(userID int, csrfToken string) error {
-	websocketApp.mu.Lock()
-	defer websocketApp.mu.Unlock()
-
-	connection, found := websocketApp.connections[userID]
-	if !found {
-		_, err := websocketApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
-		}
-
-		connection = websocketInfo{}
+	connection, err := websocketApp.getConnection(userID)
+	if err != nil {
+		return err
 	}
 
 	if connection.csrfToken != csrfToken {
@@ -120,18 +128,15 @@ func sendMessage(client *websocket.Conn, message []byte) error { // Is not safe 
 }
 
 func (websocketApp *WebsocketApp) SendMessage(userID int, message []byte) error {
-	websocketApp.mu.Lock()
-	defer websocketApp.mu.Unlock()
-
-	connection, found := websocketApp.connections[userID]
-	if !found {
-		return entity.ClientNotSetError
+	connection, err := websocketApp.getConnection(userID)
+	if err != nil {
+		return err
 	}
 
 	connection.mu.Lock()
 	defer connection.mu.Unlock()
 
-	err := sendMessage(connection.client, message)
+	err = sendMessage(connection.client, message)
 	if err != nil {
 		return err
 	}
@@ -140,12 +145,9 @@ func (websocketApp *WebsocketApp) SendMessage(userID int, message []byte) error 
 }
 
 func (websocketApp *WebsocketApp) SendMessages(userID int, messages [][]byte) error {
-	websocketApp.mu.Lock()
-	defer websocketApp.mu.Unlock()
-
-	connection, found := websocketApp.connections[userID]
-	if !found {
-		return entity.ClientNotSetError
+	connection, err := websocketApp.getConnection(userID)
+	if err != nil {
+		return err
 	}
 
 	connection.mu.Lock()
