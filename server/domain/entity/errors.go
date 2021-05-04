@@ -32,6 +32,9 @@ const NotificationAlreadyReadError customError = "Notification was already read"
 const ChatNotFoundError customError = "Chat not found"
 const MessageNotFoundError customError = "Message not found"
 const ChatAlreadyExistsError customError = "Chat already exists"
+const UserNotInChatError customError = "User is not in chat"
+
+const JsonMarshallError customError = "Could not parse struct into JSON"
 
 const NotFoundInitUserBoard customError = "Could not find user's initial board"
 const DeleteBoardError customError = "Could not delete user's board"

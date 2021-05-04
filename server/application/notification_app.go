@@ -2,7 +2,6 @@ package application
 
 import (
 	"encoding/json"
-	"fmt"
 	"pinterest/domain/entity"
 	"sync"
 )
@@ -130,7 +129,7 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 		notificationsMap = make(map[int]entity.Notification)
 	}
 
-	allNotifications := entity.MessageManyNotifications{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
+	allNotifications := entity.AllNotificationsOutput{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
 
 	for _, notification := range notificationsMap {
 		allNotifications.Notifications = append(allNotifications.Notifications, notification)
@@ -138,7 +137,7 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 
 	message, err := json.Marshal(allNotifications)
 	if err != nil {
-		return fmt.Errorf("Could not parse messages into JSON")
+		return entity.JsonMarshallError
 	}
 
 	err = notificationApp.websocketApp.SendMessage(userID, message)
@@ -160,11 +159,11 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 		return entity.NotificationNotFoundError
 	}
 
-	notificationMsg := entity.MessageOneNotification{Type: entity.OneNotificationTypeKey, Notification: notification}
+	notificationMsg := entity.OneNotificationOutput{Type: entity.OneNotificationTypeKey, Notification: notification}
 
 	message, err := json.Marshal(notificationMsg)
 	if err != nil {
-		return fmt.Errorf("Could not parse message into JSON")
+		return entity.JsonMarshallError
 	}
 
 	err = notificationApp.websocketApp.SendMessage(userID, message)

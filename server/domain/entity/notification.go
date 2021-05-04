@@ -9,17 +9,12 @@ type Notification struct {
 	IsRead         bool   `json:"isRead"`
 }
 
-type MessageManyNotifications struct {
-	Type          string         `json:"type"`
+type AllNotificationsOutput struct {
+	Type          key            `json:"type"`
 	Notifications []Notification `json:"allNotifications"`
 }
 
-type MessageOneNotification struct {
-	Type         string       `json:"type"`
+type OneNotificationOutput struct {
+	Type         key          `json:"type"`
 	Notification Notification `json:"notification"`
-}
-
-type InitialMessage struct {
-	UserID    int    `json:"userID"`
-	CSRFToken string `json:"CSRFToken"`
 }

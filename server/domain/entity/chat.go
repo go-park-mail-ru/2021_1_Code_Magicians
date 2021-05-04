@@ -60,3 +60,18 @@ func (output *ChatOutput) FillFromChat(chat *Chat, isFirstUser bool) {
 		output.IsRead = chat.SecondUserRead
 	}
 }
+
+type AllChatsOutput struct {
+	Type  key          `json:"type"`
+	Chats []ChatOutput `json:"allChats"`
+}
+
+type OneChatOutput struct {
+	Type key        `json:"type"`
+	Chat ChatOutput `json:"chat"`
+}
+
+type OneMessageOutput struct {
+	Type    key           `json:"type"`
+	Message MessageOutput `json:"message"`
+}
