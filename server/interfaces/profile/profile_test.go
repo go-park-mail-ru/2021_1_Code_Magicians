@@ -738,7 +738,7 @@ func TestProfileFailure(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    entity.AvatarDefaultPath,
+		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
 

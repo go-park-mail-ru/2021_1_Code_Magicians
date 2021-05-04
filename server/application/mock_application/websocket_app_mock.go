@@ -90,3 +90,31 @@ func (mr *MockWebsocketAppInterfaceMockRecorder) GetClient(userID interface{}) *
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClient", reflect.TypeOf((*MockWebsocketAppInterface)(nil).GetClient), userID)
 }
+
+// SendMessage mocks base method.
+func (m *MockWebsocketAppInterface) SendMessage(userID int, message []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", userID, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendMessage indicates an expected call of SendMessage.
+func (mr *MockWebsocketAppInterfaceMockRecorder) SendMessage(userID, message interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockWebsocketAppInterface)(nil).SendMessage), userID, message)
+}
+
+// SendMessages mocks base method.
+func (m *MockWebsocketAppInterface) SendMessages(userID int, messages [][]byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessages", userID, messages)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendMessages indicates an expected call of SendMessages.
+func (mr *MockWebsocketAppInterfaceMockRecorder) SendMessages(userID, messages interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessages", reflect.TypeOf((*MockWebsocketAppInterface)(nil).SendMessages), userID, messages)
+}

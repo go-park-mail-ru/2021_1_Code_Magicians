@@ -1,7 +1,6 @@
 package application
 
 import (
-	"fmt"
 	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
@@ -65,7 +64,7 @@ func (u *UserApp) DeleteUser(userID int) error {
 		return err
 	}
 
-	if user.Avatar != entity.AvatarDefaultPath {
+	if user.Avatar != string(entity.AvatarDefaultPath) {
 		err = u.s3App.DeleteFile(user.Avatar)
 
 		if err != nil {
@@ -134,7 +133,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 		return entity.UserSavingError
 	}
 
-	if oldAvatarPath != entity.AvatarDefaultPath {
+	if oldAvatarPath != string(entity.AvatarDefaultPath) {
 		err = u.s3App.DeleteFile(oldAvatarPath)
 
 		if err != nil {
@@ -147,21 +146,21 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
 
 func (u *UserApp) Follow(followerID int, followedID int) error {
 	if followerID == followedID {
-		return fmt.Errorf("Users can't follow themselves")
+		return entity.SelfFollowError
 	}
 	return u.us.Follow(followerID, followedID)
 }
 
 func (u *UserApp) Unfollow(followerID int, followedID int) error {
 	if followerID == followedID {
-		return fmt.Errorf("Users can't unfollow themselves")
+		return entity.SelfFollowError
 	}
 	return u.us.Unfollow(followerID, followedID)
 }
 
 func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	if followerID == followedID {
-		return false, fmt.Errorf("Users can't follow themselves")
+		return false, entity.SelfFollowError
 	}
 	return u.us.CheckIfFollowed(followerID, followedID)
 }

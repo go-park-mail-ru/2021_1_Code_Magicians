@@ -175,7 +175,7 @@ func TestAuthSuccess(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    entity.AvatarDefaultPath,
+		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
 	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
@@ -409,7 +409,7 @@ func TestAuthFailure(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    entity.AvatarDefaultPath,
+		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
 	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair

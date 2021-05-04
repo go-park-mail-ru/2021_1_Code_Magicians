@@ -15,6 +15,7 @@ const UnauthorizedError customError = "Unauthorized"
 const FollowNotFoundError customError = "Follow relation not found"
 const FollowAlreadyExistsError customError = "Follow relation already exists"
 const FollowCountUpdateError customError = "Failed to update follow(er/ing) counter"
+const SelfFollowError customError = "Users can't follow themselves"
 
 const CookieGenerationError customError = "Could not generate cookie"
 const GetCookieFromContextError customError = "Could not get cookie from context"
