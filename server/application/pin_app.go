@@ -1,16 +1,45 @@
 package application
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
+
+	"github.com/EdlinOrg/prominentcolor"
 )
 
 type PinApp struct {
 	p        repository.PinRepository
 	boardApp BoardAppInterface
 	s3App    S3AppInterface
+}
+
+type imageInfo struct {
+	height       int
+	width        int
+	averageColor string
+}
+
+func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
+	image, _, err := image.Decode(imageFile)
+	if err != nil {
+		return fmt.Errorf("Image decoding failed")
+	}
+
+	imageStruct.height, imageStruct.width = image.Bounds().Dy(), image.Bounds().Dx()
+
+	colors, err := prominentcolor.Kmeans(image)
+	if err != nil {
+		return fmt.Errorf("Could not determine image's most prominent color")
+	}
+	imageStruct.averageColor = colors[0].AsString()
+
+	return nil
 }
 
 func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3AppInterface) *PinApp {
@@ -26,8 +55,8 @@ type PinAppInterface interface {
 	GetLastUserPinID(int) (int, error)
 	SavePicture(*entity.Pin) error
 	RemovePin(int, int) error
-	DeletePin(int, int) error           // Removes pin by ID
-	UploadPicture(int, io.Reader) error // Upload pin
+	DeletePin(int, int) error                   // Removes pin by ID
+	UploadPicture(int, io.Reader, string) error // Upload pin
 	GetNumOfPins(int) ([]entity.Pin, error)
 	SearchPins(string) ([]entity.Pin, error)
 }
@@ -159,19 +188,27 @@ func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
 // It returns nil on success and error on failure
-func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
+func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) error {
 	pin, err := pn.GetPin(pinID)
 	if err != nil {
-		return fmt.Errorf("No pin found to place picture")
+		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random image
+	fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
+
+	imageStruct := new(imageInfo)
+	err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
+	if err != nil {
+		return fmt.Errorf("Image parsing failed")
+	}
+
+	filenamePrefix, err := GenerateRandomString(40) // generating random filename
 	if err != nil {
 		return fmt.Errorf("Could not generate filename")
 	}
 
-	picturePath := "pins/" + filenamePrefix + ".jpg"
-	err = pn.s3App.UploadFile(file, picturePath)
+	picturePath := "pins/" + filenamePrefix + extension
+	err = pn.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
 	if err != nil {
 		return fmt.Errorf("File upload failed")
 	}
@@ -193,6 +230,9 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader) error {
 	//}
 
 	pin.ImageLink = picturePath
+	pin.ImageHeight = imageStruct.height
+	pin.ImageWidth = imageStruct.width
+	pin.ImageAvgColor = imageStruct.averageColor
 
 	err = pn.SavePicture(pin)
 	if err != nil {

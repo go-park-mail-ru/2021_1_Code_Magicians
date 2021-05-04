@@ -2,15 +2,17 @@ package profile
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 )
@@ -300,7 +302,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	}
 
 	r.ParseMultipartForm(bodySize)
-	file, _, err := r.FormFile("avatarImage")
+	file, header, err := r.FormFile("avatarImage")
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -310,7 +312,8 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 
 	defer file.Close()
 
-	err = profileInfo.userApp.UpdateAvatar(userID, file)
+	extension := filepath.Ext(header.Filename)
+	err = profileInfo.userApp.UpdateAvatar(userID, file, extension)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))

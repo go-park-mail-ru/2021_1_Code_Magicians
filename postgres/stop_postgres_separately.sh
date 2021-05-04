@@ -1,1 +1,1 @@
-docker kill $(docker ps -q)
+docker kill postgrescontainer

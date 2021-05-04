@@ -197,15 +197,15 @@ func (mr *MockUserAppInterfaceMockRecorder) Unfollow(arg0, arg1 interface{}) *go
 }
 
 // UpdateAvatar mocks base method.
-func (m *MockUserAppInterface) UpdateAvatar(arg0 int, arg1 io.Reader) error {
+func (m *MockUserAppInterface) UpdateAvatar(arg0 int, arg1 io.Reader, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAvatar", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpdateAvatar", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAvatar indicates an expected call of UpdateAvatar.
-func (mr *MockUserAppInterfaceMockRecorder) UpdateAvatar(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockUserAppInterfaceMockRecorder) UpdateAvatar(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockUserAppInterface)(nil).UpdateAvatar), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockUserAppInterface)(nil).UpdateAvatar), arg0, arg1, arg2)
 }
