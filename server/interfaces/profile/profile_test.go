@@ -3,7 +3,6 @@ package profile
 import (
 	"bytes"
 	"fmt"
-	"go.uber.org/zap/zaptest"
 	"io/ioutil"
 	"pinterest/application"
 	"pinterest/application/mock_application"
@@ -11,6 +10,8 @@ import (
 	"pinterest/interfaces/auth"
 	"testing"
 	"time"
+
+	"go.uber.org/zap/zaptest"
 
 	"net/http"
 	"net/http/httptest"
@@ -437,7 +438,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUser(expectedUserEdited.UserID).Return(&expectedUserEdited, nil).Times(1) // Normal user output using userID
 
-	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any()).Return(nil).Times(1)
+	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID).Return(nil).Times(1)
 
@@ -455,7 +456,7 @@ func TestProfileSuccess(t *testing.T) {
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
-		logger: testLogger,
+		logger:          testLogger,
 	}
 	for _, tt := range profileTestSuccess {
 		tt := tt
@@ -751,7 +752,7 @@ func TestProfileFailure(t *testing.T) {
 	mockUserApp.EXPECT().GetUser(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
 
-	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any()).Return(entity.FilenameGenerationError).Times(1)
+	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any(), gomock.Any()).Return(entity.FilenameGenerationError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
@@ -766,7 +767,7 @@ func TestProfileFailure(t *testing.T) {
 		cookieApp:       cookieApp,
 		s3App:           mockS3App,
 		notificationApp: mockNotificationApp,
-		logger: testLogger,
+		logger:          testLogger,
 	}
 
 	for _, tt := range profileTestFailure {
