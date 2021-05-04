@@ -3,7 +3,7 @@ package entity
 type Pin struct {
 	PinID         int    `json:"ID"`
 	UserID        int    `json:"userID"`
-	BoardID       int    `json:"boardID,optional"`
+	BoardID       int    `json:"boardID,omitempty"`
 	Title         string `json:"title"`
 	ImageLink     string `json:"imageLink"`
 	ImageHeight   int    `json:"imageHeight"`
