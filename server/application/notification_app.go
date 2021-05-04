@@ -5,14 +5,7 @@ import (
 	"fmt"
 	"pinterest/domain/entity"
 	"sync"
-
-	"github.com/gorilla/websocket"
 )
-
-type connectionInfo struct {
-	csrfToken string
-	client    *websocket.Conn
-}
 
 type NotificationApp struct {
 	notifications      map[int]map[int]entity.Notification
@@ -123,17 +116,6 @@ func (notificationApp *NotificationApp) GetNotification(userID int, notification
 	return &notification, nil
 }
 
-func sendMessage(client *websocket.Conn, msg []byte) error {
-	w, err := client.NextWriter(websocket.TextMessage)
-	if err != nil {
-		return fmt.Errorf("Could not start writing")
-	}
-
-	w.Write(msg)
-	w.Close()
-	return nil
-}
-
 func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
@@ -148,24 +130,18 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 		notificationsMap = make(map[int]entity.Notification)
 	}
 
-	client, err := notificationApp.websocketApp.GetClient(userID)
-	if err != nil {
-		return err
-	}
-
 	allNotifications := entity.MessageManyNotifications{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
 
 	for _, notification := range notificationsMap {
 		allNotifications.Notifications = append(allNotifications.Notifications, notification)
 	}
 
-	// TODO: maybe move sending notifications to handler???
-	msg, err := json.Marshal(allNotifications)
+	message, err := json.Marshal(allNotifications)
 	if err != nil {
 		return fmt.Errorf("Could not parse messages into JSON")
 	}
 
-	err = sendMessage(client, msg)
+	err = notificationApp.websocketApp.SendMessage(userID, message)
 
 	return err
 }
@@ -184,19 +160,14 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 		return entity.NotificationNotFoundError
 	}
 
-	client, err := notificationApp.websocketApp.GetClient(userID)
-	if err != nil {
-		return err
-	}
-
 	notificationMsg := entity.MessageOneNotification{Type: entity.OneNotificationTypeKey, Notification: notification}
 
-	msg, err := json.Marshal(notificationMsg)
+	message, err := json.Marshal(notificationMsg)
 	if err != nil {
 		return fmt.Errorf("Could not parse message into JSON")
 	}
 
-	err = sendMessage(client, msg)
+	err = notificationApp.websocketApp.SendMessage(userID, message)
 
 	return err
 }
