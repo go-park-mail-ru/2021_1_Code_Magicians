@@ -53,8 +53,8 @@ type User struct {
 	Email      string `json:"email,omitempty"`
 	Avatar     string `json:"avatarLink,omitempty"` // path to avatar
 	Salt       string `json:"-"`
-	Following  int    `json:"following,omitempty"`
-	FollowedBy int    `json:"followed,omitempty"`
+	Following  int    `json:"following"`
+	FollowedBy int    `json:"followed"`
 }
 
 // UserOutput is used to marshal JSON with users' data
@@ -101,7 +101,7 @@ type UserEditInput struct {
 
 // UsersListOutput is used to marshal JSON with users' data in the search feed
 type UserListOutput struct {
-	Users []User `json:"profiles"`
+	Users []UserOutput `json:"profiles"`
 }
 
 // Validate validates UserRegInput struct according to following rules:

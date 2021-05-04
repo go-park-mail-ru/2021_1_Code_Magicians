@@ -270,7 +270,12 @@ var profileTestSuccess = []struct {
 			nil,
 			[]byte(`{"profiles":[{"ID":0,` +
 				`"username":"TestUsername",` +
-				`"avatarLink":"avatars/1"}]}`,
+				`"email":"test@example.com",` +
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastName",` +
+				`"avatarLink":"avatars/1",` +
+				`"following":0,` +
+				`"followers":0}]}`,
 			),
 		},
 		"Testing searching profiles using keywords",
@@ -411,12 +416,7 @@ func TestProfileSuccess(t *testing.T) {
 		Salt:      "",
 	}
 
-	expectedUserSearch := entity.User {
-		Username: expectedUser.Username,
-		UserID: expectedUser.UserID,
-		Avatar: expectedUser.Avatar,
-	}
-	expectedUsers := []entity.User {expectedUserSearch}
+	expectedUsers := []entity.User{expectedUser}
 
 	notificationID := 0
 

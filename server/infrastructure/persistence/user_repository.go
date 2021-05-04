@@ -209,7 +209,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 		secondNamePtr := new(string)
 		avatarPtr := new(string)
 
-		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
 			return nil, err // TODO: error handling
@@ -374,7 +374,7 @@ func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error)
 	return true, nil
 }
 
-const SearchUsersQuery string = "SELECT userID, username, avatar FROM Users\n" +
+const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
 	"WHERE LOWER(username) LIKE $1;"
 
 // SearchUsers fetches all users from database suitable with passed keywords
@@ -397,10 +397,20 @@ func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
 
 	for rows.Next() {
 		user := entity.User{}
-		err = rows.Scan(&user.UserID, &user.Username, &user.Avatar)
+
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
 			return nil, entity.SearchingError
 		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
 		users = append(users, user)
 	}
 

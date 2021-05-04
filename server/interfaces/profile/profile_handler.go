@@ -481,7 +481,13 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 		return
 	}
 
-	usersOutput := entity.UserListOutput{Users: users}
+	usersOutput := new(entity.UserListOutput)
+
+	for _, user := range users {
+		var userOutput entity.UserOutput
+		userOutput.FillFromUser(&user)
+		usersOutput.Users = append(usersOutput.Users, userOutput)
+	}
 
 	responseBody, err := json.Marshal(usersOutput)
 	if err != nil {
