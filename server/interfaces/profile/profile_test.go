@@ -268,16 +268,9 @@ var profileTestSuccess = []struct {
 		profileOutputStruct{
 			200,
 			nil,
-			[]byte(`{"profiles":[{"UserID":0,` +
-				`"Username":"TestUsername",` +
-				`"Password":"",` +
-				`"FirstName":"",` +
-				`"LastName":"",` +
-				`"Email":"",` +
-				`"Avatar":"avatars/1",` +
-				`"Salt":"",` +
-				`"Following":0,` +
-				`"FollowedBy":0}]}`,
+			[]byte(`{"profiles":[{"ID":0,` +
+				`"username":"TestUsername",` +
+				`"avatarLink":"avatars/1"}]}`,
 			),
 		},
 		"Testing searching profiles using keywords",

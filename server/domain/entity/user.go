@@ -45,16 +45,16 @@ func init() {
 
 // User is, well, a struct depicting a user
 type User struct {
-	UserID     int
-	Username   string
-	Password   string // TODO: hashing
-	FirstName  string
-	LastName   string
-	Email      string
-	Avatar     string // path to avatar
-	Salt       string
-	Following  int
-	FollowedBy int
+	UserID     int    `json:"ID"`
+	Username   string `json:"username,omitempty"`
+	Password   string `json:"-"` // TODO: hashing
+	FirstName  string `json:"firstName,omitempty"`
+	LastName   string `json:"lastName,omitempty"`
+	Email      string `json:"email,omitempty"`
+	Avatar     string `json:"avatarLink,omitempty"` // path to avatar
+	Salt       string `json:"-"`
+	Following  int    `json:"following,omitempty"`
+	FollowedBy int    `json:"followed,omitempty"`
 }
 
 // UserOutput is used to marshal JSON with users' data
