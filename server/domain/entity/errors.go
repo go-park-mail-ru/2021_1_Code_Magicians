@@ -29,6 +29,10 @@ const NoNotificationsError customError = "No notifications found"
 const NotificationNotFoundError customError = "Notification not found"
 const NotificationAlreadyReadError customError = "Notification was already read"
 
+const ChatNotFoundError customError = "Chat not found"
+const MessageNotFoundError customError = "Message not found"
+const ChatAlreadyExistsError customError = "Chat already exists"
+
 const NotFoundInitUserBoard customError = "Could not find user's initial board"
 const DeleteBoardError customError = "Could not delete user's board"
 const CreateBoardError customError = "Could not create board"
