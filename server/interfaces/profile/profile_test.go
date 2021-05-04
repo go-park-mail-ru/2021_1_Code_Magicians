@@ -257,6 +257,32 @@ var profileTestSuccess = []struct {
 	},
 	{
 		profileInputStruct{
+			"/profiles/Test",
+			"/profiles/{searchKey}",
+			"GET",
+			nil,
+			nil,
+			testProfileInfo.HandleGetProfilesByKeyWords,
+			nil,
+		},
+
+		profileOutputStruct{
+			200,
+			nil,
+			[]byte(`{"profiles":[{"ID":0,` +
+				`"username":"TestUsername",` +
+				`"email":"test@example.com",` +
+				`"firstName":"TestFirstName",` +
+				`"lastName":"TestLastName",` +
+				`"avatarLink":"avatars/1",` +
+				`"following":0,` +
+				`"followers":0}]}`,
+			),
+		},
+		"Testing searching profiles using keywords",
+	},
+	{
+		profileInputStruct{
 			"/profile/edit",
 			"/profile/edit",
 			"PUT",
@@ -391,6 +417,8 @@ func TestProfileSuccess(t *testing.T) {
 		Salt:      "",
 	}
 
+	expectedUsers := []entity.User{expectedUser}
+
 	notificationID := 0
 
 	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleFollowProfile checks if followed profile exists
@@ -398,6 +426,8 @@ func TestProfileSuccess(t *testing.T) {
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // HandleFollowProfile requests current user's username
 	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(notificationID, nil).Times(1)
 	mockNotificationApp.EXPECT().SendNotification(expectedSecondUser.UserID, notificationID).Return(nil).Times(1)
+
+	mockUserApp.EXPECT().SearchUsers("test").Return(expectedUsers, nil).Times(1)
 
 	mockUserApp.EXPECT().GetUser(expectedSecondUser.UserID).Return(&expectedSecondUser, nil).Times(1) // HandleUnfollowProfile checks if followed profile exists
 	mockUserApp.EXPECT().Unfollow(expectedUser.UserID, expectedSecondUser.UserID).Return(nil).Times(1)

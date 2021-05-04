@@ -7,6 +7,7 @@ import (
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -300,4 +301,30 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
+}
+
+func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request) {
+	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+
+	keyString = strings.NewReplacer("+", " ").Replace(keyString)
+
+	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString))
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	pins := entity.PinsOutput{resultPins}
+
+	responseBody, err := json.Marshal(pins)
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
 }

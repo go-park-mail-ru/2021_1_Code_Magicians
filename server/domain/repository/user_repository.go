@@ -12,4 +12,5 @@ type UserRepository interface {
 	Follow(int, int) error                          // Make first user follow second
 	Unfollow(int, int) error                        // Make first user unfollow second
 	CheckIfFollowed(int, int) (bool, error)         // Check if first user follows second
+	SearchUsers(string) ([]entity.User, error)      // Get all users by passed keywords
 }

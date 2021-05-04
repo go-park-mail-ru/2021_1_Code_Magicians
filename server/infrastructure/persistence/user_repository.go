@@ -209,7 +209,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 		secondNamePtr := new(string)
 		avatarPtr := new(string)
 
-		err := rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
 			return nil, err // TODO: error handling
@@ -372,4 +372,51 @@ func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error)
 		return false, entity.TransactionCommitError
 	}
 	return true, nil
+}
+
+const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"WHERE LOWER(username) LIKE $1;"
+
+// SearchUsers fetches all users from database suitable with passed keywords
+// It returns slice of users and nil on success, nil and error on failure
+func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	users := make([]entity.User, 0)
+	rows, err := tx.Query(context.Background(), SearchUsersQuery,"%" + keyWords + "%")
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		user := entity.User{}
+
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
+		if err != nil {
+			return nil, entity.SearchingError
+		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
+		users = append(users, user)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return users, nil
 }
