@@ -2,31 +2,23 @@ package application
 
 import (
 	"encoding/json"
-	"fmt"
 	"pinterest/domain/entity"
 	"sync"
-
-	"github.com/gorilla/websocket"
 )
-
-type connectionInfo struct {
-	csrfToken string
-	client    *websocket.Conn
-}
 
 type NotificationApp struct {
 	notifications      map[int]map[int]entity.Notification
 	lastNotificationID int
-	connections        map[int]connectionInfo
 	mu                 sync.Mutex
 	userApp            UserAppInterface
+	websocketApp       WebsocketAppInterface
 }
 
-func NewNotificationApp(userApp UserAppInterface) *NotificationApp {
+func NewNotificationApp(userApp UserAppInterface, websocketApp WebsocketAppInterface) *NotificationApp {
 	return &NotificationApp{
 		notifications: make(map[int]map[int]entity.Notification),
-		connections:   make(map[int]connectionInfo),
 		userApp:       userApp,
+		websocketApp:  websocketApp,
 	}
 }
 
@@ -38,9 +30,6 @@ type NotificationAppInterface interface {
 	SendAllNotifications(userID int) error                                        // Send all of the notifications that this user has
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
 	ReadNotification(userID int, notificationID int) error                        // Changes notification's status to "Read"
-	ChangeClient(userID int, client *websocket.Conn) error                        // Switches client  that was assigned to user
-	ChangeToken(userID int, csrfToken string) error                               // Change user's CRSF token
-	CheckToken(userID int, csrfToken string) error                                // Check if passed token is correct (nil on success)
 }
 
 func (notificationApp *NotificationApp) AddNotification(notification *entity.Notification) (int, error) {
@@ -126,17 +115,6 @@ func (notificationApp *NotificationApp) GetNotification(userID int, notification
 	return &notification, nil
 }
 
-func sendMessage(client *websocket.Conn, msg []byte) error {
-	w, err := client.NextWriter(websocket.TextMessage)
-	if err != nil {
-		return fmt.Errorf("Could not start writing")
-	}
-
-	w.Write(msg)
-	w.Close()
-	return nil
-}
-
 func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 	notificationApp.mu.Lock()
 	defer notificationApp.mu.Unlock()
@@ -151,24 +129,18 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 		notificationsMap = make(map[int]entity.Notification)
 	}
 
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		return entity.NotificationsClientNotSetError
-	}
-
-	allNotifications := entity.MessageManyNotifications{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
+	allNotifications := entity.AllNotificationsOutput{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
 
 	for _, notification := range notificationsMap {
 		allNotifications.Notifications = append(allNotifications.Notifications, notification)
 	}
 
-	// TODO: maybe move sending notifications to handler???
-	msg, err := json.Marshal(allNotifications)
+	message, err := json.Marshal(allNotifications)
 	if err != nil {
-		return fmt.Errorf("Could not parse messages into JSON")
+		return entity.JsonMarshallError
 	}
 
-	err = sendMessage(connection.client, msg)
+	err = notificationApp.websocketApp.SendMessage(userID, message)
 
 	return err
 }
@@ -187,19 +159,14 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 		return entity.NotificationNotFoundError
 	}
 
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		return entity.NotificationsClientNotSetError
-	}
+	notificationMsg := entity.OneNotificationOutput{Type: entity.OneNotificationTypeKey, Notification: notification}
 
-	notificationMsg := entity.MessageOneNotification{Type: entity.OneNotificationTypeKey, Notification: notification}
-
-	msg, err := json.Marshal(notificationMsg)
+	message, err := json.Marshal(notificationMsg)
 	if err != nil {
-		return fmt.Errorf("Could not parse message into JSON")
+		return entity.JsonMarshallError
 	}
 
-	err = sendMessage(connection.client, msg)
+	err = notificationApp.websocketApp.SendMessage(userID, message)
 
 	return err
 }
@@ -225,68 +192,5 @@ func (notificationApp *NotificationApp) ReadNotification(userID int, notificatio
 	notification.IsRead = true
 	notificationsMap[notificationID] = notification
 	notificationApp.notifications[userID] = notificationsMap
-	return nil
-}
-
-func (notificationApp *NotificationApp) ChangeClient(userID int, client *websocket.Conn) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
-		}
-
-		connection = connectionInfo{}
-	}
-
-	if connection.client != nil {
-		connection.client.Close()
-	}
-
-	connection.client = client
-	notificationApp.connections[userID] = connection
-	return nil
-}
-
-func (notificationApp *NotificationApp) ChangeToken(userID int, csrfToken string) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
-		}
-
-		connection = connectionInfo{}
-	}
-
-	connection.csrfToken = csrfToken
-	notificationApp.connections[userID] = connection
-	return nil
-}
-
-func (notificationApp *NotificationApp) CheckToken(userID int, csrfToken string) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	connection, found := notificationApp.connections[userID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
-		}
-
-		connection = connectionInfo{}
-	}
-
-	if connection.csrfToken != csrfToken {
-		return fmt.Errorf("Incorrect CSRF token")
-	}
-
 	return nil
 }

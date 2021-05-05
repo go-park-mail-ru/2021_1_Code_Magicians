@@ -24,10 +24,19 @@ const FilenameGenerationError customError = "Could not generate filename"
 const FileUploadError customError = "File upload failed"
 const FileDeletionError customError = "File deletion failed"
 
+const ClientNotSetError customError = "Websocket client not set"
+
 const NoNotificationsError customError = "No notifications found"
 const NotificationNotFoundError customError = "Notification not found"
-const NotificationsClientNotSetError customError = "Notifications client not set"
 const NotificationAlreadyReadError customError = "Notification was already read"
+
+const ChatNotFoundError customError = "Chat not found"
+const MessageNotFoundError customError = "Message not found"
+const ChatAlreadyExistsError customError = "Chat already exists"
+const UserNotInChatError customError = "User is not in chat"
+const ChatAlreadyReadError customError = "Chat is already read"
+
+const JsonMarshallError customError = "Could not parse struct into JSON"
 
 const NotFoundInitUserBoard customError = "Could not find user's initial board"
 const DeleteBoardError customError = "Could not delete user's board"

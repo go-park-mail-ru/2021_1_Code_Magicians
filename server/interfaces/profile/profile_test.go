@@ -386,6 +386,7 @@ func TestProfileSuccess(t *testing.T) {
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -402,7 +403,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotificationApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Normal user output using cookie's userID
 
@@ -477,7 +478,7 @@ func TestProfileSuccess(t *testing.T) {
 		cookieApp,
 		nil,
 		nil,
-		mockNotificationApp,
+		mockWebsocketApp,
 		testLogger,
 	)
 
@@ -757,6 +758,7 @@ func TestProfileFailure(t *testing.T) {
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	expectedUser := entity.User{
@@ -766,13 +768,13 @@ func TestProfileFailure(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    entity.AvatarDefaultPath,
+		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
 
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotificationApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
 	// During password change, if anything is wrong with JSON input, handler does not interact with database, hence no mocks
 
@@ -789,7 +791,7 @@ func TestProfileFailure(t *testing.T) {
 		cookieApp,
 		nil, // We don't need S3 bucket in these tests
 		nil, // We don't really care about boards in these tests
-		mockNotificationApp,
+		mockWebsocketApp,
 		testLogger,
 	)
 	testProfileInfo = ProfileInfo{

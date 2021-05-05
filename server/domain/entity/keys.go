@@ -9,7 +9,11 @@ const IDKey key = "id"
 const UsernameKey key = "username"
 const SearchKeyQuery key = "searchKey"
 
-const AvatarDefaultPath string = "assets/img/default-avatar.jpg"
+const AvatarDefaultPath key = "assets/img/default-avatar.jpg"
 
-const AllNotificationsTypeKey string = "all-notifications"
-const OneNotificationTypeKey string = "notification"
+const AllNotificationsTypeKey key = "all-notifications"
+const OneNotificationTypeKey key = "notification"
+
+const AllChatsTypeKey key = "all-chats"
+const OneChatTypeKey key = "new-chat"
+const OneMessageTypeKey key = "new-message"

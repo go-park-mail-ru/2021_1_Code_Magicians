@@ -211,7 +211,7 @@ func TestComments(t *testing.T) {
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
 	mockCommentApp := mock_application.NewMockCommentAppInterface(mockCtrl)
-	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
@@ -231,7 +231,7 @@ func TestComments(t *testing.T) {
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
 	// Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+  mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	expectedPinFirst := entity.Pin{
 		PinID:       1,
@@ -274,7 +274,7 @@ func TestComments(t *testing.T) {
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,
-		mockNotification, testLogger) // We don't need S3 or board in these tests
+		mockWebsocket, testLogger) // We don't need S3 or board in these tests
 
 	testCommentInfo = CommentInfo{
 		pinApp:     mockPinApp,

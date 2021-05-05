@@ -2,34 +2,35 @@ package auth
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	userApp         application.UserAppInterface
-	cookieApp       application.CookieAppInterface
-	s3App           application.S3AppInterface
-	boardApp        application.BoardAppInterface        // For initial user's board
-	notificationApp application.NotificationAppInterface // For setting CSRF token during  login
-	logger          *zap.Logger
+	userApp      application.UserAppInterface
+	cookieApp    application.CookieAppInterface
+	s3App        application.S3AppInterface
+	boardApp     application.BoardAppInterface     // For initial user's board
+	websocketApp application.WebsocketAppInterface // For setting CSRF token during  login
+	logger       *zap.Logger
 }
 
 func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
 	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
-	notificationApp application.NotificationAppInterface, logger *zap.Logger) *AuthInfo {
+	websocketApp application.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
-		userApp:         userApp,
-		cookieApp:       cookieApp,
-		s3App:           s3App,
-		boardApp:        boardApp,
-		notificationApp: notificationApp,
-		logger:          logger,
+		userApp:      userApp,
+		cookieApp:    cookieApp,
+		s3App:        s3App,
+		boardApp:     boardApp,
+		websocketApp: websocketApp,
+		logger:       logger,
 	}
 }
 
@@ -98,7 +99,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Replacing token in websocket connection info
 	token := r.Header.Get("X-CSRF-Token")
-	err = info.notificationApp.ChangeToken(newUser.UserID, token)
+	err = info.websocketApp.ChangeToken(newUser.UserID, token)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -157,7 +158,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	// Replacing token in websocket connection info
 	token := r.Header.Get("X-CSRF-Token")
-	err = info.notificationApp.ChangeToken(user.UserID, token)
+	err = info.websocketApp.ChangeToken(user.UserID, token)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", user.UserID),

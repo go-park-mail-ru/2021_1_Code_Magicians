@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	websocket "github.com/gorilla/websocket"
 )
 
 // MockNotificationAppInterface is a mock of NotificationAppInterface interface.
@@ -48,48 +47,6 @@ func (m *MockNotificationAppInterface) AddNotification(notification *entity.Noti
 func (mr *MockNotificationAppInterfaceMockRecorder) AddNotification(notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNotification", reflect.TypeOf((*MockNotificationAppInterface)(nil).AddNotification), notification)
-}
-
-// ChangeClient mocks base method.
-func (m *MockNotificationAppInterface) ChangeClient(userID int, client *websocket.Conn) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeClient", userID, client)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ChangeClient indicates an expected call of ChangeClient.
-func (mr *MockNotificationAppInterfaceMockRecorder) ChangeClient(userID, client interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeClient", reflect.TypeOf((*MockNotificationAppInterface)(nil).ChangeClient), userID, client)
-}
-
-// ChangeToken mocks base method.
-func (m *MockNotificationAppInterface) ChangeToken(userID int, csrfToken string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeToken", userID, csrfToken)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ChangeToken indicates an expected call of ChangeToken.
-func (mr *MockNotificationAppInterfaceMockRecorder) ChangeToken(userID, csrfToken interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeToken", reflect.TypeOf((*MockNotificationAppInterface)(nil).ChangeToken), userID, csrfToken)
-}
-
-// CheckToken mocks base method.
-func (m *MockNotificationAppInterface) CheckToken(userID int, csrfToken string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckToken", userID, csrfToken)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckToken indicates an expected call of CheckToken.
-func (mr *MockNotificationAppInterfaceMockRecorder) CheckToken(userID, csrfToken interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckToken", reflect.TypeOf((*MockNotificationAppInterface)(nil).CheckToken), userID, csrfToken)
 }
 
 // EditNotification mocks base method.

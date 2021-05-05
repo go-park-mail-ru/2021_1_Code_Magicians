@@ -10,14 +10,14 @@ type BoardApp struct {
 	//pinRepo repository.PinRepository
 }
 
-func NewBoardApp(b repository.BoardRepository/*, pinRepo repository.PinRepository*/) *BoardApp {
-	return &BoardApp{b/*pinRepo*/}
+func NewBoardApp(b repository.BoardRepository /*, pinRepo repository.PinRepository*/) *BoardApp {
+	return &BoardApp{b /*pinRepo*/}
 }
 
 type BoardAppInterface interface {
-	AddBoard(*entity.Board) (int, error) // Creating user's board
-	GetBoard(int) (*entity.BoardInfo, error)       // Get description of the board
-	GetBoards(int) ([]entity.Board, error)     // Get boards by authorID
+	AddBoard(*entity.Board) (int, error)     // Creating user's board
+	GetBoard(int) (*entity.BoardInfo, error) // Get description of the board
+	GetBoards(int) ([]entity.Board, error)   // Get boards by authorID
 	GetInitUserBoard(int) (int, error)
 	DeleteBoard(int, int) error // Removes user's board by ID
 	CheckBoard(int, int) error
@@ -41,8 +41,12 @@ func (brd *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	boardInfo := &entity.BoardInfo{board.BoardID, board.UserID,
-	board.Title, board.Description, board.ImageLInk}
+	boardInfo := &entity.BoardInfo{
+		BoardID:     board.BoardID,
+		UserID:      board.UserID,
+		Title:       board.Title,
+		Description: board.Description,
+		ImageLink:   board.ImageLInk}
 	return boardInfo, nil
 }
 

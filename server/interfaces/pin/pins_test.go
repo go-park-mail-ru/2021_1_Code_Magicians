@@ -419,7 +419,7 @@ func TestPins(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
-	mockNotification := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
@@ -437,7 +437,7 @@ func TestPins(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockNotification.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 	testLogger := zaptest.NewLogger(t)
 
 	expectedPinFirst := &entity.Pin{
@@ -501,7 +501,7 @@ func TestPins(t *testing.T) {
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,
-		mockNotification, testLogger) // We don't need S3 or board in these tests
+		mockWebsocket, testLogger) // We don't need S3 or board in these tests
 
 	testBoardInfo = *board.NewBoardInfo(mockBoardApp, testLogger)
 
