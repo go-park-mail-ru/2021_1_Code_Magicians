@@ -38,15 +38,16 @@ type Chat struct {
 }
 
 type ChatOutput struct {
-	ChatID          int             `json:"ID"`
-	TargetProfileID int             `json:"targetProfile"`
-	Messages        []MessageOutput `json:"messages"`
-	IsRead          bool            `json:"isRead"`
+	ChatID                int             `json:"ID"`
+	TargetProfileID       int             `json:"targetProfileID"`
+	TargetProfileAvatar   string          `json:"targetProfileAvatar"`
+	TargetProfileUsername string          `json:"targetProfileUsername"`
+	Messages              []MessageOutput `json:"messages"`
+	IsRead                bool            `json:"isRead"`
 }
 
 // FillFromChat fills ChatOutput from Chat
-// isFirstUser is true if we intend to send chat to first user, false if to second
-func (output *ChatOutput) FillFromChat(chat *Chat, isFirstUser bool) {
+func (output *ChatOutput) FillFromChat(chat *Chat, target *User) {
 	output.ChatID = chat.ChatID
 	output.Messages = make([]MessageOutput, 0)
 	for _, message := range chat.Messages {
@@ -55,12 +56,14 @@ func (output *ChatOutput) FillFromChat(chat *Chat, isFirstUser bool) {
 		output.Messages = append(output.Messages, messageOutput)
 	}
 
-	switch isFirstUser {
+	output.TargetProfileID = target.UserID
+	output.TargetProfileAvatar = target.Avatar
+	output.TargetProfileUsername = target.Username
+
+	switch chat.FirstUserID == target.UserID {
 	case true:
-		output.TargetProfileID = chat.SecondUserID
 		output.IsRead = chat.FirstUserRead
 	case false:
-		output.TargetProfileID = chat.FirstUserID
 		output.IsRead = chat.SecondUserRead
 	}
 }

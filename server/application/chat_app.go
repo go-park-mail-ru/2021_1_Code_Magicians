@@ -171,8 +171,13 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 		return entity.UserNotInChatError
 	}
 
+	target, err := chatApp.userApp.GetUser(userID)
+	if err != nil {
+		return entity.UserNotFoundError
+	}
+
 	var chatOutput entity.ChatOutput
-	chatOutput.FillFromChat(chat, chat.FirstUserID == userID)
+	chatOutput.FillFromChat(chat, target)
 
 	chatOutputMsg := entity.OneChatOutput{Type: entity.OneChatTypeKey, Chat: chatOutput}
 
@@ -187,7 +192,7 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 }
 
 func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be log(n) when i'll add actual database
-	_, err := chatApp.userApp.GetUser(userID)
+	target, err := chatApp.userApp.GetUser(userID)
 	if err != nil {
 		return err
 	}
@@ -198,7 +203,7 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 	for _, chat := range chatApp.chats {
 		if chat.FirstUserID == userID || chat.SecondUserID == userID {
 			var chatOutput entity.ChatOutput
-			chatOutput.FillFromChat(&chat, chat.FirstUserID == userID) // TODO: also set isRead states
+			chatOutput.FillFromChat(&chat, target) // TODO: also set isRead states
 			chatOutputs = append(chatOutputs, chatOutput)
 		}
 	}
