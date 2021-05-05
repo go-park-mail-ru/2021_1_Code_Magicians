@@ -17,8 +17,8 @@ func NewPinsRepository(db *pgxpool.Pool) *PinsRepo {
 	return &PinsRepo{db}
 }
 
-const createPinQuery string = "INSERT INTO Pins (title, imageLink, description, userID)\n" +
-	"values ($1, $2, $3, $4)\n" +
+const createPinQuery string = "INSERT INTO Pins (title, imageLink, imageHeight, imageWidth, ImageAvgColor, description, userID)\n" +
+	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING pinID;\n"
 
 // CreatePin creates new pin with passed fields
@@ -30,7 +30,9 @@ func (r *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
 	}
 	defer tx.Rollback(context.Background())
 
-	row := tx.QueryRow(context.Background(), createPinQuery, pin.Title, pin.ImageLink, pin.Description, pin.UserID)
+	row := tx.QueryRow(context.Background(), createPinQuery, pin.Title,
+		pin.ImageLink, pin.ImageHeight, pin.ImageWidth, pin.ImageAvgColor,
+		pin.Description, pin.UserID)
 	newPinID := 0
 	err = row.Scan(&newPinID)
 	if err != nil {
@@ -151,7 +153,9 @@ func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
 	return refCount, nil
 }
 
-const getPinQuery string = "SELECT pinID, userID, title, imageLink, description FROM Pins WHERE pinID=$1"
+const getPinQuery string = "SELECT pinID, userID, title," +
+	"imageLink, imageHeight, imageWidth, ImageAvgColor, description\n" +
+	"FROM Pins WHERE pinID=$1"
 
 // GetPin fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
@@ -162,9 +166,11 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	}
 	defer tx.Rollback(context.Background())
 
-	pin := entity.Pin{PinId: pinID}
+	pin := entity.Pin{PinID: pinID}
 	row := tx.QueryRow(context.Background(), getPinQuery, pinID)
-	err = row.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+	err = row.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+		&pin.Description)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.PinNotFoundError
@@ -179,7 +185,9 @@ func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
 	return &pin, nil
 }
 
-const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
 // GetPins fetches all pins from board
@@ -202,7 +210,9 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return nil, err // TODO: error handling
 		}
@@ -217,8 +227,11 @@ func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
 }
 
 const savePictureQuery string = "UPDATE pins\n" +
-	"SET imageLink=$1\n" +
-	"WHERE pinID=$2"
+	"SET imageLink=$1, " +
+	"imageHeight=$2, " +
+	"imageWidth=$3, " +
+	"imageAvgColor=$4\n" +
+	"WHERE pinID=$5"
 
 // SavePicture saves pin's picture to database
 // It returns nil on success and error on failure
@@ -229,7 +242,7 @@ func (r *PinsRepo) SavePicture(pin *entity.Pin) error {
 	}
 	defer tx.Rollback(context.Background())
 
-	_, err = tx.Exec(context.Background(), savePictureQuery, pin.ImageLink, pin.PinId)
+	_, err = tx.Exec(context.Background(), savePictureQuery, pin.ImageLink, pin.ImageHeight, pin.ImageWidth, pin.ImageAvgColor, pin.PinID)
 	if err != nil {
 		// Other errors
 		return entity.PinSavingError
@@ -249,7 +262,7 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"GROUP BY boards.userID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
-// GetLastUserPinId
+// GetLastUserPinID
 func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -275,11 +288,13 @@ func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
 	return lastPinID, nil
 }
 
-const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
 	"LIMIT $1;"
 
 // GetNumOfPins generates the main feed
-// It returns numOfPins pins and nil on success, any number and nil on failure
+// It returns numOfPins pins and nil on success, nil and error on failure
 func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
@@ -298,9 +313,48 @@ func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return nil, entity.FeedLoadingError
+		}
+		pins = append(pins, pin)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return pins, nil
+}
+
+const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+	"WHERE LOWER(pins.title) LIKE $1;"
+
+// SearchPins returns pins by keywords
+// It returns suitable pins and nil on success, nil and error on failure
+func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	pins := make([]entity.Pin, 0)
+	rows, err := tx.Query(context.Background(), SearchPinsQuery, "%"+keyWords+"%")
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		pin := entity.Pin{}
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		if err != nil {
+			return nil, entity.SearchingError
 		}
 		pins = append(pins, pin)
 	}

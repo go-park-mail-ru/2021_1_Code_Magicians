@@ -231,17 +231,17 @@ func TestComments(t *testing.T) {
 	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
 	// Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+  mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	expectedPinFirst := entity.Pin{
-		PinId:       1,
+		PinID:       1,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
 	}
 
 	expectedPinSecond := entity.Pin{
-		PinId:       2,
+		PinID:       2,
 		Title:       "exampletitle",
 		ImageLink:   "example/link",
 		Description: "exampleDescription",
@@ -261,16 +261,16 @@ func TestComments(t *testing.T) {
 
 	expectedComments := []entity.Comment{comment1, comment2}
 
-	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinId).Return(&expectedPinFirst, nil).Times(3)
+	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinID).Return(&expectedPinFirst, nil).Times(3)
 
 	mockCommentApp.EXPECT().AddComment(gomock.Any()).Return(nil).Times(2)
 
 	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
 
-	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinId).Return(expectedComments, nil)
+	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinID).Return(expectedComments, nil)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinId).Return(&expectedPinSecond, nil).Times(1)
-	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinId).Return([]entity.Comment{}, nil)
+	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinID).Return(&expectedPinSecond, nil).Times(1)
+	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinID).Return([]entity.Comment{}, nil)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp, cookieApp,
 		nil, nil,

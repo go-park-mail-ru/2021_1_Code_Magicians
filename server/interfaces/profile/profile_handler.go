@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -300,7 +302,7 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 	}
 
 	r.ParseMultipartForm(bodySize)
-	file, _, err := r.FormFile("avatarImage")
+	file, header, err := r.FormFile("avatarImage")
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -310,7 +312,8 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 
 	defer file.Close()
 
-	err = profileInfo.userApp.UpdateAvatar(userID, file)
+	extension := filepath.Ext(header.Filename)
+	err = profileInfo.userApp.UpdateAvatar(userID, file, extension)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -467,4 +470,36 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWriter, r *http.Request) {
+	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+
+	keyString = strings.NewReplacer("+", " ").Replace(keyString)
+
+	users, err := profileInfo.userApp.SearchUsers(strings.ToLower(keyString))
+	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	usersOutput := new(entity.UserListOutput)
+
+	for _, user := range users {
+		var userOutput entity.UserOutput
+		userOutput.FillFromUser(&user)
+		usersOutput.Users = append(usersOutput.Users, userOutput)
+	}
+
+	responseBody, err := json.Marshal(usersOutput)
+	if err != nil {
+		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
 }

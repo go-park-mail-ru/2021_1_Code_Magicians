@@ -2,11 +2,14 @@ package pin
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"net/http"
+	"path/filepath"
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
+	"strings"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 )
@@ -73,7 +76,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	currPin.PinId, err = pinInfo.pinApp.CreatePin(&currPin)
+	currPin.PinID, err = pinInfo.pinApp.CreatePin(&currPin)
 	if err != nil {
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
@@ -81,7 +84,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	file, _, err := r.FormFile("pinImage")
+	file, header, err := r.FormFile("pinImage")
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -89,7 +92,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = pinInfo.pinApp.UploadPicture(currPin.PinId, file)
+	extension := filepath.Ext(header.Filename)
+	err = pinInfo.pinApp.UploadPicture(currPin.PinID, file, extension)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -97,7 +101,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pinID := entity.PinID{currPin.PinId}
+	pinID := entity.PinID{currPin.PinID}
 	body, err := json.Marshal(pinID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -255,9 +259,16 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	Pins := entity.PinsOutput{boardPins}
+	//Pins := entity.PinsOutput{boardPins}
+	pins := new(entity.PinsListOutput)
 
-	pinsBody, err := json.Marshal(Pins)
+	for _, pin := range boardPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	pinsBody, err := json.Marshal(pins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -285,9 +296,17 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Pins := entity.PinsOutput{feedPins}
+	//Pins := entity.PinsOutput{feedPins}
 
-	pinsBody, err := json.Marshal(Pins)
+	pins := new(entity.PinsListOutput)
+
+	for _, pin := range feedPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	pinsBody, err := json.Marshal(pins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -297,4 +316,36 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
+}
+
+func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request) {
+	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+
+	keyString = strings.NewReplacer("+", " ").Replace(keyString)
+
+	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString))
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	pins := new(entity.PinsListOutput)
+
+	for _, pin := range resultPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	responseBody, err := json.Marshal(pins)
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
 }

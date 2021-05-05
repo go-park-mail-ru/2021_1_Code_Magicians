@@ -24,10 +24,11 @@ type UserAppInterface interface {
 	GetUsers() ([]entity.User, error)                          // Get all users
 	GetUserByUsername(string) (*entity.User, error)            // Get user by his username
 	CheckUserCredentials(string, string) (*entity.User, error) // Check if passed username and password are correct
-	UpdateAvatar(int, io.Reader) error                         // Replace user's avatar with one passed as second parameter
+	UpdateAvatar(int, io.Reader, string) error                 // Replace user's avatar with one passed as second parameter
 	Follow(int, int) error                                     // Make first user follow second
 	Unfollow(int, int) error                                   // Make first user unfollow second
 	CheckIfFollowed(int, int) (bool, error)                    // Check if first user follows second. Err != nil if those users are the same
+	SearchUsers(string) ([]entity.User, error)                 // Get all users by passed keywords
 }
 
 // CreateUser add new user to database with passed fields
@@ -108,18 +109,18 @@ func (u *UserApp) CheckUserCredentials(username string, password string) (*entit
 	return user, nil
 }
 
-func (u *UserApp) UpdateAvatar(userID int, file io.Reader) error {
+func (u *UserApp) UpdateAvatar(userID int, file io.Reader, extension string) error {
 	user, err := u.GetUser(userID)
 	if err != nil {
 		return entity.UserNotFoundError
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random image
+	filenamePrefix, err := GenerateRandomString(40) // generating random filename
 	if err != nil {
 		return entity.FilenameGenerationError
 	}
 
-	newAvatarPath := "avatars/" + filenamePrefix + ".jpg" // TODO: avatars folder sharding by date
+	newAvatarPath := "avatars/" + filenamePrefix + extension // TODO: avatars folder sharding by date
 	err = u.s3App.UploadFile(file, newAvatarPath)
 	if err != nil {
 		return entity.FileUploadError
@@ -160,7 +161,13 @@ func (u *UserApp) Unfollow(followerID int, followedID int) error {
 
 func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	if followerID == followedID {
-		return false, entity.SelfFollowError
+		return false, entity.FollowThemselfError
 	}
 	return u.us.CheckIfFollowed(followerID, followedID)
+}
+
+// SearchUsers fetches all users from database suitable with passed keywords
+// It returns slice of users and nil on success, nil and error on failure
+func (u *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
+	return u.us.SearchUsers(keyWords)
 }

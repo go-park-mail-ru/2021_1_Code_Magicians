@@ -180,16 +180,31 @@ func (mr *MockPinAppInterfaceMockRecorder) SavePin(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePin", reflect.TypeOf((*MockPinAppInterface)(nil).SavePin), arg0, arg1)
 }
 
-// UploadPicture mocks base method.
-func (m *MockPinAppInterface) UploadPicture(arg0 int, arg1 io.Reader) error {
+// SearchPins mocks base method.
+func (m *MockPinAppInterface) SearchPins(arg0 string) ([]entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadPicture", arg0, arg1)
+	ret := m.ctrl.Call(m, "SearchPins", arg0)
+	ret0, _ := ret[0].([]entity.Pin)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchPins indicates an expected call of SearchPins.
+func (mr *MockPinAppInterfaceMockRecorder) SearchPins(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPins", reflect.TypeOf((*MockPinAppInterface)(nil).SearchPins), arg0)
+}
+
+// UploadPicture mocks base method.
+func (m *MockPinAppInterface) UploadPicture(arg0 int, arg1 io.Reader, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadPicture", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UploadPicture indicates an expected call of UploadPicture.
-func (mr *MockPinAppInterfaceMockRecorder) UploadPicture(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) UploadPicture(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadPicture", reflect.TypeOf((*MockPinAppInterface)(nil).UploadPicture), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadPicture", reflect.TypeOf((*MockPinAppInterface)(nil).UploadPicture), arg0, arg1, arg2)
 }
