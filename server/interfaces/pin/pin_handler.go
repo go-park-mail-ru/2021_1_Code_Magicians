@@ -259,9 +259,16 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	Pins := entity.PinsOutput{boardPins}
+	//Pins := entity.PinsOutput{boardPins}
+	pins := new(entity.PinsListOutput)
 
-	pinsBody, err := json.Marshal(Pins)
+	for _, pin := range boardPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	pinsBody, err := json.Marshal(pins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -289,9 +296,17 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Pins := entity.PinsOutput{feedPins}
+	//Pins := entity.PinsOutput{feedPins}
 
-	pinsBody, err := json.Marshal(Pins)
+	pins := new(entity.PinsListOutput)
+
+	for _, pin := range feedPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	pinsBody, err := json.Marshal(pins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -315,7 +330,13 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	pins := entity.PinsOutput{resultPins}
+	pins := new(entity.PinsListOutput)
+
+	for _, pin := range resultPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
 
 	responseBody, err := json.Marshal(pins)
 	if err != nil {
