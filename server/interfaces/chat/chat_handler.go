@@ -21,6 +21,7 @@ func NewChatnfo(chatApp application.ChatAppInterface, userApp application.UserAp
 	logger *zap.Logger) *ChatInfo {
 	return &ChatInfo{
 		chatApp: chatApp,
+		userApp: userApp,
 		logger:  logger,
 	}
 }
@@ -41,7 +42,7 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 		}
 	case false: // ID was not passed
 		{
-			otherUsername, _ := vars[string(entity.UsernameKey)]
+			otherUsername := vars[string(entity.UsernameKey)]
 			otherUser, err := chatInfo.userApp.GetUserByUsername(otherUsername)
 			if err != nil {
 				chatInfo.logger.Info(err.Error(),
@@ -120,11 +121,13 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 
 	err = chatInfo.chatApp.SendMessage(chatID, messageID, otherUserID)
 	if err != nil {
-		chatInfo.logger.Info(err.Error(),
-			zap.String("url", r.RequestURI),
-			zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		if err != entity.ClientNotSetError {
+			chatInfo.logger.Info(err.Error(),
+				zap.String("url", r.RequestURI),
+				zap.String("method", r.Method))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 	w.WriteHeader(http.StatusCreated)
 }
