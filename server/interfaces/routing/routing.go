@@ -69,7 +69,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/profile/{username}", profileInfo.HandleGetProfile).Methods("GET")
 	r.HandleFunc("/profile", mid.AuthMid(profileInfo.HandleGetProfile, cookieApp)).Methods("GET")
 	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, cookieApp)).Methods("PUT")
-	r.HandleFunc("/profiles/{searchKey}", profileInfo.HandleGetProfilesByKeyWords).Methods("GET")
+	r.HandleFunc("/profiles/search/{searchKey}", profileInfo.HandleGetProfilesByKeyWords).Methods("GET")
 
 	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, cookieApp)).Methods("POST") // Is preferred over next one
 	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleFollowProfile, cookieApp)).Methods("POST")
