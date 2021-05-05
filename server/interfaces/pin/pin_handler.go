@@ -326,7 +326,12 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString))
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(resultPins) == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 

@@ -484,6 +484,11 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 		return
 	}
 
+	if len(users) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	usersOutput := new(entity.UserListOutput)
 
 	for _, user := range users {

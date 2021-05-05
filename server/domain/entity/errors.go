@@ -55,7 +55,9 @@ const PinNotFoundError customError = "No pin found"
 const GetPinsByBoardIdError customError = "Could not get pins from passed board"
 const PinSavingError customError = "Pin saving failed"
 const FeedLoadingError customError = "Could not extract pins for feed"
+
 const SearchingError customError = "Could not get results of searching"
+const NoResultSearch customError = "Not results for search"
 
 const AddCommentError customError = "Comment creation failed"
 const GetCommentsError customError = "Could not get comments"

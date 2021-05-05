@@ -345,7 +345,7 @@ func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
 	rows, err := tx.Query(context.Background(), SearchPinsQuery, "%"+keyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, nil
+			return nil, entity.NoResultSearch
 		}
 		return nil, err
 	}

@@ -390,7 +390,7 @@ func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
 	rows, err := tx.Query(context.Background(), SearchUsersQuery,"%" + keyWords + "%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, nil
+			return nil, entity.NoResultSearch
 		}
 		return nil, err
 	}
