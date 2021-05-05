@@ -12,6 +12,7 @@ import (
 	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
+	"pinterest/interfaces/websocket"
 	"time"
 
 	"go.uber.org/zap"
@@ -50,14 +51,16 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := application.NewCommentApp(repoComments)
 	websocketApp := application.NewWebsocketApp(userApp)
-	notificationsApp := application.NewNotificationApp(userApp, websocketApp)
+	notificationApp := application.NewNotificationApp(userApp, websocketApp)
+	chatApp := application.NewChatApp(userApp, websocketApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
 	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationsApp, zapLogger)
+	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
-	notificationsInfo := notification.NewNotificationInfo(notificationsApp, csrfOn, zapLogger)
+	notificationsInfo := notification.NewNotificationInfo(notificationApp, csrfOn, zapLogger)
+	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -93,7 +96,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, cookieApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
-	r.HandleFunc("/notifications", notificationsInfo.HandleConnect)
+	r.HandleFunc("/socket", websocketInfo.HandleConnect)
 	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
 
 	if csrfOn {
