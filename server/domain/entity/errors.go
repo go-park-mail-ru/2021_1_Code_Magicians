@@ -34,6 +34,7 @@ const ChatNotFoundError customError = "Chat not found"
 const MessageNotFoundError customError = "Message not found"
 const ChatAlreadyExistsError customError = "Chat already exists"
 const UserNotInChatError customError = "User is not in chat"
+const ChatAlreadyReadError customError = "Chat is already read"
 
 const JsonMarshallError customError = "Could not parse struct into JSON"
 

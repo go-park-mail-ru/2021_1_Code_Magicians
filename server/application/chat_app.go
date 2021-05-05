@@ -24,22 +24,24 @@ func NewChatApp(userApp UserAppInterface, websocketApp WebsocketAppInterface) *C
 }
 
 type ChatAppInterface interface {
-	CreateChat(firstUserID int, secondUserID int) (int, error)   // Create chat between first and second user (errors if chat exists already)
-	AddMessage(chatId int, message *entity.Message) (int, error) // Add message to specified chat (author has to be in said chat)
-	SendMessage(chatID int, messageID int, userID int) error     // Send specified message from specified chat to user (who must be in said chat)
-	SendChat(userID int, chatId int) error                       // Send entire specified chat to specified user (who  must be in said chat)
-	SendAllChats(userID int) error                               // Send all chats of specified user to them
+	CreateChat(firstUserID int, secondUserID int) (int, error)       // Create chat between first and second user (errors if chat exists already)
+	GetChatIDByUsers(firstUserID int, secondUserID int) (int, error) // Find chat between specified users
+	AddMessage(chatId int, message *entity.Message) (int, error)     // Add message to specified chat (author has to be in said chat)
+	SendMessage(chatID int, messageID int, userID int) error         // Send specified message from specified chat to user (who must be in said chat)
+	SendChat(userID int, chatId int) error                           // Send entire specified chat to specified user (who  must be in said chat)
+	SendAllChats(userID int) error                                   // Send all chats of specified user to them
+	ReadChat(chatID int, userID int) error                           // Mark specified chat as "Read" for specified user
 }
 
-func (chatApp *ChatApp) getChatByUsers(firstUserID int, SecondUserID int) (*entity.Chat, error) {
+func (chatApp *ChatApp) getChatByUsers(firstUserID int, secondUserID int) (*entity.Chat, error) {
 	chatApp.mu.Lock()
 	defer chatApp.mu.Unlock()
 
 	for _, chat := range chatApp.chats {
-		if chat.FirstUserID == firstUserID && chat.SecondUserID == SecondUserID {
+		if chat.FirstUserID == firstUserID && chat.SecondUserID == secondUserID {
 			return &chat, nil
 		}
-		if chat.FirstUserID == SecondUserID && chat.SecondUserID == firstUserID { // User's actual order does not matter
+		if chat.FirstUserID == secondUserID && chat.SecondUserID == firstUserID { // User's actual order does not matter
 			return &chat, nil
 		}
 	}
@@ -90,6 +92,15 @@ func (chatApp *ChatApp) CreateChat(firstUserID int, secondUserID int) (int, erro
 	return chat.ChatID, nil
 }
 
+func (chatApp *ChatApp) GetChatIDByUsers(firstUserID int, secondUserID int) (int, error) {
+	chat, err := chatApp.getChatByUsers(firstUserID, secondUserID)
+	if err != nil {
+		return -1, err
+	}
+
+	return chat.ChatID, nil
+}
+
 func (chatApp *ChatApp) AddMessage(chatID int, message *entity.Message) (int, error) {
 	chat, err := chatApp.getChatByID(chatID)
 	if err != nil {
@@ -98,6 +109,15 @@ func (chatApp *ChatApp) AddMessage(chatID int, message *entity.Message) (int, er
 
 	if chat.FirstUserID != message.AuthorID && chat.SecondUserID != message.AuthorID {
 		return -1, entity.UserNotInChatError
+	}
+
+	switch chat.FirstUserID == message.AuthorID {
+	case true:
+		chat.FirstUserRead = true
+		chat.SecondUserRead = false
+	case false:
+		chat.FirstUserRead = false
+		chat.SecondUserRead = true
 	}
 
 	chatApp.mu.Lock()
@@ -194,4 +214,34 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 	err = chatApp.websocketApp.SendMessage(userID, result)
 
 	return err
+}
+
+func (chatApp *ChatApp) ReadChat(chatID int, userID int) error {
+	chat, err := chatApp.getChatByID(chatID)
+	if err != nil {
+		return err
+	}
+
+	if chat.FirstUserID != userID && chat.SecondUserID != userID {
+		return entity.UserNotInChatError
+	}
+
+	switch chat.FirstUserID == userID {
+	case true:
+		if chat.FirstUserRead {
+			return entity.ChatAlreadyReadError
+		}
+		chat.FirstUserRead = true
+	case false:
+		if chat.SecondUserRead {
+			return entity.ChatAlreadyReadError
+		}
+		chat.SecondUserRead = true
+	}
+
+	chatApp.mu.Lock()
+	chatApp.chats[chatID] = *chat
+	chatApp.mu.Unlock()
+
+	return nil
 }

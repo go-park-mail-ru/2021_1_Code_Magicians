@@ -7,6 +7,10 @@ type Message struct {
 	TimeOfCreation string
 }
 
+type MessageInput struct {
+	MessageText string `json:"messageText"`
+}
+
 type MessageOutput struct {
 	MessageID      int    `json:"ID"`
 	ChatID         int    `json:"chatID"`

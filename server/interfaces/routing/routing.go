@@ -7,6 +7,7 @@ import (
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
+	"pinterest/interfaces/chat"
 	"pinterest/interfaces/comment"
 	mid "pinterest/interfaces/middleware"
 	"pinterest/interfaces/notification"
@@ -59,8 +60,9 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
-	notificationsInfo := notification.NewNotificationInfo(notificationApp, csrfOn, zapLogger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)
+	notificationInfo := notification.NewNotificationInfo(notificationApp, zapLogger)
+	chatInfo := chat.NewChatnfo(chatApp, userApp, zapLogger)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, cookieApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, cookieApp)).Methods("POST")
@@ -97,7 +99,10 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")
 
 	r.HandleFunc("/socket", websocketInfo.HandleConnect)
-	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationsInfo.HandleReadNotification, cookieApp)).Methods("PUT")
+	r.HandleFunc("/notifications/read/{id:[0-9]+}", mid.AuthMid(notificationInfo.HandleReadNotification, cookieApp)).Methods("PUT")
+	r.HandleFunc("/message/{id:[0-9]+}", mid.AuthMid(chatInfo.HandleAddMessage, cookieApp)).Methods("POST")
+	r.HandleFunc("/message/{username}", mid.AuthMid(chatInfo.HandleAddMessage, cookieApp)).Methods("POST")
+	r.HandleFunc("/chats/read/{id:[0-9]+}", mid.AuthMid(chatInfo.HandleReadChat, cookieApp)).Methods("PUT")
 
 	if csrfOn {
 		r.HandleFunc("/csrf", func(w http.ResponseWriter, r *http.Request) { // Is used only for getting csrf key

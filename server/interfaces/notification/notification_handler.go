@@ -16,8 +16,7 @@ type NotificationInfo struct {
 	logger          *zap.Logger
 }
 
-func NewNotificationInfo(notificationApp application.NotificationAppInterface,
-	csrfOn bool, logger *zap.Logger) *NotificationInfo {
+func NewNotificationInfo(notificationApp application.NotificationAppInterface, logger *zap.Logger) *NotificationInfo {
 	return &NotificationInfo{
 		notificationApp: notificationApp,
 		logger:          logger,
