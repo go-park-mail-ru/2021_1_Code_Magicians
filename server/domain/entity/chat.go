@@ -38,12 +38,10 @@ type Chat struct {
 }
 
 type ChatOutput struct {
-	ChatID                int             `json:"ID"`
-	TargetProfileID       int             `json:"targetProfileID"`
-	TargetProfileAvatar   string          `json:"targetProfileAvatar"`
-	TargetProfileUsername string          `json:"targetProfileUsername"`
-	Messages              []MessageOutput `json:"messages"`
-	IsRead                bool            `json:"isRead"`
+	ChatID        int             `json:"ID"`
+	TargetProfile UserOutput      `json:"targetProfile"`
+	Messages      []MessageOutput `json:"messages"`
+	IsRead        bool            `json:"isRead"`
 }
 
 // FillFromChat fills ChatOutput from Chat
@@ -56,9 +54,10 @@ func (output *ChatOutput) FillFromChat(chat *Chat, target *User) {
 		output.Messages = append(output.Messages, messageOutput)
 	}
 
-	output.TargetProfileID = target.UserID
-	output.TargetProfileAvatar = target.Avatar
-	output.TargetProfileUsername = target.Username
+	var targetProfileOutput UserOutput
+	targetProfileOutput.FillFromUser(target)
+	targetProfileOutput.Email = ""
+	output.TargetProfile = targetProfileOutput
 
 	switch chat.FirstUserID == target.UserID {
 	case true:

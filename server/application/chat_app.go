@@ -171,9 +171,20 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 		return entity.UserNotInChatError
 	}
 
-	target, err := chatApp.userApp.GetUser(userID)
-	if err != nil {
-		return entity.UserNotFoundError
+	var target *entity.User
+	switch true {
+	case chat.FirstUserID == userID:
+		target, err = chatApp.userApp.GetUser(chat.SecondUserID)
+		if err != nil {
+			return entity.UserNotFoundError
+		}
+	case chat.SecondUserID == userID:
+		target, err = chatApp.userApp.GetUser(chat.FirstUserID)
+		if err != nil {
+			return entity.UserNotFoundError
+		}
+	default:
+		return entity.UserNotInChatError
 	}
 
 	var chatOutput entity.ChatOutput
@@ -192,7 +203,7 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 }
 
 func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be log(n) when i'll add actual database
-	target, err := chatApp.userApp.GetUser(userID)
+	_, err := chatApp.userApp.GetUser(userID)
 	if err != nil {
 		return err
 	}
@@ -202,6 +213,19 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 	chatApp.mu.Lock()
 	for _, chat := range chatApp.chats {
 		if chat.FirstUserID == userID || chat.SecondUserID == userID {
+			var target *entity.User
+			switch true {
+			case chat.FirstUserID == userID:
+				target, err = chatApp.userApp.GetUser(chat.SecondUserID)
+				if err != nil {
+					return entity.UserNotFoundError
+				}
+			case chat.SecondUserID == userID:
+				target, err = chatApp.userApp.GetUser(chat.FirstUserID)
+				if err != nil {
+					return entity.UserNotFoundError
+				}
+			}
 			var chatOutput entity.ChatOutput
 			chatOutput.FillFromChat(&chat, target) // TODO: also set isRead states
 			chatOutputs = append(chatOutputs, chatOutput)
