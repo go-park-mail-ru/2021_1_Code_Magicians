@@ -204,7 +204,7 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 	}
 	chatApp.mu.Unlock()
 
-	chatsOutputMsg := entity.AllChatsOutput{Type: entity.OneChatTypeKey, Chats: chatOutputs}
+	chatsOutputMsg := entity.AllChatsOutput{Type: entity.AllChatsTypeKey, Chats: chatOutputs}
 
 	result, err := json.Marshal(chatsOutputMsg)
 	if err != nil {

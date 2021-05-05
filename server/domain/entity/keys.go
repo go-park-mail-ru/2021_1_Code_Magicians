@@ -14,5 +14,5 @@ const AllNotificationsTypeKey key = "all-notifications"
 const OneNotificationTypeKey key = "notification"
 
 const AllChatsTypeKey key = "all-chats"
-const OneChatTypeKey key = "chat"
-const OneMessageTypeKey key = "message"
+const OneChatTypeKey key = "new-chat"
+const OneMessageTypeKey key = "new-message"
