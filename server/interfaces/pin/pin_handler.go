@@ -259,6 +259,11 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if len(boardPins) == 0 {
+		pinInfo.logger.Info(entity.NoResultSearch.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	//Pins := entity.PinsOutput{boardPins}
 	pins := new(entity.PinsListOutput)
 

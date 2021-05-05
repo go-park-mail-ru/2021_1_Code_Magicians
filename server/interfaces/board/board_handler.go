@@ -136,6 +136,14 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if len(resultBoards) == 0 {
+		boardInfo.logger.Info(
+			entity.NoResultSearch.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	boards := entity.BoardsOutput{resultBoards}
 
 	boardsBody, err := json.Marshal(boards)
