@@ -191,6 +191,8 @@ func (chatInfo *ChatInfo) HandleReadChat(w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(http.StatusForbidden)
 		case entity.ChatAlreadyReadError:
 			w.WriteHeader(http.StatusConflict)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
