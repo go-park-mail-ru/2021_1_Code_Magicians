@@ -62,6 +62,7 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 	}
 
 	chatID, err := chatInfo.chatApp.GetChatIDByUsers(userID, otherUserID)
+	chatExisted := true
 	if err != nil {
 		if err != entity.ChatNotFoundError {
 			chatInfo.logger.Info(err.Error(),
@@ -72,6 +73,7 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 		}
 
 		chatID, err = chatInfo.chatApp.CreateChat(userID, otherUserID)
+		chatExisted = false
 		if err != nil {
 			chatInfo.logger.Info(err.Error(),
 				zap.String("url", r.RequestURI),
@@ -119,7 +121,45 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = chatInfo.chatApp.SendMessage(chatID, messageID, otherUserID)
+	if chatExisted { // If chat existed, we only send added message
+		err = chatInfo.chatApp.SendMessage(chatID, messageID, userID)
+		if err != nil {
+			if err != entity.ClientNotSetError {
+				chatInfo.logger.Info(err.Error(),
+					zap.String("url", r.RequestURI),
+					zap.String("method", r.Method))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		err = chatInfo.chatApp.SendMessage(chatID, messageID, otherUserID)
+		if err != nil {
+			if err != entity.ClientNotSetError {
+				chatInfo.logger.Info(err.Error(),
+					zap.String("url", r.RequestURI),
+					zap.String("method", r.Method))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		return
+	}
+
+	err = chatInfo.chatApp.SendChat(chatID, userID)
+	if err != nil {
+		if err != entity.ClientNotSetError {
+			chatInfo.logger.Info(err.Error(),
+				zap.String("url", r.RequestURI),
+				zap.String("method", r.Method))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = chatInfo.chatApp.SendChat(chatID, otherUserID)
 	if err != nil {
 		if err != entity.ClientNotSetError {
 			chatInfo.logger.Info(err.Error(),
