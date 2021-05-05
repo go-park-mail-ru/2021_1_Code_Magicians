@@ -161,7 +161,7 @@ func (u *UserApp) Unfollow(followerID int, followedID int) error {
 
 func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
 	if followerID == followedID {
-		return false, entity.FollowThemselfError
+		return false, entity.SelfFollowError
 	}
 	return u.us.CheckIfFollowed(followerID, followedID)
 }
