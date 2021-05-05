@@ -136,6 +136,10 @@ func (websocketApp *WebsocketApp) SendMessage(userID int, message []byte) error 
 	connection.mu.Lock()
 	defer connection.mu.Unlock()
 
+	if connection.client == nil {
+		return entity.ClientNotSetError
+	}
+
 	err = sendMessage(connection.client, message)
 	if err != nil {
 		return err
@@ -152,6 +156,10 @@ func (websocketApp *WebsocketApp) SendMessages(userID int, messages [][]byte) er
 
 	connection.mu.Lock()
 	defer connection.mu.Unlock()
+
+	if connection.client == nil {
+		return entity.ClientNotSetError
+	}
 
 	for _, message := range messages {
 		err := sendMessage(connection.client, message)

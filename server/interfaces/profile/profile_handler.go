@@ -2,7 +2,6 @@ package profile
 
 import (
 	"encoding/json"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
 	"pinterest/application"
@@ -10,6 +9,8 @@ import (
 	"pinterest/interfaces/middleware"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/gorilla/mux"
 )
