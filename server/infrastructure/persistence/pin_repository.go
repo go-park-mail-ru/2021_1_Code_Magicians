@@ -342,7 +342,7 @@ func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
 	defer tx.Rollback(context.Background())
 
 	pins := make([]entity.Pin, 0)
-	rows, err := tx.Query(context.Background(), SearchPinsQuery,"%" + keyWords + "%")
+	rows, err := tx.Query(context.Background(), SearchPinsQuery, "%"+keyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -352,7 +352,7 @@ func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinId, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
 		if err != nil {
 			return nil, entity.SearchingError
 		}
