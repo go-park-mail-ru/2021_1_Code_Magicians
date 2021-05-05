@@ -61,9 +61,9 @@ func (output *ChatOutput) FillFromChat(chat *Chat, target *User) {
 
 	switch chat.FirstUserID == target.UserID {
 	case true:
-		output.IsRead = chat.FirstUserRead
-	case false:
 		output.IsRead = chat.SecondUserRead
+	case false:
+		output.IsRead = chat.FirstUserRead
 	}
 }
 
