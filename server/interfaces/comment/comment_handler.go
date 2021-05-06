@@ -15,7 +15,7 @@ import (
 type CommentInfo struct {
 	commentApp application.CommentAppInterface
 	pinApp     application.PinAppInterface
-	logger *zap.Logger
+	logger     *zap.Logger
 }
 
 func NewCommentInfo(commentApp application.CommentAppInterface,
@@ -24,7 +24,7 @@ func NewCommentInfo(commentApp application.CommentAppInterface,
 	return &CommentInfo{
 		commentApp: commentApp,
 		pinApp:     pinApp,
-		logger: logger,
+		logger:     logger,
 	}
 }
 
@@ -116,7 +116,6 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 	}
 
 	comments := entity.CommentsOutput{pinComments}
-
 
 	body, err := json.Marshal(comments)
 	if err != nil {
