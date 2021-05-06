@@ -213,6 +213,7 @@ var pinTest = []struct {
 			nil,
 			[]byte(`{"ID":1,` +
 				`"userID":0,` +
+				`"boardID":0,` +
 				`"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
 				`"imageHeight":1,` +
@@ -275,11 +276,17 @@ var pinTest = []struct {
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
+				`"imageHeight":1,` +
+				`"imageWidth":1,` +
+				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription"},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
 				`"imageLink":"example/link",` +
+				`"imageHeight":1,` +
+				`"imageWidth":1,` +
+				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription"}]}`,
 			),
 		},
