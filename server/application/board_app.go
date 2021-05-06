@@ -33,10 +33,6 @@ func (brd *BoardApp) AddBoard(board *entity.Board) (int, error) {
 // GetBoard returns board with passed boardID
 // It returns that board and nil on success, nil and error on failure
 func (brd *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
-	//pins, err := brd.pinRepo.GetPins(boardID)
-	//if err != nil {
-	//	return nil, err
-	//}
 	board, err := brd.b.GetBoard(boardID)
 	if err != nil {
 		return nil, err
