@@ -4,10 +4,14 @@
 // 	protoc        v3.6.1
 // source: auth.proto
 
-package __
+package proto
 
 import (
+	context "context"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -1309,4 +1313,623 @@ func file_auth_proto_init() {
 	file_auth_proto_rawDesc = nil
 	file_auth_proto_goTypes = nil
 	file_auth_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// AuthClient is the client API for Auth service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type AuthClient interface {
+	CreateUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*UserID, error)
+	SaveUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*Error, error)
+	DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error)
+	GetUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserOutput, error)
+	GetUserByUsername(ctx context.Context, in *Username, opts ...grpc.CallOption) (*UserOutput, error)
+	GetUsers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UsersListOutput, error)
+	CheckUserCredentials(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*UserOutput, error)
+	UpdateAvatar(ctx context.Context, opts ...grpc.CallOption) (Auth_UpdateAvatarClient, error)
+	Follow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error)
+	Unfollow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error)
+	CheckIfFollowed(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*IfFollowedResponse, error)
+	GenerateCookie(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Cookie, error)
+	AddCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error)
+	CheckCookie(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error)
+	RemoveCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error)
+}
+
+type authClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAuthClient(cc grpc.ClientConnInterface) AuthClient {
+	return &authClient{cc}
+}
+
+func (c *authClient) CreateUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*UserID, error) {
+	out := new(UserID)
+	err := c.cc.Invoke(ctx, "/auth.Auth/CreateUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) SaveUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/SaveUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/DeleteUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) GetUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserOutput, error) {
+	out := new(UserOutput)
+	err := c.cc.Invoke(ctx, "/auth.Auth/GetUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) GetUserByUsername(ctx context.Context, in *Username, opts ...grpc.CallOption) (*UserOutput, error) {
+	out := new(UserOutput)
+	err := c.cc.Invoke(ctx, "/auth.Auth/GetUserByUsername", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) GetUsers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UsersListOutput, error) {
+	out := new(UsersListOutput)
+	err := c.cc.Invoke(ctx, "/auth.Auth/GetUsers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) CheckUserCredentials(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*UserOutput, error) {
+	out := new(UserOutput)
+	err := c.cc.Invoke(ctx, "/auth.Auth/CheckUserCredentials", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) UpdateAvatar(ctx context.Context, opts ...grpc.CallOption) (Auth_UpdateAvatarClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Auth_serviceDesc.Streams[0], "/auth.Auth/UpdateAvatar", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &authUpdateAvatarClient{stream}
+	return x, nil
+}
+
+type Auth_UpdateAvatarClient interface {
+	Send(*UploadAvatar) error
+	CloseAndRecv() (*Error, error)
+	grpc.ClientStream
+}
+
+type authUpdateAvatarClient struct {
+	grpc.ClientStream
+}
+
+func (x *authUpdateAvatarClient) Send(m *UploadAvatar) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *authUpdateAvatarClient) CloseAndRecv() (*Error, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(Error)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *authClient) Follow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/Follow", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) Unfollow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/Unfollow", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) CheckIfFollowed(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*IfFollowedResponse, error) {
+	out := new(IfFollowedResponse)
+	err := c.cc.Invoke(ctx, "/auth.Auth/CheckIfFollowed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) GenerateCookie(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Cookie, error) {
+	out := new(Cookie)
+	err := c.cc.Invoke(ctx, "/auth.Auth/GenerateCookie", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) AddCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/AddCookie", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) CheckCookie(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error) {
+	out := new(CheckCookieResponse)
+	err := c.cc.Invoke(ctx, "/auth.Auth/CheckCookie", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) RemoveCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/auth.Auth/RemoveCookie", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AuthServer is the server API for Auth service.
+type AuthServer interface {
+	CreateUser(context.Context, *UserReg) (*UserID, error)
+	SaveUser(context.Context, *UserReg) (*Error, error)
+	DeleteUser(context.Context, *UserID) (*Error, error)
+	GetUser(context.Context, *UserID) (*UserOutput, error)
+	GetUserByUsername(context.Context, *Username) (*UserOutput, error)
+	GetUsers(context.Context, *empty.Empty) (*UsersListOutput, error)
+	CheckUserCredentials(context.Context, *UserAuth) (*UserOutput, error)
+	UpdateAvatar(Auth_UpdateAvatarServer) error
+	Follow(context.Context, *Follows) (*Error, error)
+	Unfollow(context.Context, *Follows) (*Error, error)
+	CheckIfFollowed(context.Context, *Follows) (*IfFollowedResponse, error)
+	GenerateCookie(context.Context, *empty.Empty) (*Cookie, error)
+	AddCookie(context.Context, *CookieInfo) (*Error, error)
+	CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error)
+	RemoveCookie(context.Context, *CookieInfo) (*Error, error)
+}
+
+// UnimplementedAuthServer can be embedded to have forward compatible implementations.
+type UnimplementedAuthServer struct {
+}
+
+func (*UnimplementedAuthServer) CreateUser(context.Context, *UserReg) (*UserID, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (*UnimplementedAuthServer) SaveUser(context.Context, *UserReg) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveUser not implemented")
+}
+func (*UnimplementedAuthServer) DeleteUser(context.Context, *UserID) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (*UnimplementedAuthServer) GetUser(context.Context, *UserID) (*UserOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
+}
+func (*UnimplementedAuthServer) GetUserByUsername(context.Context, *Username) (*UserOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserByUsername not implemented")
+}
+func (*UnimplementedAuthServer) GetUsers(context.Context, *empty.Empty) (*UsersListOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
+}
+func (*UnimplementedAuthServer) CheckUserCredentials(context.Context, *UserAuth) (*UserOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUserCredentials not implemented")
+}
+func (*UnimplementedAuthServer) UpdateAvatar(Auth_UpdateAvatarServer) error {
+	return status.Errorf(codes.Unimplemented, "method UpdateAvatar not implemented")
+}
+func (*UnimplementedAuthServer) Follow(context.Context, *Follows) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Follow not implemented")
+}
+func (*UnimplementedAuthServer) Unfollow(context.Context, *Follows) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unfollow not implemented")
+}
+func (*UnimplementedAuthServer) CheckIfFollowed(context.Context, *Follows) (*IfFollowedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckIfFollowed not implemented")
+}
+func (*UnimplementedAuthServer) GenerateCookie(context.Context, *empty.Empty) (*Cookie, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateCookie not implemented")
+}
+func (*UnimplementedAuthServer) AddCookie(context.Context, *CookieInfo) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddCookie not implemented")
+}
+func (*UnimplementedAuthServer) CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckCookie not implemented")
+}
+func (*UnimplementedAuthServer) RemoveCookie(context.Context, *CookieInfo) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveCookie not implemented")
+}
+
+func RegisterAuthServer(s *grpc.Server, srv AuthServer) {
+	s.RegisterService(&_Auth_serviceDesc, srv)
+}
+
+func _Auth_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserReg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/CreateUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).CreateUser(ctx, req.(*UserReg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_SaveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserReg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).SaveUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/SaveUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).SaveUser(ctx, req.(*UserReg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/DeleteUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).DeleteUser(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/GetUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GetUser(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_GetUserByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Username)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GetUserByUsername(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/GetUserByUsername",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GetUserByUsername(ctx, req.(*Username))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_GetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/GetUsers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GetUsers(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_CheckUserCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserAuth)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).CheckUserCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/CheckUserCredentials",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).CheckUserCredentials(ctx, req.(*UserAuth))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_UpdateAvatar_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AuthServer).UpdateAvatar(&authUpdateAvatarServer{stream})
+}
+
+type Auth_UpdateAvatarServer interface {
+	SendAndClose(*Error) error
+	Recv() (*UploadAvatar, error)
+	grpc.ServerStream
+}
+
+type authUpdateAvatarServer struct {
+	grpc.ServerStream
+}
+
+func (x *authUpdateAvatarServer) SendAndClose(m *Error) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *authUpdateAvatarServer) Recv() (*UploadAvatar, error) {
+	m := new(UploadAvatar)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Auth_Follow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Follows)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).Follow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/Follow",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).Follow(ctx, req.(*Follows))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_Unfollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Follows)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).Unfollow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/Unfollow",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).Unfollow(ctx, req.(*Follows))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_CheckIfFollowed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Follows)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).CheckIfFollowed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/CheckIfFollowed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).CheckIfFollowed(ctx, req.(*Follows))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_GenerateCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GenerateCookie(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/GenerateCookie",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GenerateCookie(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_AddCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CookieInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).AddCookie(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/AddCookie",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).AddCookie(ctx, req.(*CookieInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_CheckCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Cookie)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).CheckCookie(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/CheckCookie",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).CheckCookie(ctx, req.(*Cookie))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_RemoveCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CookieInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).RemoveCookie(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/RemoveCookie",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).RemoveCookie(ctx, req.(*CookieInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Auth_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "auth.Auth",
+	HandlerType: (*AuthServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateUser",
+			Handler:    _Auth_CreateUser_Handler,
+		},
+		{
+			MethodName: "SaveUser",
+			Handler:    _Auth_SaveUser_Handler,
+		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _Auth_DeleteUser_Handler,
+		},
+		{
+			MethodName: "GetUser",
+			Handler:    _Auth_GetUser_Handler,
+		},
+		{
+			MethodName: "GetUserByUsername",
+			Handler:    _Auth_GetUserByUsername_Handler,
+		},
+		{
+			MethodName: "GetUsers",
+			Handler:    _Auth_GetUsers_Handler,
+		},
+		{
+			MethodName: "CheckUserCredentials",
+			Handler:    _Auth_CheckUserCredentials_Handler,
+		},
+		{
+			MethodName: "Follow",
+			Handler:    _Auth_Follow_Handler,
+		},
+		{
+			MethodName: "Unfollow",
+			Handler:    _Auth_Unfollow_Handler,
+		},
+		{
+			MethodName: "CheckIfFollowed",
+			Handler:    _Auth_CheckIfFollowed_Handler,
+		},
+		{
+			MethodName: "GenerateCookie",
+			Handler:    _Auth_GenerateCookie_Handler,
+		},
+		{
+			MethodName: "AddCookie",
+			Handler:    _Auth_AddCookie_Handler,
+		},
+		{
+			MethodName: "CheckCookie",
+			Handler:    _Auth_CheckCookie_Handler,
+		},
+		{
+			MethodName: "RemoveCookie",
+			Handler:    _Auth_RemoveCookie_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UpdateAvatar",
+			Handler:       _Auth_UpdateAvatar_Handler,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "auth.proto",
 }

@@ -3,39 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"os"
+	"pinterest/domain/entity"
 	"pinterest/interfaces/routing"
 
-	"go.uber.org/zap"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
-
-// connectAws returns session that can be used to connect to Amazon Web Service
-func connectAws() *session.Session {
-	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
-	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-	myRegion := os.Getenv("AWS_REGION")
-	sess, err := session.NewSession(
-		&aws.Config{
-			Region: aws.String(myRegion),
-			Credentials: credentials.NewStaticCredentials(
-				accessKeyID,
-				secretAccessKey,
-				"", // a token will be created when the session is used.
-			),
-		})
-	if err != nil {
-		panic(err)
-	}
-	return sess
-}
 
 func runServer(addr string) {
 	logger, _ := zap.NewDevelopment()
@@ -70,7 +47,7 @@ func runServer(addr string) {
 
 	defer conn.Close()
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
+	r := routing.CreateRouter(conn, entity.ConnectAws(), os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {
