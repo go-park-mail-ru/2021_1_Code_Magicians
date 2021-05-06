@@ -69,7 +69,7 @@ func (c *CookieApp) GenerateCookie() (*http.Cookie, error) {
 			Expires:  expirationTime,
 			Secure:   true, // We use HTTPS
 			HttpOnly: true, // So that frontend won't have direct access to cookies
-			SameSite: http.SameSiteNoneMode,
+			SameSite: http.SameSiteLaxMode,
 		}, nil
 	}
 	return &http.Cookie{
