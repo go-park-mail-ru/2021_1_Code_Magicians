@@ -36,8 +36,8 @@ const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwor
 
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) CreateUser(user *entity.User) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -88,8 +88,8 @@ const saveUserQuery string = "UPDATE Users\n" +
 
 // SaveUser saves user to database with passed fields
 // It returns nil on success and error on failure
-func (r *UserRepo) SaveUser(user *entity.User) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) SaveUser(user *entity.User) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -119,8 +119,8 @@ const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 
 // SaveUser deletes user with passed ID
 // It returns nil on success and error on failure
-func (r *UserRepo) DeleteUser(userID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) DeleteUser(userID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -146,8 +146,8 @@ const getUserQuery string = "SELECT username, passwordhash, salt, email, first_n
 
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
-func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) GetUser(userID int) (*entity.User, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -185,8 +185,8 @@ const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email
 
 // GetUsers fetches all users from database
 // It returns slice of all users, nil on success and nil, error on failure
-func (r *UserRepo) GetUsers() ([]entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) GetUsers() ([]entity.User, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -233,8 +233,8 @@ const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email,
 
 // GetUserByUsername fetches user with passed username from database
 // It returns that user, nil on success and nil, error on failure
-func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -272,8 +272,8 @@ const followQuery string = "INSERT INTO Followers(followerID, followedID) VALUES
 const updateFollowingQuery string = "UPDATE Users SET following = following + 1 WHERE userID=$1"
 const updateFollowedByQuery string = "UPDATE Users SET followed_by = followed_by + 1 WHERE userID=$1"
 
-func (r *UserRepo) Follow(followerID int, followedID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) Follow(followerID int, followedID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -316,8 +316,8 @@ const unfollowQuery string = "DELETE FROM Followers WHERE followerID=$1 AND foll
 const updateUnfollowingQuery string = "UPDATE Users SET following = following - 1 WHERE userID=$1"
 const updateUnfollowedByQuery string = "UPDATE Users SET followed_by = followed_by - 1 WHERE userID=$1"
 
-func (r *UserRepo) Unfollow(followerID int, followedID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) Unfollow(followerID int, followedID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -348,8 +348,8 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 
 const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, no rows otherwise
 
-func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return false, entity.TransactionBeginError
 	}
@@ -379,8 +379,8 @@ const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, em
 
 // SearchUsers fetches all users from database suitable with passed keywords
 // It returns slice of users and nil on success, nil and error on failure
-func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}

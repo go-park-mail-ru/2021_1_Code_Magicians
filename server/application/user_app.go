@@ -1,9 +1,7 @@
 package application
 
 import (
-	"context"
 	"io"
-	"net/http"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
 )
@@ -12,16 +10,15 @@ type UserApp struct {
 	us        repository.UserRepository
 	boardApp  BoardAppInterface
 	s3App     S3AppInterface
-	cookieApp CookieAppInterface
 }
 
 func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App S3AppInterface,
 	cookieApp CookieAppInterface) *UserApp {
-	return &UserApp{us, boardApp, s3App, cookieApp}
+	return &UserApp{us, boardApp, s3App}
 }
 
 type UserAppInterface interface {
-	CreateUser(context.Context, *entity.UserRegInput) (int, error)                      // Create user, returns created user's ID
+	CreateUser(*entity.User) (int, error)                      // Create user, returns created user's ID
 	SaveUser(*entity.User) error                               // Save changed user to database
 	DeleteUser(int) error                                      // Delete user with passed userID from database
 	GetUser(int) (*entity.User, error)                         // Get user by his ID
@@ -33,15 +30,11 @@ type UserAppInterface interface {
 	Unfollow(int, int) error                                   // Make first user unfollow second
 	CheckIfFollowed(int, int) (bool, error)                    // Check if first user follows second. Err != nil if those users are the same
 	SearchUsers(string) ([]entity.User, error)                 // Get all users by passed keywords
-	GenerateCookie() (*http.Cookie, error)
-	AddCookie(*entity.CookieInfo) error
-	CheckCookie(*http.Cookie) (*entity.CookieInfo, bool)
-	RemoveCookie(*entity.CookieInfo) error
 }
 
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (u *UserApp) CreateUser(cnx context.Context,user *entity.User) (int, error) {
+func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 	userID, err := u.us.CreateUser(user)
 	if err != nil {
 		return -1, err
@@ -178,20 +171,4 @@ func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) 
 // It returns slice of users and nil on success, nil and error on failure
 func (u *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
 	return u.us.SearchUsers(keyWords)
-}
-
-func (u *UserApp) GenerateCookie() (*http.Cookie, error) {
-	return u.cookieApp.GenerateCookie()
-}
-
-func (u *UserApp) AddCookie(cookieInfo *entity.CookieInfo) error {
-	return u.cookieApp.AddCookie(cookieInfo)
-}
-
-func (u *UserApp) CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) {
-	return u.cookieApp.CheckCookie(cookie)
-}
-
-func (u *UserApp) RemoveCookie(cookieInfo *entity.CookieInfo) error {
-	return u.cookieApp.RemoveCookie(cookieInfo)
 }
