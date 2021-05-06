@@ -11,24 +11,27 @@ import (
 )
 
 type CookieApp struct {
-	sessions     map[string]entity.CookieInfo
-	mu           sync.Mutex
-	cookieLength int
-	duration     time.Duration
+	sessionsByValue  map[string]*entity.CookieInfo
+	sessionsByUserID map[int]*entity.CookieInfo // Each value from sessionsByUserID is also sessionsByValue and vice versa
+	mu               sync.Mutex
+	cookieLength     int
+	duration         time.Duration
 }
 
 func NewCookieApp(cookieLength int, duration time.Duration) *CookieApp {
 	return &CookieApp{
-		sessions:     make(map[string]entity.CookieInfo),
-		cookieLength: cookieLength,
-		duration:     duration,
+		sessionsByValue:  make(map[string]*entity.CookieInfo),
+		sessionsByUserID: make(map[int]*entity.CookieInfo),
+		cookieLength:     cookieLength,
+		duration:         duration,
 	}
 }
 
 type CookieAppInterface interface {
 	GenerateCookie() (*http.Cookie, error)
-	AddCookie(*entity.CookieInfo) error
-	CheckCookie(*http.Cookie) (*entity.CookieInfo, bool)
+	AddCookie(cookieInfo *entity.CookieInfo) error
+	SearchByValue(sessionValue string) (*entity.CookieInfo, bool)
+	SearchByUserID(userID int) (*entity.CookieInfo, bool)
 	RemoveCookie(*entity.CookieInfo) error
 }
 
@@ -54,13 +57,13 @@ func GenerateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
-func (c *CookieApp) GenerateCookie() (*http.Cookie, error) {
-	sessionValue, err := GenerateRandomString(c.cookieLength) // cookie value - random string
+func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
+	sessionValue, err := GenerateRandomString(cookieApp.cookieLength) // cookie value - random string
 	if err != nil {
 		return nil, entity.CookieGenerationError
 	}
 
-	expirationTime := time.Now().Add(c.duration)
+	expirationTime := time.Now().Add(cookieApp.duration)
 	if os.Getenv("HTTPS_ON") == "true" {
 		return &http.Cookie{
 			Name:     entity.CookieNameKey,
@@ -81,34 +84,54 @@ func (c *CookieApp) GenerateCookie() (*http.Cookie, error) {
 	}, nil
 }
 
-func (c *CookieApp) AddCookie(cookieInfo *entity.CookieInfo) error {
-	c.mu.Lock()
-	c.sessions[cookieInfo.Cookie.Value] = *cookieInfo
-	c.mu.Unlock()
+func (cookieApp *CookieApp) AddCookie(cookieInfo *entity.CookieInfo) error {
+	oldCookieInfo, found := cookieApp.SearchByUserID(cookieInfo.UserID)
+	if found {
+		cookieApp.RemoveCookie(oldCookieInfo)
+	}
+
+	_, found = cookieApp.SearchByValue(cookieInfo.Cookie.Value)
+	if found {
+		return entity.DuplicatingCookieValueError
+	}
+
+	cookieApp.mu.Lock()
+	cookieApp.sessionsByValue[cookieInfo.Cookie.Value] = &(*cookieInfo) // Copying by value
+	cookieApp.sessionsByUserID[cookieInfo.UserID] = cookieApp.sessionsByValue[cookieInfo.Cookie.Value]
+	cookieApp.mu.Unlock()
 	return nil
 }
 
-func (c *CookieApp) CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) {
-	c.mu.Lock()
-	userCookieInfo, ok := c.sessions[cookie.Value]
-	c.mu.Unlock()
+func (cookieApp *CookieApp) SearchByUserID(userID int) (*entity.CookieInfo, bool) {
+	cookieApp.mu.Lock()
+	cookieInfo, found := cookieApp.sessionsByUserID[userID]
+	cookieApp.mu.Unlock()
 
-	if !ok { // cookie was not found
+	if cookieInfo.Cookie.Expires.Before(time.Now()) { // We check if cookie is not past it's expiration date
+		cookieApp.RemoveCookie(cookieInfo)
 		return nil, false
 	}
 
-	if userCookieInfo.Cookie.Expires.Before(time.Now()) { // We check our cookie because client could change their expiration date
-		c.RemoveCookie(&userCookieInfo)
-		return nil, false
-	}
-
-	return &userCookieInfo, true
+	return cookieInfo, found
 }
 
-func (c *CookieApp) RemoveCookie(cookieInfo *entity.CookieInfo) error {
-	c.mu.Lock()
-	delete(c.sessions, cookieInfo.Cookie.Value)
-	c.mu.Unlock()
+func (cookieApp *CookieApp) SearchByValue(cookieValue string) (*entity.CookieInfo, bool) {
+	cookieApp.mu.Lock()
+	cookieInfo, found := cookieApp.sessionsByValue[cookieValue]
+	cookieApp.mu.Unlock()
 
+	if cookieInfo.Cookie.Expires.Before(time.Now()) { // We check if cookie is not past it's expiration date
+		cookieApp.RemoveCookie(cookieInfo)
+		return nil, false
+	}
+
+	return cookieInfo, found
+}
+
+func (cookieApp *CookieApp) RemoveCookie(cookieInfo *entity.CookieInfo) error {
+	cookieApp.mu.Lock()
+	delete(cookieApp.sessionsByValue, cookieInfo.Cookie.Value)
+	delete(cookieApp.sessionsByUserID, cookieInfo.UserID)
+	cookieApp.mu.Unlock()
 	return nil
 }
