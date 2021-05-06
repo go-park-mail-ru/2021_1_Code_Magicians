@@ -6,6 +6,7 @@ const TransactionBeginError customError = "Could not start transaction"
 const TransactionCommitError customError = "Could not commit transaction"
 
 const DuplicatingCookieValueError customError = "Cookie with such session value already exists"
+const UserNotLoggedInError customError = "User is not logged in"
 
 const UserNotFoundError customError = "User not found"
 const UsernameEmailDuplicateError customError = "Username or email is already taken"

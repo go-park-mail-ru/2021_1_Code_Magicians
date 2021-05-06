@@ -29,7 +29,7 @@ func NewCookieApp(cookieLength int, duration time.Duration) *CookieApp {
 
 type CookieAppInterface interface {
 	GenerateCookie() (*http.Cookie, error)
-	AddCookie(cookieInfo *entity.CookieInfo) error
+	AddCookieInfo(cookieInfo *entity.CookieInfo) error
 	SearchByValue(sessionValue string) (*entity.CookieInfo, bool)
 	SearchByUserID(userID int) (*entity.CookieInfo, bool)
 	RemoveCookie(*entity.CookieInfo) error
@@ -84,7 +84,7 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 	}, nil
 }
 
-func (cookieApp *CookieApp) AddCookie(cookieInfo *entity.CookieInfo) error {
+func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 	oldCookieInfo, found := cookieApp.SearchByUserID(cookieInfo.UserID)
 	if found {
 		cookieApp.RemoveCookie(oldCookieInfo)
