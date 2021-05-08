@@ -156,7 +156,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
-	err := info.cookieApp.RemoveCookie(userCookie)
+	err := info.authApp.LogoutUser(userCookie.UserID)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userCookie.UserID),

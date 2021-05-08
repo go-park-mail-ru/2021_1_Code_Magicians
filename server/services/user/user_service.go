@@ -158,7 +158,7 @@ func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, err
 	secondNamePtr := new(string)
 	avatarPtr := new(string)
 
-	row := tx.QueryRow(context.Background(), getUserQuery, userID)
+	row := tx.QueryRow(context.Background(), getUserQuery, userID.Uid)
 	err = row.Scan(&user.Username, &user.Email, &firstNamePtr,
 		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {

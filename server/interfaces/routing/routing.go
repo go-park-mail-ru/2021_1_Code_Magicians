@@ -2,6 +2,7 @@ package routing
 
 import (
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"net/http"
 	"os"
 	"pinterest/usage"
@@ -42,7 +43,14 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	zapLogger, _ := zap.NewDevelopment()
 	defer zapLogger.Sync()
 
-	sessionUser, _ := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+	var kacp = keepalive.ClientParameters{
+		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Second,      // wait 1 second for ping back
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
+
+	sessionUser, _ := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure(),grpc.WithKeepaliveParams(kacp))
+	defer sessionUser.Close()
 	repo := protoUser.NewUserClient(sessionUser)
 	repo1 := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
