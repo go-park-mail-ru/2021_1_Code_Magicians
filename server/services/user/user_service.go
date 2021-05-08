@@ -1,13 +1,25 @@
 package user
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	_"google.golang.org/grpc"
 	_ "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"io"
 	"log"
+	"os"
 	"pinterest/domain/entity"
 	. "pinterest/services/user/proto"
 	"strings"
@@ -15,10 +27,11 @@ import (
 
 type service struct {
 	db *pgxpool.Pool
+	s3 *session.Session
 }
 
-func NewService(db *pgxpool.Pool) *service {
-	return &service{db}
+func NewService(db *pgxpool.Pool, s3 *session.Session) *service {
+	return &service{db, s3}
 }
 
 const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwordhash, salt, email, first_name, last_name, avatar)\n" +
@@ -106,7 +119,7 @@ const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 
 // DeleteUser deletes user with passed ID
 // It returns nil on success and error on failure
-func (s *service) DeleteUser(ctx context.Context, userID *UserID) (*Error, error)  {
+func (s *service) DeleteUser(ctx context.Context, userID *UserID) (*Error, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
@@ -133,7 +146,7 @@ const getUserQuery string = "SELECT username, email, first_name, last_name, avat
 
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
-func (s* service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, error) {
+func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
@@ -172,7 +185,7 @@ const getUsersQuery string = "SELECT userID, username, email, first_name, last_n
 
 // GetUsers fetches all users from database
 // It returns slice of all users, nil on success and nil, error on failure
-func (s* service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutput, error) {
+func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutput, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
@@ -373,7 +386,7 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 	defer tx.Rollback(context.Background())
 
 	users := make([]*UserOutput, 0)
-	rows, err := tx.Query(context.Background(), SearchUsersQuery,"%" + keyWords.KeyWords + "%")
+	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%"+keyWords.KeyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.NoResultSearch
@@ -407,11 +420,69 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 	return &UsersListOutput{Users: users}, nil
 }
 
-func (s *service) UpdateAvatar(Auth_UpdateAvatarServer) error {
-	return nil
+var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
+func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
+	imageData := bytes.Buffer{}
+	imageSize := 0
+	req, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot receive image info")
+	}
+
+	filenamePrefix, err := GenerateRandomString(40) // generating random filename
+	if err != nil {
+		return entity.FilenameGenerationError
+	}
+	newAvatarPath := "avatars/" + filenamePrefix + req.GetInfo().GetExtension() // TODO: avatars folder sharding by date
+
+	for {
+		log.Print("waiting to receive more data")
+
+		req, err = stream.Recv()
+		if err == io.EOF {
+			log.Print("no more data")
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err)
+		}
+		chunk := req.GetChunkData()
+		size := len(chunk)
+
+		log.Printf("received a chunk with size: %d", size)
+
+		imageSize += size
+		if imageSize > maxPostAvatarBodySize {
+			return status.Errorf(codes.InvalidArgument, "image is too large: %d > %d", imageSize, maxPostAvatarBodySize)
+		}
+		_, err = imageData.Write(chunk)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot write chunk data: %v", err)
+		}
+	}
+	uploader := s3manager.NewUploader(s.s3)
+
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
+		ACL:    aws.String("public-read"),
+		Key:    aws.String(newAvatarPath),
+		Body:   bytes.NewReader(imageData.Bytes()),
+	})
+
+	res := &UploadAvatarResponse{
+		Path: newAvatarPath,
+		Size: uint32(imageSize),
+	}
+
+	err = stream.SendAndClose(res)
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot send response: %v", err)
+	}
+
+	return handleS3Error(err)
 }
 
-func FillFromRegForm(us *UserReg) entity.User  {
+func FillFromRegForm(us *UserReg) entity.User {
 	return entity.User{
 		UserID:     0,
 		Username:   us.Username,
@@ -434,5 +505,46 @@ func emptyIfNil(input *string) *string {
 	return input
 }
 
+func handleS3Error(err error) error {
+	if err == nil {
+		return nil
+	}
 
+	aerr, ok := err.(awserr.Error)
+	if ok {
+		switch aerr.Code() {
+		case s3.ErrCodeNoSuchBucket:
+			return fmt.Errorf("Specified bucket does not exist")
+		case s3.ErrCodeNoSuchKey:
+			return fmt.Errorf("No file found with such filename")
+		case s3.ErrCodeObjectAlreadyInActiveTierError:
+			return fmt.Errorf("S3 bucket denied access to you")
+		default:
+			return fmt.Errorf("Unknown S3 error")
+		}
+	}
 
+	return fmt.Errorf("Not an S3 error")
+}
+
+// generateRandomBytes returns securely generated random bytes.
+// It will return an error if the system's secure random
+// number generator fails to function correctly, in which
+// case the caller should not continue.
+func generateRandomBytes(n int) ([]byte, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	// Note that err == nil only if we read len(b) bytes.
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+// generateRandomString returns a URL-safe, base64 encoded
+// securely generated random string.
+func GenerateRandomString(s int) (string, error) {
+	b, err := generateRandomBytes(s)
+	return base64.URLEncoding.EncodeToString(b), err
+}

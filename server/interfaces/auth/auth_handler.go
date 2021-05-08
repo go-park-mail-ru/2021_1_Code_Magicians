@@ -122,7 +122,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 	}
     log.Println("LOG1")
 	user, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
-
+	log.Println("LOG2121")
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err.Error() {

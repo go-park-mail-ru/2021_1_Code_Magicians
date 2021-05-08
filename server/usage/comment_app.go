@@ -1,4 +1,4 @@
-package application
+package usage
 
 import (
 	"pinterest/domain/entity"

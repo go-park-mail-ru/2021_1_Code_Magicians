@@ -6,7 +6,7 @@ syntax = "proto3";
 option go_package = "./";
 import "google/protobuf/empty.proto";
 
-package auth;
+package user;
 
 message UserReg {
   string  Username = 1;
@@ -54,6 +54,11 @@ message UploadAvatar {
   };
 }
 
+message UploadAvatarResponse {
+  string path = 1;
+  uint32 size = 2;
+}
+
 message Follows {
   int64 FollowerID = 1;
   int64 FollowedID = 2;
@@ -64,7 +69,7 @@ message IfFollowedResponse {
 }
 
 message ImageInfo {
-  int64 UserID = 1;
+  string Path = 1;
   string Extension = 2;
 }
 
@@ -74,16 +79,16 @@ message SearchInput {
 
 message Error {}
 
-service Auth {
-    rpc   CreateUser(UserReg) returns (UserID) {}
-    rpc   SaveUser(UserReg) returns (Error) {}
-    rpc   DeleteUser(UserID) returns (Error) {}
-    rpc   GetUser(UserID) returns (UserOutput) {}
-    rpc   GetUserByUsername(Username) returns (UserOutput) {}
-    rpc   GetUsers(google.protobuf.Empty) returns (UsersListOutput) {}
-    rpc   UpdateAvatar(stream UploadAvatar) returns (Error) {}
-    rpc   Follow(Follows) returns (Error) {}
-    rpc   Unfollow(Follows) returns (Error) {}
-    rpc   CheckIfFollowed(Follows) returns (IfFollowedResponse) {}
-    rpc   SearchUsers(SearchInput) returns (UsersListOutput) {}
+service User {
+  rpc   CreateUser(UserReg) returns (UserID) {}
+  rpc   SaveUser(UserReg) returns (Error) {}
+  rpc   DeleteUser(UserID) returns (Error) {}
+  rpc   GetUser(UserID) returns (UserOutput) {}
+  rpc   GetUserByUsername(Username) returns (UserOutput) {}
+  rpc   GetUsers(google.protobuf.Empty) returns (UsersListOutput) {}
+  rpc   UpdateAvatar(stream UploadAvatar) returns (UploadAvatarResponse) {}
+  rpc   Follow(Follows) returns (Error) {}
+  rpc   Unfollow(Follows) returns (Error) {}
+  rpc   CheckIfFollowed(Follows) returns (IfFollowedResponse) {}
+  rpc   SearchUsers(SearchInput) returns (UsersListOutput) {}
 }

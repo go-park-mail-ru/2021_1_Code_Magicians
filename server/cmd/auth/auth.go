@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"log"
+	"net"
 	"net/http"
 	"os"
-	"pinterest/application"
+	"pinterest/usage"
 	"pinterest/domain/entity"
-	"pinterest/domain/repository"
+	_ "pinterest/domain/repository"
 	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/routing"
-	"pinterest/services/auth/proto"
+	authProto "pinterest/services/auth/proto"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -86,14 +88,13 @@ func runService(addr string) {
 
 	server := grpc.NewServer()
 	userAuthRepository := persistence.NewUserRepository(conn)
-	boardApp := application.NewBoardApp(persistence.NewBoardsRepository(conn))
-	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
-	cookieApp := application.NewCookieApp(40, 10*time.Hour)
+	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
 
-	service := application.NewUserApp(userAuthRepository, boardApp, s3App, cookieApp)
-	proto.RegisterAuthServer(server, service)
+	service := usage.NewAuthApp(userAuthRepository, cookieApp)
+	authProto.RegisterAuthServer(server, service)
 
-	log.Print("starting server at :8081")
+	lis, err := net.Listen("tcp", addr)
+
 	err = server.Serve(lis)
 	if err != nil {
 		log.Fatalln("Serve auth error: ", err)
