@@ -12,8 +12,7 @@ type UserApp struct {
 	s3App    S3AppInterface
 }
 
-func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App S3AppInterface,
-	cookieApp CookieAppInterface) *UserApp {
+func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App S3AppInterface) *UserApp {
 	return &UserApp{us, boardApp, s3App}
 }
 

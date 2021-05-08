@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"pinterest/application"
+	"pinterest/usage"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"strconv"
@@ -19,15 +19,16 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp         application.UserAppInterface
-	cookieApp       application.CookieAppInterface
-	s3App           application.S3AppInterface
-	notificationApp application.NotificationAppInterface
+	userApp         usage.UserAppInterface
+	authApp         usage.AuthAppInterface
+	cookieApp       usage.CookieAppInterface
+	s3App           usage.S3AppInterface
+	notificationApp usage.NotificationAppInterface
 	logger          *zap.Logger
 }
 
-func NewProfileInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface,
+func NewProfileInfo(userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
+	s3App usage.S3AppInterface, notificationApp usage.NotificationAppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
@@ -236,7 +237,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	var userOutput entity.UserOutput
 	userOutput.FillFromUser(user)
 
-	cookie, found := middleware.CheckCookies(r, profileInfo.cookieApp)
+	cookie, found := middleware.CheckCookies(r, profileInfo.authApp)
 	if !found {
 		userOutput.Email = ""
 		responseBody, err := json.Marshal(userOutput)
@@ -248,7 +249,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			return
 		}
 
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Type", "usage/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
 	}
@@ -276,7 +277,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
@@ -504,7 +505,7 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }

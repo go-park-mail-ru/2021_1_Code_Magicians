@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
-	"pinterest/application"
+	"pinterest/usage"
 	"strconv"
 
 	"pinterest/domain/entity"
@@ -14,11 +14,11 @@ import (
 )
 
 type BoardInfo struct {
-	boardApp application.BoardAppInterface
-	logger *zap.Logger
+	boardApp usage.BoardAppInterface
+	logger   *zap.Logger
 }
 
-func NewBoardInfo(boardApp application.BoardAppInterface, logger *zap.Logger) *BoardInfo {
+func NewBoardInfo(boardApp usage.BoardAppInterface, logger *zap.Logger) *BoardInfo {
 	return &BoardInfo{
 		boardApp: boardApp,
 		logger: logger,
@@ -63,7 +63,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
@@ -113,7 +113,7 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
@@ -152,7 +152,7 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(boardsBody)
 }

@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"pinterest/application"
+	"pinterest/usage"
 	"pinterest/domain/entity"
 
 	"github.com/gorilla/csrf"
 )
 
-func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
+func AuthMid(next http.HandlerFunc, cookieApp usage.AuthAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, found := CheckCookies(r, cookieApp)
 		if !found {
@@ -26,7 +26,7 @@ func AuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) ht
 	})
 }
 
-func NoAuthMid(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc {
+func NoAuthMid(next http.HandlerFunc, cookieApp usage.AuthAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, found := CheckCookies(r, cookieApp)
 		if found {
@@ -64,7 +64,7 @@ func CSRFSettingMid(next http.Handler) http.Handler {
 }
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func CheckCookies(r *http.Request, cookieApp application.CookieAppInterface) (*entity.CookieInfo, bool) {
+func CheckCookies(r *http.Request, cookieApp usage.AuthAppInterface) (*entity.CookieInfo, bool) {
 	cookie, err := r.Cookie(entity.CookieNameKey)
 	if err == http.ErrNoCookie {
 		return nil, false

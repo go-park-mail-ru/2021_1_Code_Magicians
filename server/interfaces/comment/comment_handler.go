@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
-	"pinterest/application"
+	"pinterest/usage"
 	"pinterest/domain/entity"
 	"strconv"
 
@@ -13,13 +13,13 @@ import (
 )
 
 type CommentInfo struct {
-	commentApp application.CommentAppInterface
-	pinApp     application.PinAppInterface
+	commentApp usage.CommentAppInterface
+	pinApp     usage.PinAppInterface
 	logger     *zap.Logger
 }
 
-func NewCommentInfo(commentApp application.CommentAppInterface,
-	pinApp application.PinAppInterface,
+func NewCommentInfo(commentApp usage.CommentAppInterface,
+	pinApp usage.PinAppInterface,
 	logger *zap.Logger) *CommentInfo {
 	return &CommentInfo{
 		commentApp: commentApp,
@@ -87,7 +87,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
@@ -124,7 +124,7 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }

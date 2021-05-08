@@ -2,8 +2,9 @@ package auth
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
-	"pinterest/application"
+	"pinterest/usage"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 	"time"
@@ -13,17 +14,18 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	userApp      application.UserAppInterface
-	cookieApp    application.CookieAppInterface
-	s3App        application.S3AppInterface
-	boardApp     application.BoardAppInterface     // For initial user's board
-	websocketApp application.WebsocketAppInterface // For setting CSRF token during  login
+	authApp      usage.AuthAppInterface
+	userApp      usage.UserAppInterface
+	cookieApp    usage.CookieAppInterface
+	s3App        usage.S3AppInterface
+	boardApp     usage.BoardAppInterface     // For initial user's board
+	websocketApp usage.WebsocketAppInterface // For setting CSRF token during  login
 	logger       *zap.Logger
 }
 
-func NewAuthInfo(userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
-	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
-	websocketApp application.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
+func NewAuthInfo(userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
+	s3App usage.S3AppInterface, boardApp usage.BoardAppInterface,
+	websocketApp usage.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
 		userApp:      userApp,
 		cookieApp:    cookieApp,
@@ -88,7 +90,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = info.cookieApp.AddCookie(&entity.CookieInfo{newUser.UserID, cookie})
+	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{newUser.UserID, cookie})
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -118,8 +120,8 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	user, err := info.userApp.CheckUserCredentials(userInput.Username, userInput.Password)
+    log.Println("LOG1")
+	user, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
 
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -135,7 +137,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	log.Println("LOG2")
 	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
@@ -144,8 +146,8 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	err = info.cookieApp.AddCookie(&entity.CookieInfo{user.UserID, cookie})
+	log.Println("LOG3")
+	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{user.UserID, cookie})
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", user.UserID),
@@ -153,7 +155,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	log.Println("LOG4")
 	http.SetCookie(w, cookie)
 
 	// Replacing token in websocket connection info
@@ -191,7 +193,7 @@ func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 
 // HandleCheckUser checks if current user is logged in
 func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
-	_, found := middleware.CheckCookies(r, info.cookieApp)
+	_, found := middleware.CheckCookies(r, info.authApp)
 	if !found {
 		info.logger.Info(entity.UnauthorizedError.Error(),
 			zap.String("url", r.RequestURI),

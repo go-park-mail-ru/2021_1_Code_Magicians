@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"pinterest/application"
-	"pinterest/application/mock_application"
+	"pinterest/usage"
+	"pinterest/usage/mock_application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
 	"testing"
@@ -32,7 +32,7 @@ type profileInputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	profileFunc  func(w http.ResponseWriter, r *http.Request)
-	middleware   func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
+	middleware   func(next http.HandlerFunc, cookieApp usage.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms profileInputStruct to http.Request, adding global cookies
@@ -383,7 +383,7 @@ func TestProfileSuccess(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
-	cookieApp := application.NewCookieApp(40, 10*time.Hour)
+	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
@@ -755,7 +755,7 @@ func TestProfileFailure(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
-	cookieApp := application.NewCookieApp(40, 10*time.Hour)
+	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
