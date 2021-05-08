@@ -111,6 +111,10 @@ func (cookieApp *CookieApp) SearchByUserID(userID int) (*entity.CookieInfo, bool
 	cookieInfo, found := cookieApp.sessionsByUserID[userID]
 	cookieApp.mu.Unlock()
 
+	if !found {
+		return nil, false
+	}
+
 	if cookieInfo.Cookie.Expires.Before(time.Now()) { // We check if cookie is not past it's expiration date
 		cookieApp.RemoveCookie(cookieInfo)
 		return nil, false
@@ -123,6 +127,10 @@ func (cookieApp *CookieApp) SearchByValue(cookieValue string) (*entity.CookieInf
 	cookieApp.mu.Lock()
 	cookieInfo, found := cookieApp.sessionsByValue[cookieValue]
 	cookieApp.mu.Unlock()
+
+	if !found {
+		return nil, false
+	}
 
 	if cookieInfo.Cookie.Expires.Before(time.Now()) { // We check if cookie is not past it's expiration date
 		cookieApp.RemoveCookie(cookieInfo)
