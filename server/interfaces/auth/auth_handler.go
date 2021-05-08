@@ -122,49 +122,28 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("LOG1")
-	user, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
-	log.Println("LOG2121")
+	cookieInfo, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		switch err.Error() {
-		case entity.IncorrectPasswordError.Error():
+		switch err {
+		case entity.IncorrectPasswordError:
 			w.WriteHeader(http.StatusUnauthorized)
-		case string(entity.UserNotFoundError):
+		case entity.UserNotFoundError:
 			w.WriteHeader(http.StatusNotFound)
 		default:
-			{
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
-	log.Println("LOG2")
-	cookie, err := info.cookieApp.GenerateCookie()
-	if err != nil {
-		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", user.UserID),
-			zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	log.Println("LOG3")
-	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{user.UserID, cookie})
-	if err != nil {
-		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", user.UserID),
-			zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	log.Println("LOG4")
-	http.SetCookie(w, cookie)
+
+	http.SetCookie(w, cookieInfo.Cookie)
 
 	// Replacing token in websocket connection info
 	token := r.Header.Get("X-CSRF-Token")
-	err = info.websocketApp.ChangeToken(user.UserID, token)
+	err = info.websocketApp.ChangeToken(cookieInfo.UserID, token)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", user.UserID),
+			zap.Int("for user", cookieInfo.UserID),
 			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
