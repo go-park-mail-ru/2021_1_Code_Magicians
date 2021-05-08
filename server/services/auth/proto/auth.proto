@@ -8,69 +8,13 @@ import "google/protobuf/empty.proto";
 
 package auth;
 
-message Session {
-  string SessionID = 1;
-  string Number = 2;
-}
-
-message UserReg {
-  string  Username = 1;
-  string  Password = 2;
-  string  FirstName = 3;
-  string  LastName = 4;
-  string  Email = 5;
-
-}
-
 message UserAuth {
   string Username = 1;
   string Password = 2;
 }
 
-message UserOutput {
-  int32    UserID = 1;
-  string   Username = 2;
-  string   Email = 3;
-  string   FirstName = 4;
-  string   LastName = 5;
-  string   Avatar = 6;
-  int32    Following = 7 ;
-  int32    FollowedBy = 8;
-  bool     Followed = 9 ;
-}
-
-message UsersListOutput {
-  repeated UserOutput Users = 1;
-}
-
-
 message UserID {
   int32 uid = 1;
-}
-
-message Username {
-  string username = 1;
-}
-
-message UploadAvatar {
-  oneof data {
-    ImageInfo info = 1;
-    bytes chunk_data = 2;
-  };
-}
-
-message Follows {
-  int32 FollowerID = 1;
-  int32 FollowedID = 2;
-}
-
-message IfFollowedResponse {
-  bool isFollowed = 1;
-}
-
-message ImageInfo {
-  int32 UserID = 1;
-  string Extension = 2;
 }
 
 message Cookie {
@@ -89,19 +33,12 @@ message CheckCookieResponse {
 message Error {}
 
 service Auth {
-  rpc   CreateUser(UserReg) returns (UserID) {}
-  rpc   SaveUser(UserReg) returns (Error) {}
-  rpc   DeleteUser(UserID) returns (Error) {}
-  rpc   GetUser(UserID) returns (UserOutput) {}
-  rpc   GetUserByUsername(Username) returns (UserOutput) {}
-  rpc   GetUsers(google.protobuf.Empty) returns (UsersListOutput) {}
-  rpc   CheckUserCredentials(UserAuth) returns (UserOutput) {}
-  rpc   UpdateAvatar(stream UploadAvatar) returns (Error) {}
-  rpc   Follow(Follows) returns (Error) {}
-  rpc   Unfollow(Follows) returns (Error) {}
-  rpc   CheckIfFollowed(Follows) returns (IfFollowedResponse) {}
-  rpc   GenerateCookie(google.protobuf.Empty) returns (Cookie) {}
-  rpc   AddCookie(CookieInfo) returns (Error) {}
+  rpc   LoginUser(UserAuth) returns (CookieInfo) {}
+  rpc   LogoutUser(UserID) returns (Error) {}
   rpc   CheckCookie(Cookie) returns (CheckCookieResponse) {}
+  rpc   GenerateCookie(google.protobuf.Empty) returns (Cookie) {}
+  rpc   AddCookieInfo(CookieInfo) returns (Error) {}
+  rpc   SearchByValue(Cookie) returns (CheckCookieResponse) {}
+  rpc   SearchByUserID(UserID) returns (CheckCookieResponse) {}
   rpc   RemoveCookie(CookieInfo) returns (Error) {}
 }

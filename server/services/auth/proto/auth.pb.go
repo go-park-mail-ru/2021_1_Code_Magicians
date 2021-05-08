@@ -4,7 +4,7 @@
 // 	protoc        v3.6.1
 // source: auth.proto
 
-package proto
+package __
 
 import (
 	context "context"
@@ -25,140 +25,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Session struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	SessionID string `protobuf:"bytes,1,opt,name=SessionID,proto3" json:"SessionID,omitempty"`
-	Number    string `protobuf:"bytes,2,opt,name=Number,proto3" json:"Number,omitempty"`
-}
-
-func (x *Session) Reset() {
-	*x = Session{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Session) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Session) ProtoMessage() {}
-
-func (x *Session) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Session.ProtoReflect.Descriptor instead.
-func (*Session) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Session) GetSessionID() string {
-	if x != nil {
-		return x.SessionID
-	}
-	return ""
-}
-
-func (x *Session) GetNumber() string {
-	if x != nil {
-		return x.Number
-	}
-	return ""
-}
-
-type UserReg struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Username  string `protobuf:"bytes,1,opt,name=Username,proto3" json:"Username,omitempty"`
-	Password  string `protobuf:"bytes,2,opt,name=Password,proto3" json:"Password,omitempty"`
-	FirstName string `protobuf:"bytes,3,opt,name=FirstName,proto3" json:"FirstName,omitempty"`
-	LastName  string `protobuf:"bytes,4,opt,name=LastName,proto3" json:"LastName,omitempty"`
-	Email     string `protobuf:"bytes,5,opt,name=Email,proto3" json:"Email,omitempty"`
-}
-
-func (x *UserReg) Reset() {
-	*x = UserReg{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UserReg) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserReg) ProtoMessage() {}
-
-func (x *UserReg) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UserReg.ProtoReflect.Descriptor instead.
-func (*UserReg) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *UserReg) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *UserReg) GetPassword() string {
-	if x != nil {
-		return x.Password
-	}
-	return ""
-}
-
-func (x *UserReg) GetFirstName() string {
-	if x != nil {
-		return x.FirstName
-	}
-	return ""
-}
-
-func (x *UserReg) GetLastName() string {
-	if x != nil {
-		return x.LastName
-	}
-	return ""
-}
-
-func (x *UserReg) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
-}
-
 type UserAuth struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -171,7 +37,7 @@ type UserAuth struct {
 func (x *UserAuth) Reset() {
 	*x = UserAuth{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[2]
+		mi := &file_auth_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -184,7 +50,7 @@ func (x *UserAuth) String() string {
 func (*UserAuth) ProtoMessage() {}
 
 func (x *UserAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[2]
+	mi := &file_auth_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +63,7 @@ func (x *UserAuth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserAuth.ProtoReflect.Descriptor instead.
 func (*UserAuth) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{2}
+	return file_auth_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *UserAuth) GetUsername() string {
@@ -214,164 +80,6 @@ func (x *UserAuth) GetPassword() string {
 	return ""
 }
 
-type UserOutput struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	UserID     int32  `protobuf:"varint,1,opt,name=UserID,proto3" json:"UserID,omitempty"`
-	Username   string `protobuf:"bytes,2,opt,name=Username,proto3" json:"Username,omitempty"`
-	Email      string `protobuf:"bytes,3,opt,name=Email,proto3" json:"Email,omitempty"`
-	FirstName  string `protobuf:"bytes,4,opt,name=FirstName,proto3" json:"FirstName,omitempty"`
-	LastName   string `protobuf:"bytes,5,opt,name=LastName,proto3" json:"LastName,omitempty"`
-	Avatar     string `protobuf:"bytes,6,opt,name=Avatar,proto3" json:"Avatar,omitempty"`
-	Following  int32  `protobuf:"varint,7,opt,name=Following,proto3" json:"Following,omitempty"`
-	FollowedBy int32  `protobuf:"varint,8,opt,name=FollowedBy,proto3" json:"FollowedBy,omitempty"`
-	Followed   bool   `protobuf:"varint,9,opt,name=Followed,proto3" json:"Followed,omitempty"`
-}
-
-func (x *UserOutput) Reset() {
-	*x = UserOutput{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UserOutput) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserOutput) ProtoMessage() {}
-
-func (x *UserOutput) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UserOutput.ProtoReflect.Descriptor instead.
-func (*UserOutput) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *UserOutput) GetUserID() int32 {
-	if x != nil {
-		return x.UserID
-	}
-	return 0
-}
-
-func (x *UserOutput) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *UserOutput) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
-}
-
-func (x *UserOutput) GetFirstName() string {
-	if x != nil {
-		return x.FirstName
-	}
-	return ""
-}
-
-func (x *UserOutput) GetLastName() string {
-	if x != nil {
-		return x.LastName
-	}
-	return ""
-}
-
-func (x *UserOutput) GetAvatar() string {
-	if x != nil {
-		return x.Avatar
-	}
-	return ""
-}
-
-func (x *UserOutput) GetFollowing() int32 {
-	if x != nil {
-		return x.Following
-	}
-	return 0
-}
-
-func (x *UserOutput) GetFollowedBy() int32 {
-	if x != nil {
-		return x.FollowedBy
-	}
-	return 0
-}
-
-func (x *UserOutput) GetFollowed() bool {
-	if x != nil {
-		return x.Followed
-	}
-	return false
-}
-
-type UsersListOutput struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Users []*UserOutput `protobuf:"bytes,1,rep,name=Users,proto3" json:"Users,omitempty"`
-}
-
-func (x *UsersListOutput) Reset() {
-	*x = UsersListOutput{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UsersListOutput) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UsersListOutput) ProtoMessage() {}
-
-func (x *UsersListOutput) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UsersListOutput.ProtoReflect.Descriptor instead.
-func (*UsersListOutput) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *UsersListOutput) GetUsers() []*UserOutput {
-	if x != nil {
-		return x.Users
-	}
-	return nil
-}
-
 type UserID struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -383,7 +91,7 @@ type UserID struct {
 func (x *UserID) Reset() {
 	*x = UserID{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[5]
+		mi := &file_auth_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -396,7 +104,7 @@ func (x *UserID) String() string {
 func (*UserID) ProtoMessage() {}
 
 func (x *UserID) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[5]
+	mi := &file_auth_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +117,7 @@ func (x *UserID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserID.ProtoReflect.Descriptor instead.
 func (*UserID) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{5}
+	return file_auth_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *UserID) GetUid() int32 {
@@ -417,290 +125,6 @@ func (x *UserID) GetUid() int32 {
 		return x.Uid
 	}
 	return 0
-}
-
-type Username struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-}
-
-func (x *Username) Reset() {
-	*x = Username{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Username) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Username) ProtoMessage() {}
-
-func (x *Username) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Username.ProtoReflect.Descriptor instead.
-func (*Username) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *Username) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-type UploadAvatar struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Data:
-	//	*UploadAvatar_Info
-	//	*UploadAvatar_ChunkData
-	Data isUploadAvatar_Data `protobuf_oneof:"data"`
-}
-
-func (x *UploadAvatar) Reset() {
-	*x = UploadAvatar{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UploadAvatar) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UploadAvatar) ProtoMessage() {}
-
-func (x *UploadAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UploadAvatar.ProtoReflect.Descriptor instead.
-func (*UploadAvatar) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{7}
-}
-
-func (m *UploadAvatar) GetData() isUploadAvatar_Data {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
-func (x *UploadAvatar) GetInfo() *ImageInfo {
-	if x, ok := x.GetData().(*UploadAvatar_Info); ok {
-		return x.Info
-	}
-	return nil
-}
-
-func (x *UploadAvatar) GetChunkData() []byte {
-	if x, ok := x.GetData().(*UploadAvatar_ChunkData); ok {
-		return x.ChunkData
-	}
-	return nil
-}
-
-type isUploadAvatar_Data interface {
-	isUploadAvatar_Data()
-}
-
-type UploadAvatar_Info struct {
-	Info *ImageInfo `protobuf:"bytes,1,opt,name=info,proto3,oneof"`
-}
-
-type UploadAvatar_ChunkData struct {
-	ChunkData []byte `protobuf:"bytes,2,opt,name=chunk_data,json=chunkData,proto3,oneof"`
-}
-
-func (*UploadAvatar_Info) isUploadAvatar_Data() {}
-
-func (*UploadAvatar_ChunkData) isUploadAvatar_Data() {}
-
-type Follows struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	FollowerID int32 `protobuf:"varint,1,opt,name=FollowerID,proto3" json:"FollowerID,omitempty"`
-	FollowedID int32 `protobuf:"varint,2,opt,name=FollowedID,proto3" json:"FollowedID,omitempty"`
-}
-
-func (x *Follows) Reset() {
-	*x = Follows{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Follows) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Follows) ProtoMessage() {}
-
-func (x *Follows) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Follows.ProtoReflect.Descriptor instead.
-func (*Follows) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *Follows) GetFollowerID() int32 {
-	if x != nil {
-		return x.FollowerID
-	}
-	return 0
-}
-
-func (x *Follows) GetFollowedID() int32 {
-	if x != nil {
-		return x.FollowedID
-	}
-	return 0
-}
-
-type IfFollowedResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	IsFollowed bool `protobuf:"varint,1,opt,name=isFollowed,proto3" json:"isFollowed,omitempty"`
-}
-
-func (x *IfFollowedResponse) Reset() {
-	*x = IfFollowedResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *IfFollowedResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*IfFollowedResponse) ProtoMessage() {}
-
-func (x *IfFollowedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use IfFollowedResponse.ProtoReflect.Descriptor instead.
-func (*IfFollowedResponse) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *IfFollowedResponse) GetIsFollowed() bool {
-	if x != nil {
-		return x.IsFollowed
-	}
-	return false
-}
-
-type ImageInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	UserID    int32  `protobuf:"varint,1,opt,name=UserID,proto3" json:"UserID,omitempty"`
-	Extension string `protobuf:"bytes,2,opt,name=Extension,proto3" json:"Extension,omitempty"`
-}
-
-func (x *ImageInfo) Reset() {
-	*x = ImageInfo{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ImageInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ImageInfo) ProtoMessage() {}
-
-func (x *ImageInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ImageInfo.ProtoReflect.Descriptor instead.
-func (*ImageInfo) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *ImageInfo) GetUserID() int32 {
-	if x != nil {
-		return x.UserID
-	}
-	return 0
-}
-
-func (x *ImageInfo) GetExtension() string {
-	if x != nil {
-		return x.Extension
-	}
-	return ""
 }
 
 type Cookie struct {
@@ -714,7 +138,7 @@ type Cookie struct {
 func (x *Cookie) Reset() {
 	*x = Cookie{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[11]
+		mi := &file_auth_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -727,7 +151,7 @@ func (x *Cookie) String() string {
 func (*Cookie) ProtoMessage() {}
 
 func (x *Cookie) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[11]
+	mi := &file_auth_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -740,7 +164,7 @@ func (x *Cookie) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cookie.ProtoReflect.Descriptor instead.
 func (*Cookie) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{11}
+	return file_auth_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Cookie) GetSessionValue() string {
@@ -762,7 +186,7 @@ type CookieInfo struct {
 func (x *CookieInfo) Reset() {
 	*x = CookieInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[12]
+		mi := &file_auth_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -775,7 +199,7 @@ func (x *CookieInfo) String() string {
 func (*CookieInfo) ProtoMessage() {}
 
 func (x *CookieInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[12]
+	mi := &file_auth_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -788,7 +212,7 @@ func (x *CookieInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CookieInfo.ProtoReflect.Descriptor instead.
 func (*CookieInfo) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{12}
+	return file_auth_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CookieInfo) GetUserID() int32 {
@@ -817,7 +241,7 @@ type CheckCookieResponse struct {
 func (x *CheckCookieResponse) Reset() {
 	*x = CheckCookieResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[13]
+		mi := &file_auth_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -830,7 +254,7 @@ func (x *CheckCookieResponse) String() string {
 func (*CheckCookieResponse) ProtoMessage() {}
 
 func (x *CheckCookieResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[13]
+	mi := &file_auth_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +267,7 @@ func (x *CheckCookieResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckCookieResponse.ProtoReflect.Descriptor instead.
 func (*CheckCookieResponse) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{13}
+	return file_auth_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CheckCookieResponse) GetCookieInfo() *CookieInfo {
@@ -869,7 +293,7 @@ type Error struct {
 func (x *Error) Reset() {
 	*x = Error{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_auth_proto_msgTypes[14]
+		mi := &file_auth_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -882,7 +306,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[14]
+	mi := &file_auth_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -895,7 +319,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{14}
+	return file_auth_proto_rawDescGZIP(), []int{5}
 }
 
 var File_auth_proto protoreflect.FileDescriptor
@@ -904,131 +328,56 @@ var file_auth_proto_rawDesc = []byte{
 	0x0a, 0x0a, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x04, 0x61, 0x75,
 	0x74, 0x68, 0x1a, 0x1b, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x62, 0x75, 0x66, 0x2f, 0x65, 0x6d, 0x70, 0x74, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
-	0x3f, 0x0a, 0x07, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x53, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x53,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x44, 0x12, 0x16, 0x0a, 0x06, 0x4e, 0x75, 0x6d, 0x62,
-	0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72,
-	0x22, 0x91, 0x01, 0x0a, 0x07, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x67, 0x12, 0x1a, 0x0a, 0x08,
-	0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
-	0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x50, 0x61, 0x73, 0x73,
-	0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x50, 0x61, 0x73, 0x73,
-	0x77, 0x6f, 0x72, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x46, 0x69, 0x72, 0x73, 0x74, 0x4e, 0x61, 0x6d,
-	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x46, 0x69, 0x72, 0x73, 0x74, 0x4e, 0x61,
-	0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x4c, 0x61, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x4c, 0x61, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x14,
-	0x0a, 0x05, 0x45, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x45,
-	0x6d, 0x61, 0x69, 0x6c, 0x22, 0x42, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x41, 0x75, 0x74, 0x68,
-	0x12, 0x1a, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08,
-	0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
-	0x50, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x22, 0x82, 0x02, 0x0a, 0x0a, 0x55, 0x73, 0x65,
-	0x72, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49,
-	0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x12,
-	0x1a, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x45,
-	0x6d, 0x61, 0x69, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x45, 0x6d, 0x61, 0x69,
-	0x6c, 0x12, 0x1c, 0x0a, 0x09, 0x46, 0x69, 0x72, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x46, 0x69, 0x72, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12,
-	0x1a, 0x0a, 0x08, 0x4c, 0x61, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x08, 0x4c, 0x61, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x41,
-	0x76, 0x61, 0x74, 0x61, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x41, 0x76, 0x61,
-	0x74, 0x61, 0x72, 0x12, 0x1c, 0x0a, 0x09, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x69, 0x6e, 0x67,
-	0x18, 0x07, 0x20, 0x01, 0x28, 0x05, 0x52, 0x09, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x69, 0x6e,
-	0x67, 0x12, 0x1e, 0x0a, 0x0a, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x42, 0x79, 0x18,
-	0x08, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x42,
-	0x79, 0x12, 0x1a, 0x0a, 0x08, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x18, 0x09, 0x20,
-	0x01, 0x28, 0x08, 0x52, 0x08, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x22, 0x39, 0x0a,
-	0x0f, 0x55, 0x73, 0x65, 0x72, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74,
-	0x12, 0x26, 0x0a, 0x05, 0x55, 0x73, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x75, 0x74, 0x70, 0x75,
-	0x74, 0x52, 0x05, 0x55, 0x73, 0x65, 0x72, 0x73, 0x22, 0x1a, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72,
-	0x49, 0x44, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52,
-	0x03, 0x75, 0x69, 0x64, 0x22, 0x26, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65,
-	0x12, 0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x5e, 0x0a, 0x0c,
-	0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x41, 0x76, 0x61, 0x74, 0x61, 0x72, 0x12, 0x25, 0x0a, 0x04,
-	0x69, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x48, 0x00, 0x52, 0x04, 0x69,
-	0x6e, 0x66, 0x6f, 0x12, 0x1f, 0x0a, 0x0a, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x5f, 0x64, 0x61, 0x74,
-	0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x00, 0x52, 0x09, 0x63, 0x68, 0x75, 0x6e, 0x6b,
-	0x44, 0x61, 0x74, 0x61, 0x42, 0x06, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x49, 0x0a, 0x07,
-	0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x73, 0x12, 0x1e, 0x0a, 0x0a, 0x46, 0x6f, 0x6c, 0x6c, 0x6f,
-	0x77, 0x65, 0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x46, 0x6f, 0x6c,
-	0x6c, 0x6f, 0x77, 0x65, 0x72, 0x49, 0x44, 0x12, 0x1e, 0x0a, 0x0a, 0x46, 0x6f, 0x6c, 0x6c, 0x6f,
-	0x77, 0x65, 0x64, 0x49, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x46, 0x6f, 0x6c,
-	0x6c, 0x6f, 0x77, 0x65, 0x64, 0x49, 0x44, 0x22, 0x34, 0x0a, 0x12, 0x49, 0x66, 0x46, 0x6f, 0x6c,
-	0x6c, 0x6f, 0x77, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1e, 0x0a,
-	0x0a, 0x69, 0x73, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x0a, 0x69, 0x73, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x22, 0x41, 0x0a,
-	0x09, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16, 0x0a, 0x06, 0x55, 0x73,
-	0x65, 0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x55, 0x73, 0x65, 0x72,
-	0x49, 0x44, 0x12, 0x1c, 0x0a, 0x09, 0x45, 0x78, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x45, 0x78, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e,
-	0x22, 0x2c, 0x0a, 0x06, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x56,
-	0x0a, 0x0a, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16, 0x0a, 0x06,
-	0x75, 0x73, 0x65, 0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x75, 0x73,
-	0x65, 0x72, 0x49, 0x44, 0x12, 0x30, 0x0a, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x56,
-	0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
-	0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x63, 0x0a, 0x13, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x43,
-	0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x30, 0x0a,
-	0x0a, 0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49,
-	0x6e, 0x66, 0x6f, 0x52, 0x0a, 0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12,
-	0x1a, 0x0a, 0x08, 0x69, 0x73, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x08, 0x69, 0x73, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x22, 0x07, 0x0a, 0x05, 0x45,
-	0x72, 0x72, 0x6f, 0x72, 0x32, 0xff, 0x05, 0x0a, 0x04, 0x41, 0x75, 0x74, 0x68, 0x12, 0x2b, 0x0a,
-	0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0d, 0x2e, 0x61, 0x75,
-	0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x67, 0x1a, 0x0c, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x22, 0x00, 0x12, 0x28, 0x0a, 0x08, 0x53, 0x61,
-	0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0d, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x73,
-	0x65, 0x72, 0x52, 0x65, 0x67, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72,
-	0x6f, 0x72, 0x22, 0x00, 0x12, 0x29, 0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x55, 0x73,
-	0x65, 0x72, 0x12, 0x0c, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44,
-	0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12,
-	0x2b, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0c, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x1a, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e,
-	0x55, 0x73, 0x65, 0x72, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x22, 0x00, 0x12, 0x37, 0x0a, 0x11,
-	0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x79, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
-	0x65, 0x12, 0x0e, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d,
-	0x65, 0x1a, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x75, 0x74,
-	0x70, 0x75, 0x74, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x55, 0x73, 0x65, 0x72,
-	0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x15, 0x2e, 0x61, 0x75, 0x74, 0x68,
-	0x2e, 0x55, 0x73, 0x65, 0x72, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74,
-	0x22, 0x00, 0x12, 0x3a, 0x0a, 0x14, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x55, 0x73, 0x65, 0x72, 0x43,
-	0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x12, 0x0e, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x41, 0x75, 0x74, 0x68, 0x1a, 0x10, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x75, 0x74, 0x70, 0x75, 0x74, 0x22, 0x00, 0x12, 0x33,
-	0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x76, 0x61, 0x74, 0x61, 0x72, 0x12, 0x12,
-	0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x41, 0x76, 0x61, 0x74,
-	0x61, 0x72, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22,
-	0x00, 0x28, 0x01, 0x12, 0x26, 0x0a, 0x06, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x12, 0x0d, 0x2e,
-	0x61, 0x75, 0x74, 0x68, 0x2e, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x73, 0x1a, 0x0b, 0x2e, 0x61,
-	0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x28, 0x0a, 0x08, 0x55,
-	0x6e, 0x66, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x12, 0x0d, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x46,
-	0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x73, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45, 0x72,
-	0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x3c, 0x0a, 0x0f, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x49, 0x66,
-	0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x12, 0x0d, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e,
-	0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x73, 0x1a, 0x18, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x49,
-	0x66, 0x46, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x38, 0x0a, 0x0e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x43,
-	0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0c, 0x2e,
-	0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x22, 0x00, 0x12, 0x2c, 0x0a,
-	0x09, 0x41, 0x64, 0x64, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x10, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x1a, 0x0b, 0x2e, 0x61,
-	0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x38, 0x0a, 0x0b, 0x43,
-	0x68, 0x65, 0x63, 0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x0c, 0x2e, 0x61, 0x75, 0x74,
-	0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x1a, 0x19, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e,
-	0x43, 0x68, 0x65, 0x63, 0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x2f, 0x0a, 0x0c, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x43,
-	0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f,
-	0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45,
-	0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x0a, 0x08, 0x55, 0x73, 0x65, 0x72, 0x41, 0x75, 0x74, 0x68, 0x12, 0x1a, 0x0a, 0x08, 0x55,
+	0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x55,
+	0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x50, 0x61, 0x73, 0x73, 0x77,
+	0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x50, 0x61, 0x73, 0x73, 0x77,
+	0x6f, 0x72, 0x64, 0x22, 0x1a, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x12, 0x10, 0x0a,
+	0x03, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x75, 0x69, 0x64, 0x22,
+	0x2c, 0x0a, 0x06, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x56, 0x0a,
+	0x0a, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x16, 0x0a, 0x06, 0x75,
+	0x73, 0x65, 0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x75, 0x73, 0x65,
+	0x72, 0x49, 0x44, 0x12, 0x30, 0x0a, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x56, 0x61,
+	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x0c, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x63, 0x0a, 0x13, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x43, 0x6f,
+	0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x0a,
+	0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e,
+	0x66, 0x6f, 0x52, 0x0a, 0x63, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1a,
+	0x0a, 0x08, 0x69, 0x73, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x08, 0x69, 0x73, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x72,
+	0x72, 0x6f, 0x72, 0x32, 0xb2, 0x03, 0x0a, 0x04, 0x41, 0x75, 0x74, 0x68, 0x12, 0x2f, 0x0a, 0x09,
+	0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0e, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x55, 0x73, 0x65, 0x72, 0x41, 0x75, 0x74, 0x68, 0x1a, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x00, 0x12, 0x29, 0x0a,
+	0x0a, 0x4c, 0x6f, 0x67, 0x6f, 0x75, 0x74, 0x55, 0x73, 0x65, 0x72, 0x12, 0x0c, 0x2e, 0x61, 0x75,
+	0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x38, 0x0a, 0x0b, 0x43, 0x68, 0x65, 0x63,
+	0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x0c, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43,
+	0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x1a, 0x19, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x68, 0x65,
+	0x63, 0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x38, 0x0a, 0x0e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x43, 0x6f,
+	0x6f, 0x6b, 0x69, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x0c, 0x2e, 0x61,
+	0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x22, 0x00, 0x12, 0x30, 0x0a, 0x0d,
+	0x41, 0x64, 0x64, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x10, 0x2e,
+	0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x1a,
+	0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x3a,
+	0x0a, 0x0d, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x42, 0x79, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12,
+	0x0c, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x1a, 0x19, 0x2e,
+	0x61, 0x75, 0x74, 0x68, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x0e, 0x53, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x42, 0x79, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x12, 0x0c, 0x2e, 0x61,
+	0x75, 0x74, 0x68, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x1a, 0x19, 0x2e, 0x61, 0x75, 0x74,
+	0x68, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x2f, 0x0a, 0x0c, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x65, 0x43, 0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x12, 0x10, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x43,
+	0x6f, 0x6f, 0x6b, 0x69, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x1a, 0x0b, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1043,65 +392,40 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_auth_proto_goTypes = []interface{}{
-	(*Session)(nil),             // 0: auth.Session
-	(*UserReg)(nil),             // 1: auth.UserReg
-	(*UserAuth)(nil),            // 2: auth.UserAuth
-	(*UserOutput)(nil),          // 3: auth.UserOutput
-	(*UsersListOutput)(nil),     // 4: auth.UsersListOutput
-	(*UserID)(nil),              // 5: auth.UserID
-	(*Username)(nil),            // 6: auth.Username
-	(*UploadAvatar)(nil),        // 7: auth.UploadAvatar
-	(*Follows)(nil),             // 8: auth.Follows
-	(*IfFollowedResponse)(nil),  // 9: auth.IfFollowedResponse
-	(*ImageInfo)(nil),           // 10: auth.ImageInfo
-	(*Cookie)(nil),              // 11: auth.Cookie
-	(*CookieInfo)(nil),          // 12: auth.CookieInfo
-	(*CheckCookieResponse)(nil), // 13: auth.CheckCookieResponse
-	(*Error)(nil),               // 14: auth.Error
-	(*empty.Empty)(nil),         // 15: google.protobuf.Empty
+	(*UserAuth)(nil),            // 0: auth.UserAuth
+	(*UserID)(nil),              // 1: auth.UserID
+	(*Cookie)(nil),              // 2: auth.Cookie
+	(*CookieInfo)(nil),          // 3: auth.CookieInfo
+	(*CheckCookieResponse)(nil), // 4: auth.CheckCookieResponse
+	(*Error)(nil),               // 5: auth.Error
+	(*empty.Empty)(nil),         // 6: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
-	3,  // 0: auth.UsersListOutput.Users:type_name -> auth.UserOutput
-	10, // 1: auth.UploadAvatar.info:type_name -> auth.ImageInfo
-	11, // 2: auth.CookieInfo.sessionValue:type_name -> auth.Cookie
-	12, // 3: auth.CheckCookieResponse.cookieInfo:type_name -> auth.CookieInfo
-	1,  // 4: auth.Auth.CreateUser:input_type -> auth.UserReg
-	1,  // 5: auth.Auth.SaveUser:input_type -> auth.UserReg
-	5,  // 6: auth.Auth.DeleteUser:input_type -> auth.UserID
-	5,  // 7: auth.Auth.GetUser:input_type -> auth.UserID
-	6,  // 8: auth.Auth.GetUserByUsername:input_type -> auth.Username
-	15, // 9: auth.Auth.GetUsers:input_type -> google.protobuf.Empty
-	2,  // 10: auth.Auth.CheckUserCredentials:input_type -> auth.UserAuth
-	7,  // 11: auth.Auth.UpdateAvatar:input_type -> auth.UploadAvatar
-	8,  // 12: auth.Auth.Follow:input_type -> auth.Follows
-	8,  // 13: auth.Auth.Unfollow:input_type -> auth.Follows
-	8,  // 14: auth.Auth.CheckIfFollowed:input_type -> auth.Follows
-	15, // 15: auth.Auth.GenerateCookie:input_type -> google.protobuf.Empty
-	12, // 16: auth.Auth.AddCookie:input_type -> auth.CookieInfo
-	11, // 17: auth.Auth.CheckCookie:input_type -> auth.Cookie
-	12, // 18: auth.Auth.RemoveCookie:input_type -> auth.CookieInfo
-	5,  // 19: auth.Auth.CreateUser:output_type -> auth.UserID
-	14, // 20: auth.Auth.SaveUser:output_type -> auth.Error
-	14, // 21: auth.Auth.DeleteUser:output_type -> auth.Error
-	3,  // 22: auth.Auth.GetUser:output_type -> auth.UserOutput
-	3,  // 23: auth.Auth.GetUserByUsername:output_type -> auth.UserOutput
-	4,  // 24: auth.Auth.GetUsers:output_type -> auth.UsersListOutput
-	3,  // 25: auth.Auth.CheckUserCredentials:output_type -> auth.UserOutput
-	14, // 26: auth.Auth.UpdateAvatar:output_type -> auth.Error
-	14, // 27: auth.Auth.Follow:output_type -> auth.Error
-	14, // 28: auth.Auth.Unfollow:output_type -> auth.Error
-	9,  // 29: auth.Auth.CheckIfFollowed:output_type -> auth.IfFollowedResponse
-	11, // 30: auth.Auth.GenerateCookie:output_type -> auth.Cookie
-	14, // 31: auth.Auth.AddCookie:output_type -> auth.Error
-	13, // 32: auth.Auth.CheckCookie:output_type -> auth.CheckCookieResponse
-	14, // 33: auth.Auth.RemoveCookie:output_type -> auth.Error
-	19, // [19:34] is the sub-list for method output_type
-	4,  // [4:19] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	2,  // 0: auth.CookieInfo.sessionValue:type_name -> auth.Cookie
+	3,  // 1: auth.CheckCookieResponse.cookieInfo:type_name -> auth.CookieInfo
+	0,  // 2: auth.Auth.LoginUser:input_type -> auth.UserAuth
+	1,  // 3: auth.Auth.LogoutUser:input_type -> auth.UserID
+	2,  // 4: auth.Auth.CheckCookie:input_type -> auth.Cookie
+	6,  // 5: auth.Auth.GenerateCookie:input_type -> google.protobuf.Empty
+	3,  // 6: auth.Auth.AddCookieInfo:input_type -> auth.CookieInfo
+	2,  // 7: auth.Auth.SearchByValue:input_type -> auth.Cookie
+	1,  // 8: auth.Auth.SearchByUserID:input_type -> auth.UserID
+	3,  // 9: auth.Auth.RemoveCookie:input_type -> auth.CookieInfo
+	3,  // 10: auth.Auth.LoginUser:output_type -> auth.CookieInfo
+	5,  // 11: auth.Auth.LogoutUser:output_type -> auth.Error
+	4,  // 12: auth.Auth.CheckCookie:output_type -> auth.CheckCookieResponse
+	2,  // 13: auth.Auth.GenerateCookie:output_type -> auth.Cookie
+	5,  // 14: auth.Auth.AddCookieInfo:output_type -> auth.Error
+	4,  // 15: auth.Auth.SearchByValue:output_type -> auth.CheckCookieResponse
+	4,  // 16: auth.Auth.SearchByUserID:output_type -> auth.CheckCookieResponse
+	5,  // 17: auth.Auth.RemoveCookie:output_type -> auth.Error
+	10, // [10:18] is the sub-list for method output_type
+	2,  // [2:10] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_auth_proto_init() }
@@ -1111,30 +435,6 @@ func file_auth_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_auth_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Session); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UserReg); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UserAuth); i {
 			case 0:
 				return &v.state
@@ -1146,31 +446,7 @@ func file_auth_proto_init() {
 				return nil
 			}
 		}
-		file_auth_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UserOutput); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UsersListOutput); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_auth_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UserID); i {
 			case 0:
 				return &v.state
@@ -1182,67 +458,7 @@ func file_auth_proto_init() {
 				return nil
 			}
 		}
-		file_auth_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Username); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadAvatar); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Follows); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IfFollowedResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImageInfo); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_auth_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_auth_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Cookie); i {
 			case 0:
 				return &v.state
@@ -1254,7 +470,7 @@ func file_auth_proto_init() {
 				return nil
 			}
 		}
-		file_auth_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+		file_auth_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CookieInfo); i {
 			case 0:
 				return &v.state
@@ -1266,7 +482,7 @@ func file_auth_proto_init() {
 				return nil
 			}
 		}
-		file_auth_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_auth_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CheckCookieResponse); i {
 			case 0:
 				return &v.state
@@ -1278,7 +494,7 @@ func file_auth_proto_init() {
 				return nil
 			}
 		}
-		file_auth_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_auth_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Error); i {
 			case 0:
 				return &v.state
@@ -1291,17 +507,13 @@ func file_auth_proto_init() {
 			}
 		}
 	}
-	file_auth_proto_msgTypes[7].OneofWrappers = []interface{}{
-		(*UploadAvatar_Info)(nil),
-		(*UploadAvatar_ChunkData)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_auth_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1327,20 +539,13 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AuthClient interface {
-	CreateUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*UserID, error)
-	SaveUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*Error, error)
-	DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error)
-	GetUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserOutput, error)
-	GetUserByUsername(ctx context.Context, in *Username, opts ...grpc.CallOption) (*UserOutput, error)
-	GetUsers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UsersListOutput, error)
-	CheckUserCredentials(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*UserOutput, error)
-	UpdateAvatar(ctx context.Context, opts ...grpc.CallOption) (Auth_UpdateAvatarClient, error)
-	Follow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error)
-	Unfollow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error)
-	CheckIfFollowed(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*IfFollowedResponse, error)
-	GenerateCookie(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Cookie, error)
-	AddCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error)
+	LoginUser(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*CookieInfo, error)
+	LogoutUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error)
 	CheckCookie(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error)
+	GenerateCookie(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*Cookie, error)
+	AddCookieInfo(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error)
+	SearchByValue(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error)
+	SearchByUserID(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*CheckCookieResponse, error)
 	RemoveCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error)
 }
 
@@ -1352,124 +557,27 @@ func NewAuthClient(cc grpc.ClientConnInterface) AuthClient {
 	return &authClient{cc}
 }
 
-func (c *authClient) CreateUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*UserID, error) {
-	out := new(UserID)
-	err := c.cc.Invoke(ctx, "/auth.Auth/CreateUser", in, out, opts...)
+func (c *authClient) LoginUser(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*CookieInfo, error) {
+	out := new(CookieInfo)
+	err := c.cc.Invoke(ctx, "/auth.Auth/LoginUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authClient) SaveUser(ctx context.Context, in *UserReg, opts ...grpc.CallOption) (*Error, error) {
+func (c *authClient) LogoutUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error) {
 	out := new(Error)
-	err := c.cc.Invoke(ctx, "/auth.Auth/SaveUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth.Auth/LogoutUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authClient) DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Error, error) {
-	out := new(Error)
-	err := c.cc.Invoke(ctx, "/auth.Auth/DeleteUser", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) GetUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserOutput, error) {
-	out := new(UserOutput)
-	err := c.cc.Invoke(ctx, "/auth.Auth/GetUser", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) GetUserByUsername(ctx context.Context, in *Username, opts ...grpc.CallOption) (*UserOutput, error) {
-	out := new(UserOutput)
-	err := c.cc.Invoke(ctx, "/auth.Auth/GetUserByUsername", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) GetUsers(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*UsersListOutput, error) {
-	out := new(UsersListOutput)
-	err := c.cc.Invoke(ctx, "/auth.Auth/GetUsers", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) CheckUserCredentials(ctx context.Context, in *UserAuth, opts ...grpc.CallOption) (*UserOutput, error) {
-	out := new(UserOutput)
-	err := c.cc.Invoke(ctx, "/auth.Auth/CheckUserCredentials", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) UpdateAvatar(ctx context.Context, opts ...grpc.CallOption) (Auth_UpdateAvatarClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Auth_serviceDesc.Streams[0], "/auth.Auth/UpdateAvatar", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &authUpdateAvatarClient{stream}
-	return x, nil
-}
-
-type Auth_UpdateAvatarClient interface {
-	Send(*UploadAvatar) error
-	CloseAndRecv() (*Error, error)
-	grpc.ClientStream
-}
-
-type authUpdateAvatarClient struct {
-	grpc.ClientStream
-}
-
-func (x *authUpdateAvatarClient) Send(m *UploadAvatar) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *authUpdateAvatarClient) CloseAndRecv() (*Error, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(Error)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *authClient) Follow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error) {
-	out := new(Error)
-	err := c.cc.Invoke(ctx, "/auth.Auth/Follow", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) Unfollow(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*Error, error) {
-	out := new(Error)
-	err := c.cc.Invoke(ctx, "/auth.Auth/Unfollow", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authClient) CheckIfFollowed(ctx context.Context, in *Follows, opts ...grpc.CallOption) (*IfFollowedResponse, error) {
-	out := new(IfFollowedResponse)
-	err := c.cc.Invoke(ctx, "/auth.Auth/CheckIfFollowed", in, out, opts...)
+func (c *authClient) CheckCookie(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error) {
+	out := new(CheckCookieResponse)
+	err := c.cc.Invoke(ctx, "/auth.Auth/CheckCookie", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1485,18 +593,27 @@ func (c *authClient) GenerateCookie(ctx context.Context, in *empty.Empty, opts .
 	return out, nil
 }
 
-func (c *authClient) AddCookie(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error) {
+func (c *authClient) AddCookieInfo(ctx context.Context, in *CookieInfo, opts ...grpc.CallOption) (*Error, error) {
 	out := new(Error)
-	err := c.cc.Invoke(ctx, "/auth.Auth/AddCookie", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth.Auth/AddCookieInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authClient) CheckCookie(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error) {
+func (c *authClient) SearchByValue(ctx context.Context, in *Cookie, opts ...grpc.CallOption) (*CheckCookieResponse, error) {
 	out := new(CheckCookieResponse)
-	err := c.cc.Invoke(ctx, "/auth.Auth/CheckCookie", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth.Auth/SearchByValue", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) SearchByUserID(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*CheckCookieResponse, error) {
+	out := new(CheckCookieResponse)
+	err := c.cc.Invoke(ctx, "/auth.Auth/SearchByUserID", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1514,20 +631,13 @@ func (c *authClient) RemoveCookie(ctx context.Context, in *CookieInfo, opts ...g
 
 // AuthServer is the server API for Auth service.
 type AuthServer interface {
-	CreateUser(context.Context, *UserReg) (*UserID, error)
-	SaveUser(context.Context, *UserReg) (*Error, error)
-	DeleteUser(context.Context, *UserID) (*Error, error)
-	GetUser(context.Context, *UserID) (*UserOutput, error)
-	GetUserByUsername(context.Context, *Username) (*UserOutput, error)
-	GetUsers(context.Context, *empty.Empty) (*UsersListOutput, error)
-	CheckUserCredentials(context.Context, *UserAuth) (*UserOutput, error)
-	UpdateAvatar(Auth_UpdateAvatarServer) error
-	Follow(context.Context, *Follows) (*Error, error)
-	Unfollow(context.Context, *Follows) (*Error, error)
-	CheckIfFollowed(context.Context, *Follows) (*IfFollowedResponse, error)
-	GenerateCookie(context.Context, *empty.Empty) (*Cookie, error)
-	AddCookie(context.Context, *CookieInfo) (*Error, error)
+	LoginUser(context.Context, *UserAuth) (*CookieInfo, error)
+	LogoutUser(context.Context, *UserID) (*Error, error)
 	CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error)
+	GenerateCookie(context.Context, *empty.Empty) (*Cookie, error)
+	AddCookieInfo(context.Context, *CookieInfo) (*Error, error)
+	SearchByValue(context.Context, *Cookie) (*CheckCookieResponse, error)
+	SearchByUserID(context.Context, *UserID) (*CheckCookieResponse, error)
 	RemoveCookie(context.Context, *CookieInfo) (*Error, error)
 }
 
@@ -1535,47 +645,26 @@ type AuthServer interface {
 type UnimplementedAuthServer struct {
 }
 
-func (*UnimplementedAuthServer) CreateUser(context.Context, *UserReg) (*UserID, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+func (*UnimplementedAuthServer) LoginUser(context.Context, *UserAuth) (*CookieInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
-func (*UnimplementedAuthServer) SaveUser(context.Context, *UserReg) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveUser not implemented")
+func (*UnimplementedAuthServer) LogoutUser(context.Context, *UserID) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LogoutUser not implemented")
 }
-func (*UnimplementedAuthServer) DeleteUser(context.Context, *UserID) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
-}
-func (*UnimplementedAuthServer) GetUser(context.Context, *UserID) (*UserOutput, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
-}
-func (*UnimplementedAuthServer) GetUserByUsername(context.Context, *Username) (*UserOutput, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUserByUsername not implemented")
-}
-func (*UnimplementedAuthServer) GetUsers(context.Context, *empty.Empty) (*UsersListOutput, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
-}
-func (*UnimplementedAuthServer) CheckUserCredentials(context.Context, *UserAuth) (*UserOutput, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckUserCredentials not implemented")
-}
-func (*UnimplementedAuthServer) UpdateAvatar(Auth_UpdateAvatarServer) error {
-	return status.Errorf(codes.Unimplemented, "method UpdateAvatar not implemented")
-}
-func (*UnimplementedAuthServer) Follow(context.Context, *Follows) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Follow not implemented")
-}
-func (*UnimplementedAuthServer) Unfollow(context.Context, *Follows) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Unfollow not implemented")
-}
-func (*UnimplementedAuthServer) CheckIfFollowed(context.Context, *Follows) (*IfFollowedResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckIfFollowed not implemented")
+func (*UnimplementedAuthServer) CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckCookie not implemented")
 }
 func (*UnimplementedAuthServer) GenerateCookie(context.Context, *empty.Empty) (*Cookie, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateCookie not implemented")
 }
-func (*UnimplementedAuthServer) AddCookie(context.Context, *CookieInfo) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddCookie not implemented")
+func (*UnimplementedAuthServer) AddCookieInfo(context.Context, *CookieInfo) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddCookieInfo not implemented")
 }
-func (*UnimplementedAuthServer) CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckCookie not implemented")
+func (*UnimplementedAuthServer) SearchByValue(context.Context, *Cookie) (*CheckCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchByValue not implemented")
+}
+func (*UnimplementedAuthServer) SearchByUserID(context.Context, *UserID) (*CheckCookieResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchByUserID not implemented")
 }
 func (*UnimplementedAuthServer) RemoveCookie(context.Context, *CookieInfo) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCookie not implemented")
@@ -1585,208 +674,56 @@ func RegisterAuthServer(s *grpc.Server, srv AuthServer) {
 	s.RegisterService(&_Auth_serviceDesc, srv)
 }
 
-func _Auth_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserReg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).CreateUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/CreateUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).CreateUser(ctx, req.(*UserReg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_SaveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserReg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).SaveUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/SaveUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).SaveUser(ctx, req.(*UserReg))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).DeleteUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/DeleteUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).DeleteUser(ctx, req.(*UserID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserID)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).GetUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/GetUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).GetUser(ctx, req.(*UserID))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_GetUserByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Username)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).GetUserByUsername(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/GetUserByUsername",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).GetUserByUsername(ctx, req.(*Username))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_GetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).GetUsers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/GetUsers",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).GetUsers(ctx, req.(*empty.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_CheckUserCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UserAuth)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServer).CheckUserCredentials(ctx, in)
+		return srv.(AuthServer).LoginUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Auth/CheckUserCredentials",
+		FullMethod: "/auth.Auth/LoginUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).CheckUserCredentials(ctx, req.(*UserAuth))
+		return srv.(AuthServer).LoginUser(ctx, req.(*UserAuth))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Auth_UpdateAvatar_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(AuthServer).UpdateAvatar(&authUpdateAvatarServer{stream})
-}
-
-type Auth_UpdateAvatarServer interface {
-	SendAndClose(*Error) error
-	Recv() (*UploadAvatar, error)
-	grpc.ServerStream
-}
-
-type authUpdateAvatarServer struct {
-	grpc.ServerStream
-}
-
-func (x *authUpdateAvatarServer) SendAndClose(m *Error) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *authUpdateAvatarServer) Recv() (*UploadAvatar, error) {
-	m := new(UploadAvatar)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _Auth_Follow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Follows)
+func _Auth_LogoutUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServer).Follow(ctx, in)
+		return srv.(AuthServer).LogoutUser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Auth/Follow",
+		FullMethod: "/auth.Auth/LogoutUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).Follow(ctx, req.(*Follows))
+		return srv.(AuthServer).LogoutUser(ctx, req.(*UserID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Auth_Unfollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Follows)
+func _Auth_CheckCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Cookie)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServer).Unfollow(ctx, in)
+		return srv.(AuthServer).CheckCookie(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Auth/Unfollow",
+		FullMethod: "/auth.Auth/CheckCookie",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).Unfollow(ctx, req.(*Follows))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Auth_CheckIfFollowed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Follows)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServer).CheckIfFollowed(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/auth.Auth/CheckIfFollowed",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).CheckIfFollowed(ctx, req.(*Follows))
+		return srv.(AuthServer).CheckCookie(ctx, req.(*Cookie))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1809,38 +746,56 @@ func _Auth_GenerateCookie_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Auth_AddCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_AddCookieInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CookieInfo)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServer).AddCookie(ctx, in)
+		return srv.(AuthServer).AddCookieInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Auth/AddCookie",
+		FullMethod: "/auth.Auth/AddCookieInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).AddCookie(ctx, req.(*CookieInfo))
+		return srv.(AuthServer).AddCookieInfo(ctx, req.(*CookieInfo))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Auth_CheckCookie_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Auth_SearchByValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Cookie)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServer).CheckCookie(ctx, in)
+		return srv.(AuthServer).SearchByValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth.Auth/CheckCookie",
+		FullMethod: "/auth.Auth/SearchByValue",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServer).CheckCookie(ctx, req.(*Cookie))
+		return srv.(AuthServer).SearchByValue(ctx, req.(*Cookie))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_SearchByUserID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).SearchByUserID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.Auth/SearchByUserID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).SearchByUserID(ctx, req.(*UserID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1868,68 +823,38 @@ var _Auth_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AuthServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateUser",
-			Handler:    _Auth_CreateUser_Handler,
+			MethodName: "LoginUser",
+			Handler:    _Auth_LoginUser_Handler,
 		},
 		{
-			MethodName: "SaveUser",
-			Handler:    _Auth_SaveUser_Handler,
-		},
-		{
-			MethodName: "DeleteUser",
-			Handler:    _Auth_DeleteUser_Handler,
-		},
-		{
-			MethodName: "GetUser",
-			Handler:    _Auth_GetUser_Handler,
-		},
-		{
-			MethodName: "GetUserByUsername",
-			Handler:    _Auth_GetUserByUsername_Handler,
-		},
-		{
-			MethodName: "GetUsers",
-			Handler:    _Auth_GetUsers_Handler,
-		},
-		{
-			MethodName: "CheckUserCredentials",
-			Handler:    _Auth_CheckUserCredentials_Handler,
-		},
-		{
-			MethodName: "Follow",
-			Handler:    _Auth_Follow_Handler,
-		},
-		{
-			MethodName: "Unfollow",
-			Handler:    _Auth_Unfollow_Handler,
-		},
-		{
-			MethodName: "CheckIfFollowed",
-			Handler:    _Auth_CheckIfFollowed_Handler,
-		},
-		{
-			MethodName: "GenerateCookie",
-			Handler:    _Auth_GenerateCookie_Handler,
-		},
-		{
-			MethodName: "AddCookie",
-			Handler:    _Auth_AddCookie_Handler,
+			MethodName: "LogoutUser",
+			Handler:    _Auth_LogoutUser_Handler,
 		},
 		{
 			MethodName: "CheckCookie",
 			Handler:    _Auth_CheckCookie_Handler,
 		},
 		{
+			MethodName: "GenerateCookie",
+			Handler:    _Auth_GenerateCookie_Handler,
+		},
+		{
+			MethodName: "AddCookieInfo",
+			Handler:    _Auth_AddCookieInfo_Handler,
+		},
+		{
+			MethodName: "SearchByValue",
+			Handler:    _Auth_SearchByValue_Handler,
+		},
+		{
+			MethodName: "SearchByUserID",
+			Handler:    _Auth_SearchByUserID_Handler,
+		},
+		{
 			MethodName: "RemoveCookie",
 			Handler:    _Auth_RemoveCookie_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "UpdateAvatar",
-			Handler:       _Auth_UpdateAvatar_Handler,
-			ClientStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "auth.proto",
 }
