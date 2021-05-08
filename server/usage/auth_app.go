@@ -40,11 +40,15 @@ func (authApp *AuthApp) LoginUser(username string, password string) (*entity.Coo
 	for err == entity.DuplicatingCookieValueError {
 		cookie, err = authApp.cookieApp.GenerateCookie()
 	}
+	log.Println("EBELEX3")
 	resultCookieInfo := &entity.CookieInfo{UserID: user.UserID, Cookie: cookie}
+	log.Println("EBELEX4")
 	err = authApp.cookieApp.AddCookieInfo(resultCookieInfo)
+	log.Println("EBELEX4")
 	if err != nil {
 		return nil, err
 	}
+	log.Println("EBELEX4")
 
 	return resultCookieInfo, nil
 }

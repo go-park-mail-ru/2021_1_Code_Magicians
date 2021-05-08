@@ -42,7 +42,8 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	zapLogger, _ := zap.NewDevelopment()
 	defer zapLogger.Sync()
 
-	repo := protoUser.NewUserClient(&grpc.ClientConn{})
+	sessionUser, _ := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+	repo := protoUser.NewUserClient(sessionUser)
 	repo1 := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
@@ -60,7 +61,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	chatApp := usage.NewChatApp(userApp, websocketApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
-	authInfo := auth.NewAuthInfo(userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
+	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
 	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)

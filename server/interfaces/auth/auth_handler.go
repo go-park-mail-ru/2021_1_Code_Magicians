@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"pinterest/usage"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
+	"pinterest/usage"
 	"time"
 
 	"go.uber.org/zap"
@@ -23,10 +23,11 @@ type AuthInfo struct {
 	logger       *zap.Logger
 }
 
-func NewAuthInfo(userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
+func NewAuthInfo(authApp usage.AuthAppInterface, userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
 	s3App usage.S3AppInterface, boardApp usage.BoardAppInterface,
 	websocketApp usage.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
+		authApp:      authApp,
 		userApp:      userApp,
 		cookieApp:    cookieApp,
 		s3App:        s3App,
@@ -120,7 +121,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-    log.Println("LOG1")
+	log.Println("LOG1")
 	user, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
 	log.Println("LOG2121")
 	if err != nil {
