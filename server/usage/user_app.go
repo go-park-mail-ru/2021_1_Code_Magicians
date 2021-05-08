@@ -1,8 +1,8 @@
 package usage
 
 import (
+	"context"
 	"io"
-	"log"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
 )
@@ -36,7 +36,7 @@ type UserAppInterface interface {
 func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 	newUser := new(grpcUser.UserReg)
 	FillRegForm(user, newUser)
-	userID, err := u.grpcClient.CreateUser(nil, newUser)
+	userID, err := u.grpcClient.CreateUser(context.Background(), newUser)
 	if err != nil {
 		return -1, err
 	}
@@ -57,7 +57,7 @@ func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 func (u *UserApp) SaveUser(user *entity.User) error {
 	newUser := new(grpcUser.UserReg)
 	FillRegForm(user, newUser)
-	_, err := u.grpcClient.SaveUser(nil, newUser)
+	_, err := u.grpcClient.SaveUser(context.Background(), newUser)
 	return err
 }
 
@@ -65,7 +65,7 @@ func (u *UserApp) SaveUser(user *entity.User) error {
 // S3AppInterface is needed for avatar deletion
 // It returns nil on success and error on failure
 func (u *UserApp) DeleteUser(userID int) error {
-	user, err := u.grpcClient.GetUser(nil, &grpcUser.UserID{Uid: int64(userID)})
+	user, err := u.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
 		return err
 	}
@@ -78,15 +78,14 @@ func (u *UserApp) DeleteUser(userID int) error {
 		}
 	}
 
-	_, err = u.grpcClient.DeleteUser(nil, &grpcUser.UserID{Uid: int64(userID)})
+	_, err = u.grpcClient.DeleteUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	return err
 }
 
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
 func (u *UserApp) GetUser(userID int) (*entity.User, error) {
-	log.Println("EEEEEEEEE")
-	userOutput, err := u.grpcClient.GetUser(nil, &grpcUser.UserID{Uid: int64(userID)})
+	userOutput, err := u.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func (u *UserApp) GetUser(userID int) (*entity.User, error) {
 // GetUsers fetches all users from database
 // It returns slice of all users, nil on success and nil, error on failure
 func (u *UserApp) GetUsers() ([]entity.User, error) {
-	usersList, err := u.grpcClient.GetUsers(nil, nil)
+	usersList, err := u.grpcClient.GetUsers(context.Background(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,7 @@ func (u *UserApp) GetUsers() ([]entity.User, error) {
 // GetUserByUsername fetches user with passed username from database
 // It returns that user, nil on success and nil, error on failure
 func (u *UserApp) GetUserByUsername(username string) (*entity.User, error) {
-	userOutput, err := u.grpcClient.GetUserByUsername(nil, &grpcUser.Username{Username: username})
+	userOutput, err := u.grpcClient.GetUserByUsername(context.Background(), &grpcUser.Username{Username: username})
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +158,7 @@ func (u *UserApp) Follow(followerID int, followedID int) error {
 	if followerID == followedID {
 		return entity.SelfFollowError
 	}
-	_, err := u.grpcClient.Follow(nil, &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
+	_, err := u.grpcClient.Follow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
 	return err
 }
 
@@ -167,7 +166,7 @@ func (u *UserApp) Unfollow(followerID int, followedID int) error {
 	if followerID == followedID {
 		return entity.SelfFollowError
 	}
-	_, err := u.grpcClient.Unfollow(nil, &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
+	_, err := u.grpcClient.Unfollow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
 	return err
 }
 
@@ -175,14 +174,14 @@ func (u *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) 
 	if followerID == followedID {
 		return false, entity.SelfFollowError
 	}
-	isFollowed, err := u.grpcClient.CheckIfFollowed(nil, &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
+	isFollowed, err := u.grpcClient.CheckIfFollowed(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
 	return isFollowed.IsFollowed, err
 }
 
 // SearchUsers fetches all users from database suitable with passed keywords
 // It returns slice of users and nil on success, nil and error on failure
 func (u *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
-	usersList, err := u.grpcClient.SearchUsers(nil, &grpcUser.SearchInput{KeyWords: keyWords})
+	usersList, err := u.grpcClient.SearchUsers(context.Background(), &grpcUser.SearchInput{KeyWords: keyWords})
 	users := ReturnUsersList(usersList.Users)
 	return users, err
 }
