@@ -1,8 +1,6 @@
 package usage
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"net/http"
 	"pinterest/domain/entity"
 	authProto "pinterest/services/auth/proto"
@@ -33,28 +31,6 @@ type CookieAppInterface interface {
 	SearchByValue(sessionValue string) (*entity.CookieInfo, bool)
 	SearchByUserID(userID int) (*entity.CookieInfo, bool)
 	RemoveCookie(*entity.CookieInfo) error
-}
-
-// generateRandomBytes returns securely generated random bytes.
-// It will return an error if the system's secure random
-// number generator fails to function correctly, in which
-// case the caller should not continue.
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-
-// generateRandomString returns a URL-safe, base64 encoded
-// securely generated random string.
-func GenerateRandomString(s int) (string, error) {
-	b, err := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
 }
 
 func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {

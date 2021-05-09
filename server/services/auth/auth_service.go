@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -64,7 +63,7 @@ func (s *service) CheckCookie(ctx context.Context, cookie *Cookie) (*CheckCookie
 }
 
 func (s *service) GenerateCookie(ctx context.Context, nothing *empty.Empty) (*Cookie, error) {
-	sessionValue, err := GenerateRandomString(40) // cookie value - random string
+	sessionValue, err := entity.GenerateRandomString(40) // cookie value - random string
 	if err != nil {
 		return nil, entity.CookieGenerationError
 	}
@@ -119,9 +118,3 @@ func generateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-// generateRandomString returns a URL-safe, base64 encoded
-// securely generated random string.
-func GenerateRandomString(s int) (string, error) {
-	b, err := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
-}

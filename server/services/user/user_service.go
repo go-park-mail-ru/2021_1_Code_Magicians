@@ -3,8 +3,6 @@ package user
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -452,7 +450,7 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 		return status.Errorf(codes.Unknown, "cannot receive image info")
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random filename
+	filenamePrefix, err := entity.GenerateRandomString(40) // generating random filename
 	if err != nil {
 		return entity.FilenameGenerationError
 	}
@@ -568,26 +566,4 @@ func handleS3Error(err error) error {
 	}
 
 	return fmt.Errorf("Not an S3 error")
-}
-
-// generateRandomBytes returns securely generated random bytes.
-// It will return an error if the system's secure random
-// number generator fails to function correctly, in which
-// case the caller should not continue.
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-
-// generateRandomString returns a URL-safe, base64 encoded
-// securely generated random string.
-func GenerateRandomString(s int) (string, error) {
-	b, err := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
 }
