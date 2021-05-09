@@ -1,1 +1,0 @@
-This layer is a pad between domain (DB) and interfaces (actual app)
