@@ -1,4 +1,4 @@
-package auth
+package main
 
 import (
 	"context"
@@ -7,19 +7,12 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	"net/http"
 	"os"
-	"pinterest/usage"
-	"pinterest/domain/entity"
-	_ "pinterest/domain/repository"
-	"pinterest/infrastructure/persistence"
-	"pinterest/interfaces/routing"
+	authService "pinterest/services/auth"
 	authProto "pinterest/services/auth/proto"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/rs/cors"
 )
 
 func runService(addr string) {
@@ -55,46 +48,15 @@ func runService(addr string) {
 
 	defer conn.Close()
 
-	sess := entity.ConnectAws()
-
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn, sess, os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
-
-	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
-	switch os.Getenv("HTTPS_ON") {
-	case "true":
-		allowedOrigins = append(allowedOrigins, "https://pinter-best.com:8081", "https://pinter-best.com", "https://127.0.0.1:8081")
-	case "false":
-		allowedOrigins = append(allowedOrigins, "http://pinter-best.com:8081", "http://pinter-best.com", "http://127.0.0.1:8081")
-	default:
-		sugarLogger.Fatal("HTTPS_ON variable is not set")
-	}
-
-	c := cors.New(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-	})
-
-	handler := c.Handler(r)
-	fmt.Printf("Starting server at localhost%s\n", addr)
-
-	switch os.Getenv("HTTPS_ON") {
-	case "true":
-		sugarLogger.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
-	case "false":
-		sugarLogger.Fatal(http.ListenAndServe(addr, handler))
-	}
-
 	server := grpc.NewServer()
-	userAuthRepository := persistence.NewUserRepository(conn)
-	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
 
-	service := usage.NewAuthApp(userAuthRepository, cookieApp)
+	service := authService.NewService(conn)
 	authProto.RegisterAuthServer(server, service)
 
 	lis, err := net.Listen("tcp", addr)
 
+	fmt.Printf("Starting server at localhost%s\n", addr)
 	err = server.Serve(lis)
 	if err != nil {
 		log.Fatalln("Serve auth error: ", err)
@@ -102,5 +64,5 @@ func runService(addr string) {
 }
 
 func main() {
-	runService(":8081")
+	runService(":8083")
 }

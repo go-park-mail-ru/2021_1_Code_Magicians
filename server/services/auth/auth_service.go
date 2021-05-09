@@ -18,3 +18,11 @@ func NewService(db *pgxpool.Pool) *service {
 func (s *service) LoginUser(ctx context.Context, in *UserAuth) (*CookieInfo, error) {
 
 }
+
+func (s *service) LogoutUser(context.Context, *UserID) (*Error, error) {
+
+}
+
+func (s *service) CheckCookie(context.Context, *Cookie) (*CheckCookieResponse, error) {
+
+}

@@ -4,7 +4,6 @@ syntax = "proto3";
 // PATH="${PATH}:${HOME}/go/bin" protoc --go_out=plugins=grpc:. *.proto
 
 option go_package = "./";
-import "google/protobuf/empty.proto";
 
 package auth;
 
@@ -36,9 +35,4 @@ service Auth {
   rpc   LoginUser(UserAuth) returns (CookieInfo) {}
   rpc   LogoutUser(UserID) returns (Error) {}
   rpc   CheckCookie(Cookie) returns (CheckCookieResponse) {}
-  rpc   GenerateCookie(google.protobuf.Empty) returns (Cookie) {}
-  rpc   AddCookieInfo(CookieInfo) returns (Error) {}
-  rpc   SearchByValue(Cookie) returns (CheckCookieResponse) {}
-  rpc   SearchByUserID(UserID) returns (CheckCookieResponse) {}
-  rpc   RemoveCookie(CookieInfo) returns (Error) {}
 }

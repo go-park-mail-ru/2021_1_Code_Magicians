@@ -83,8 +83,8 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 }
 
 const saveUserQuery string = "UPDATE Users\n" +
-	"SET username=$1, passwordhash=$2, salt=$3, email=$4, first_name=$5, last_name=$6, avatar=$7\n" +
-	"WHERE userID=$8"
+	"SET username=$1, email=$2, first_name=$3, last_name=$4, avatar=$5\n" +
+	"WHERE userID=$6"
 
 func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, error) {
 	user := FillFromEditForm(us)
@@ -93,8 +93,36 @@ func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, erro
 		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
-	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Password, user.Salt, user.Email,
+	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Email,
 		user.FirstName, user.LastName, user.Avatar, user.UserID)
+	if err != nil {
+		// If username/email is already taken
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
+			return &Error{}, entity.UsernameEmailDuplicateError
+		}
+		// Other errors
+		return &Error{}, err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		log.Println(err, "COMMIT ERROR")
+		return &Error{}, entity.TransactionCommitError
+	}
+	return &Error{}, nil
+}
+
+const changePasswordQuery string = "UPDATE Users\n" +
+	"SET passwordhash=$1\n" +
+	"WHERE userID=$2"
+
+func (s *service) ChangePassword(ctx context.Context, pswrd *Password) (*Error, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return &Error{}, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+	_, err = tx.Exec(context.Background(), changePasswordQuery, pswrd.Password, pswrd.UserID)
 	if err != nil {
 		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
@@ -471,6 +499,15 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 	}
 
 	return handleS3Error(err)
+}
+
+func (s *service) DeleteFile(ctx context.Context, filename *FilePath) (*Error, error) {
+	deleter := s3.New(s.s3)
+	_, err := deleter.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
+		Key:    aws.String(filename.ImagePath),
+	})
+	return &Error{}, handleS3Error(err)
 }
 
 func FillFromRegForm(us *UserReg) entity.User {

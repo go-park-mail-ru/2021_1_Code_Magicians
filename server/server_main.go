@@ -60,8 +60,7 @@ func runServer(addr string) {
 	defer conn.Close()
 	sess := entity.ConnectAws()
 	// TODO divide file
-	zapLogger, _ := zap.NewDevelopment()
-	defer zapLogger.Sync()
+
 	//
 	//var kacp = keepalive.ClientParameters{
 	//	Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
@@ -70,8 +69,8 @@ func runServer(addr string) {
 	//}
 
 	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
-
 	defer sessionUser.Close()
+
 	repo := protoUser.NewUserClient(sessionUser)
 	repo1 := persistence.NewUserRepository(conn)
 	repoPins := persistence.NewPinsRepository(conn)
@@ -82,21 +81,21 @@ func runServer(addr string) {
 	authApp := usage.NewAuthApp(repo1, cookieApp)
 	boardApp := usage.NewBoardApp(repoBoards)
 	s3App := usage.NewS3App(sess, os.Getenv("BUCKET_NAME"))
-	userApp := usage.NewUserApp(repo, boardApp, s3App)
+	userApp := usage.NewUserApp(repo, boardApp)
 	pinApp := usage.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := usage.NewCommentApp(repoComments)
 	websocketApp := usage.NewWebsocketApp(userApp)
 	notificationApp := usage.NewNotificationApp(userApp, websocketApp)
 	chatApp := usage.NewChatApp(userApp, websocketApp)
 
-	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
-	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, zapLogger)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
-	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
-	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", zapLogger)
-	notificationInfo := notification.NewNotificationInfo(notificationApp, zapLogger)
-	chatInfo := chat.NewChatnfo(chatApp, userApp, zapLogger)
+	boardsInfo := board.NewBoardInfo(boardApp, logger)
+	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, logger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, logger)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
+	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
+	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
+	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
+	chatInfo := chat.NewChatnfo(chatApp, userApp, logger)
 	// TODO divide file
 
 	fmt.Println("Successfully connected to database")

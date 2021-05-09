@@ -13,16 +13,16 @@ import (
 type UserApp struct {
 	grpcClient grpcUser.UserClient
 	boardApp   BoardAppInterface
-	s3App      S3AppInterface
 }
 
-func NewUserApp(us grpcUser.UserClient, boardApp BoardAppInterface, s3App S3AppInterface) *UserApp {
-	return &UserApp{us, boardApp, s3App}
+func NewUserApp(us grpcUser.UserClient, boardApp BoardAppInterface) *UserApp {
+	return &UserApp{us, boardApp}
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error)           // Create user, returns created user's ID
-	SaveUser(*entity.User) error                    // Save changed user to database
+	CreateUser(*entity.User) (int, error) // Create user, returns created user's ID
+	SaveUser(*entity.User) error          // Save changed user to database
+	ChangePassword(*entity.User) error
 	DeleteUser(int) error                           // Delete user with passed userID from database
 	GetUser(int) (*entity.User, error)              // Get user by his ID
 	GetUsers() ([]entity.User, error)               // Get all users
@@ -64,6 +64,13 @@ func (u *UserApp) SaveUser(user *entity.User) error {
 	return err
 }
 
+func (u *UserApp) ChangePassword(user *entity.User) error {
+	_, err := u.grpcClient.ChangePassword(context.Background(),
+		&grpcUser.Password{UserID: int64(user.UserID),
+			Password: user.Password})
+	return err
+}
+
 // SaveUser deletes user with passed ID
 // S3AppInterface is needed for avatar deletion
 // It returns nil on success and error on failure
@@ -74,7 +81,7 @@ func (u *UserApp) DeleteUser(userID int) error {
 	}
 
 	if user.Avatar != string(entity.AvatarDefaultPath) {
-		err = u.s3App.DeleteFile(user.Avatar)
+		_, err = u.grpcClient.DeleteFile(context.Background(), &grpcUser.FilePath{ImagePath: user.Avatar})
 
 		if err != nil {
 			return err
@@ -174,12 +181,12 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, extension string) err
 	user.Avatar = res.Path
 	err = u.SaveUser(user)
 	if err != nil {
-		u.s3App.DeleteFile(res.Path)
+		u.grpcClient.DeleteFile(context.Background(), &grpcUser.FilePath{ImagePath: res.Path})
 		return entity.UserSavingError
 	}
 
 	if oldAvatarPath != string(entity.AvatarDefaultPath) {
-		err = u.s3App.DeleteFile(oldAvatarPath)
+		_, err = u.grpcClient.DeleteFile(ctx, &grpcUser.FilePath{ImagePath: oldAvatarPath})
 
 		if err != nil {
 			return entity.FileDeletionError

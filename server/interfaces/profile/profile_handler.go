@@ -72,7 +72,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 	}
 
 	user.Password = userInput.Password
-	err = profileInfo.userApp.SaveUser(user)
+	err = profileInfo.userApp.ChangePassword(user)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -348,6 +348,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
 	case false: // ID was not passed
@@ -362,6 +363,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
 	}
@@ -400,6 +402,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return
 }
 
 func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
@@ -422,6 +425,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
 	case false: // ID was not passed
@@ -436,6 +440,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 					return
 				}
 				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 		}
 	}
