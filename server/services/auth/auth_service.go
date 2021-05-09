@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -41,7 +40,7 @@ func (s *service) LoginUser(ctx context.Context, userCredentials *UserAuth) (*Er
 			return &Error{}, entity.UserNotFoundError
 		}
 
-		return &Error{},  err
+		return &Error{}, err
 	}
 
 	err = tx.Commit(context.Background())
@@ -54,21 +53,13 @@ func (s *service) LoginUser(ctx context.Context, userCredentials *UserAuth) (*Er
 	return &Error{}, nil
 }
 
-func (s *service) LogoutUser(ctx context.Context, userID *UserID) (*Error, error) {
-	return nil, nil
-}
-
-func (s *service) CheckCookie(ctx context.Context, cookie *Cookie) (*CheckCookieResponse, error) {
-	return nil, nil
-}
-
 func (s *service) GenerateCookie(ctx context.Context, nothing *empty.Empty) (*Cookie, error) {
 	sessionValue, err := entity.GenerateRandomString(40) // cookie value - random string
 	if err != nil {
 		return nil, entity.CookieGenerationError
 	}
 
-	expirationTime := time.Now().Add(10*time.Hour)
+	expirationTime := time.Now().Add(10 * time.Hour)
 	if os.Getenv("HTTPS_ON") == "true" {
 		return &Cookie{
 			Name:     entity.CookieNameKey,
@@ -102,19 +93,10 @@ func (s *service) RemoveCookie(ctx context.Context, cookieInfo *CookieInfo) (*Er
 	return nil, nil
 }
 
-
-// generateRandomBytes returns securely generated random bytes.
-// It will return an error if the system's secure random
-// number generator fails to function correctly, in which
-// case the caller should not continue.
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+func (s *service) LogoutUser(ctx context.Context, userID *UserID) (*Error, error) {
+	return nil, nil
 }
 
+func (s *service) CheckCookie(ctx context.Context, cookie *Cookie) (*CheckCookieResponse, error) {
+	return nil, nil
+}
