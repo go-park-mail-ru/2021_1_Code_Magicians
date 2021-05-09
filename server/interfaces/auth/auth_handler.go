@@ -72,7 +72,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.cookieApp.GenerateCookie()
+	cookie, err := info.authApp.GenerateCookie()
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)

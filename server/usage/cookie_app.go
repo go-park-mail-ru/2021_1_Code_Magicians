@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
-	"os"
 	"pinterest/domain/entity"
 	authProto "pinterest/services/auth/proto"
 	"sync"
@@ -30,7 +29,6 @@ func NewCookieApp(cookieLength int, duration time.Duration) *CookieApp {
 }
 
 type CookieAppInterface interface {
-	GenerateCookie() (*http.Cookie, error)
 	AddCookieInfo(cookieInfo *entity.CookieInfo) error
 	SearchByValue(sessionValue string) (*entity.CookieInfo, bool)
 	SearchByUserID(userID int) (*entity.CookieInfo, bool)
@@ -57,10 +55,6 @@ func generateRandomBytes(n int) ([]byte, error) {
 func GenerateRandomString(s int) (string, error) {
 	b, err := generateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
-}
-
-func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
-	grpcCookie, err := authProto.
 }
 
 func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
@@ -123,11 +117,12 @@ func (cookieApp *CookieApp) RemoveCookie(cookieInfo *entity.CookieInfo) error {
 	return nil
 }
 
-func FillGRPCCookie (cookie *http.Cookie, grpcCookie *authProto.Cookie) {
+func FillGRPCCookie(cookie *http.Cookie, grpcCookie *authProto.Cookie) {
 	cookie.Name = grpcCookie.Name
 	cookie.Path = grpcCookie.Path
 	cookie.SameSite = http.SameSite(grpcCookie.SameSite)
 	cookie.HttpOnly = grpcCookie.HttpOnly
 	cookie.Value = grpcCookie.Value
 	cookie.Expires = grpcCookie.Expires.AsTime()
+	cookie.Secure = grpcCookie.Secure
 }

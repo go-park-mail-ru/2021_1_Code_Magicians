@@ -10,7 +10,7 @@ const UserNotLoggedInError customError = "User is not logged in"
 
 const UserNotFoundError customError = "User not found"
 const UsernameEmailDuplicateError customError = "Username or email is already taken"
-const IncorrectPasswordError customError = "rpc error: code = Unknown desc = Password is incorrect"
+const IncorrectPasswordError customError = "Password is incorrect"
 const UserSavingError customError = "User saving failed"
 const ValidationError customError = "Validation error"
 const UnauthorizedError customError = "Unauthorized"
