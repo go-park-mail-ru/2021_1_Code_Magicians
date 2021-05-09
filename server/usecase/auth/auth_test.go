@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
-	"time"
 
 	"go.uber.org/zap/zaptest"
 
@@ -13,10 +12,10 @@ import (
 	"net/http/httptest"
 	"net/url"
 
+	"pinterest/delivery"
+	"pinterest/delivery/mock_delivery"
 	"pinterest/domain/entity"
-	"pinterest/interfaces/middleware"
-	"pinterest/usecase"
-	"pinterest/usecase/mock_usecase"
+	"pinterest/usecase/middleware"
 
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
@@ -30,7 +29,7 @@ type authInputStruct struct {
 	headers    map[string][]string
 	postBody   []byte
 	authFunc   func(w http.ResponseWriter, r *http.Request)
-	middleware func(next http.HandlerFunc, cookieApp usecase.CookieAppInterface) http.HandlerFunc
+	middleware func(next http.HandlerFunc, authApp delivery.AuthAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
@@ -165,8 +164,9 @@ var successCookies []*http.Cookie
 func TestAuthSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockUser := mock_usecase.NewMockUserAppInterface(mockCtrl)
-	mockWebsocket := mock_usecase.NewMockWebsocketAppInterface(mockCtrl)
+	mockUserApp := mock_delivery.NewMockUserAppInterface(mockCtrl)
+	mockAuthApp := mock_delivery.NewMockAuthAppInterface(mockCtrl)
+	mockWebsocketApp := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
 
 	expectedUser := entity.User{
 		UserID:    0,
@@ -178,20 +178,20 @@ func TestAuthSuccess(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
-	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
-	mockUser.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 
-	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
+	mockUserApp.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
 
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
 
 	testInfo = AuthInfo{
-		userApp:      mockUser,
-		cookieApp:    usecase.NewCookieApp(40, 10*time.Hour),
+		userApp:      mockUserApp,
+		authApp:      mockAuthApp,
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
-		websocketApp: mockWebsocket,
+		websocketApp: mockWebsocketApp,
 	}
 	for _, tt := range authTestSuccess {
 		tt := tt
@@ -202,7 +202,7 @@ func TestAuthSuccess(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testInfo.cookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, mockAuthApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
@@ -398,8 +398,9 @@ func TestAuthFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockUser := mock_usecase.NewMockUserAppInterface(mockCtrl)
-	mockWebsocket := mock_usecase.NewMockWebsocketAppInterface(mockCtrl)
+	mockUserApp := mock_delivery.NewMockUserAppInterface(mockCtrl)
+	mockAuthApp := mock_delivery.NewMockAuthAppInterface(mockCtrl)
+	mockWebsocketApp := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	expectedUser := entity.User{
@@ -412,16 +413,16 @@ func TestAuthFailure(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
-	mockUser.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
-	mockUser.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1)      // Checking incorrect username/password pair
-	mockUser.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
+	mockUserApp.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
+	mockUserApp.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1)      // Checking incorrect username/password pair
+	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
 
 	testInfo = AuthInfo{
-		userApp:      mockUser,
-		cookieApp:    usecase.NewCookieApp(40, 10*time.Hour),
+		userApp:      mockUserApp,
+		authApp:      mockAuthApp,
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
-		websocketApp: mockWebsocket,
+		websocketApp: mockWebsocketApp,
 		logger:       testLogger,
 	}
 	for _, tt := range authTestFailure {
@@ -433,7 +434,7 @@ func TestAuthFailure(t *testing.T) {
 			m := mux.NewRouter()
 			funcToHandle := tt.in.authFunc
 			if tt.in.middleware != nil { // We don't always need middleware
-				funcToHandle = tt.in.middleware(funcToHandle, testInfo.cookieApp)
+				funcToHandle = tt.in.middleware(funcToHandle, mockAuthApp)
 			}
 			m.HandleFunc(tt.in.url, funcToHandle).Methods(tt.in.method)
 			m.ServeHTTP(rw, req)
