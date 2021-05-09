@@ -86,33 +86,30 @@ const saveUserQuery string = "UPDATE Users\n" +
 	"SET username=$1, passwordhash=$2, salt=$3, email=$4, first_name=$5, last_name=$6, avatar=$7\n" +
 	"WHERE userID=$8"
 
-func (s *service) SaveUser(ctx context.Context, us *UserReg) (*Error, error) {
-	user := FillFromRegForm(us)
-
+func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, error) {
+	user := FillFromEditForm(us)
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
-		return nil, entity.TransactionBeginError
+		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
-
 	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Password, user.Salt, user.Email,
 		user.FirstName, user.LastName, user.Avatar, user.UserID)
 	if err != nil {
 		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
-			return nil, entity.UsernameEmailDuplicateError
+			return &Error{}, entity.UsernameEmailDuplicateError
 		}
-
 		// Other errors
-		log.Println(err)
-		return nil, err
+		return &Error{}, err
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return nil, entity.TransactionCommitError
+		log.Println(err, "COMMIT ERROR")
+		return &Error{}, entity.TransactionCommitError
 	}
-	return nil, nil
+	return &Error{}, nil
 }
 
 const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
@@ -122,23 +119,23 @@ const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 func (s *service) DeleteUser(ctx context.Context, userID *UserID) (*Error, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
-		return nil, entity.TransactionBeginError
+		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
 
 	commandTag, err := tx.Exec(context.Background(), deleteUserQuery, int(userID.Uid))
 	if err != nil {
-		return nil, err
+		return &Error{}, err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return nil, entity.UserNotFoundError
+		return &Error{}, entity.UserNotFoundError
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return nil, entity.TransactionCommitError
+		return &Error{}, entity.TransactionCommitError
 	}
-	return nil, nil
+	return &Error{}, nil
 }
 
 const getUserQuery string = "SELECT username, email, first_name, last_name, avatar, followed_by, following\n" +
@@ -273,41 +270,41 @@ const updateFollowedByQuery string = "UPDATE Users SET followed_by = followed_by
 func (s *service) Follow(ctx context.Context, follows *Follows) (*Error, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
-		return nil, entity.TransactionBeginError
+		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background()) // Will help if one of updateX queries fails
 
 	_, err = tx.Exec(context.Background(), followQuery, follows.FollowerID, follows.FollowedID)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
-			return nil, entity.FollowAlreadyExistsError
+			return &Error{}, entity.FollowAlreadyExistsError
 		}
 		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_followed"`) {
-			return nil, entity.UserNotFoundError
+			return &Error{}, entity.UserNotFoundError
 		}
 		if strings.Contains(err.Error(), `violates foreign key constraint "followers_users_follower"`) { // Actually does not usually happen because of checks in middleware
-			return nil, entity.UserNotFoundError
+			return &Error{}, entity.UserNotFoundError
 		}
 
-		return nil, err
+		return &Error{}, err
 	}
 
 	_, err = tx.Exec(context.Background(), updateFollowingQuery, follows.FollowerID)
 	if err != nil {
 		log.Println(err)
-		return nil, entity.FollowCountUpdateError
+		return &Error{}, entity.FollowCountUpdateError
 	}
 
 	_, err = tx.Exec(context.Background(), updateFollowedByQuery, follows.FollowedID)
 	if err != nil {
-		return nil, entity.FollowCountUpdateError
+		return &Error{}, entity.FollowCountUpdateError
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return nil, entity.TransactionCommitError
 	}
-	return nil, nil
+	return &Error{}, nil
 }
 
 const unfollowQuery string = "DELETE FROM Followers WHERE followerID=$1 AND followedID=$2"
@@ -317,31 +314,31 @@ const updateUnfollowedByQuery string = "UPDATE Users SET followed_by = followed_
 func (s *service) Unfollow(ctx context.Context, follows *Follows) (*Error, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
-		return nil, entity.TransactionBeginError
+		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background()) // Will help if one of updateX queries fails
 
 	result, _ := tx.Exec(context.Background(), unfollowQuery, follows.FollowerID, follows.FollowedID)
 
 	if result.RowsAffected() != 1 {
-		return nil, entity.FollowNotFoundError
+		return &Error{}, entity.FollowNotFoundError
 	}
 
 	_, err = tx.Exec(context.Background(), updateUnfollowingQuery, follows.FollowerID)
 	if err != nil {
-		return nil, entity.FollowCountUpdateError
+		return &Error{}, entity.FollowCountUpdateError
 	}
 
 	_, err = tx.Exec(context.Background(), updateUnfollowedByQuery, follows.FollowedID)
 	if err != nil {
-		return nil, entity.FollowCountUpdateError
+		return &Error{}, entity.FollowCountUpdateError
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return nil, entity.TransactionCommitError
+		return &Error{}, entity.TransactionCommitError
 	}
-	return nil, err
+	return &Error{}, err
 }
 
 const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, no rows otherwise
@@ -385,7 +382,7 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 	}
 	defer tx.Rollback(context.Background())
 	users := make([]*UserOutput, 0)
-	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%" + keyWords.KeyWords + "%")
+	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%"+keyWords.KeyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.NoResultSearch
@@ -434,8 +431,6 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 	newAvatarPath := "avatars/" + filenamePrefix + req.GetExtension() // TODO: avatars folder sharding by date
 
 	for {
-		log.Print("waiting to receive more data")
-
 		req, err = stream.Recv()
 		if err == io.EOF {
 			log.Print("no more data")
@@ -446,8 +441,6 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 		}
 		chunk := req.GetChunkData()
 		size := len(chunk)
-
-		log.Printf("received a chunk with size: %d", size)
 
 		imageSize += size
 		if imageSize > maxPostAvatarBodySize {
@@ -490,6 +483,21 @@ func FillFromRegForm(us *UserReg) entity.User {
 		Email:      us.Email,
 		Avatar:     "",
 		Salt:       "", // TODO salt realize
+		Following:  0,
+		FollowedBy: 0,
+	}
+}
+
+func FillFromEditForm(us *UserEditInput) *entity.User {
+	return &entity.User{
+		UserID:     int(us.UserID),
+		Username:   us.Username,
+		Password:   us.Password,
+		FirstName:  us.FirstName,
+		LastName:   us.LastName,
+		Email:      us.Email,
+		Avatar:     us.AvatarLink,
+		Salt:       us.Salt, // TODO salt realize
 		Following:  0,
 		FollowedBy: 0,
 	}

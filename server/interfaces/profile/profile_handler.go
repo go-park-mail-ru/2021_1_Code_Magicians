@@ -129,8 +129,10 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 		switch err.Error() {
 		case entity.UsernameEmailDuplicateError.Error():
 			w.WriteHeader(http.StatusConflict)
+			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
 

@@ -58,9 +58,9 @@ func (u *UserApp) CreateUser(user *entity.User) (int, error) {
 // SaveUser saves user to database with passed fields
 // It returns nil on success and error on failure
 func (u *UserApp) SaveUser(user *entity.User) error {
-	newUser := new(grpcUser.UserReg)
-	FillRegForm(user, newUser)
-	_, err := u.grpcClient.SaveUser(context.Background(), newUser)
+	newUser := grpcUser.UserEditInput{}
+	FillEditForm(user, &newUser)
+	_, err := u.grpcClient.SaveUser(context.Background(), &newUser)
 	return err
 }
 
@@ -143,7 +143,7 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, extension string) err
 		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
 	}
 	reader := bufio.NewReader(file)
-	buffer := make([]byte,  8 * 1024 * 1024 )
+	buffer := make([]byte, 8*1024*1024)
 
 	for {
 		n, err := reader.Read(buffer)
@@ -159,7 +159,6 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, extension string) err
 				ChunkData: buffer[:n],
 			},
 		}
-
 		err = stream.Send(req)
 		if err != nil {
 			log.Fatal("cannot send chunk to server: ", err)
@@ -230,6 +229,17 @@ func FillRegForm(user *entity.User, userReg *grpcUser.UserReg) {
 	userReg.Password = user.Password
 }
 
+func FillEditForm(user *entity.User, userEdit *grpcUser.UserEditInput) {
+	userEdit.UserID = int64(user.UserID)
+	userEdit.Username = user.Username
+	userEdit.Email = user.Email
+	userEdit.FirstName = user.FirstName
+	userEdit.LastName = user.LastName
+	userEdit.Password = user.Password
+	userEdit.AvatarLink = user.Avatar
+	userEdit.Salt = user.Salt
+}
+
 func FillOutForm(user *entity.User, userOut *grpcUser.UserOutput) {
 	user.UserID = int(userOut.UserID)
 	user.Username = userOut.Username
@@ -241,11 +251,10 @@ func FillOutForm(user *entity.User, userOut *grpcUser.UserOutput) {
 	user.FollowedBy = int(userOut.FollowedBy)
 }
 
-
 func ReturnUsersList(userOutList []*grpcUser.UserOutput) []entity.User {
 	userList := make([]entity.User, 0)
 
-	for _, userOut:= range userOutList {
+	for _, userOut := range userOutList {
 		user := entity.User{}
 		user.UserID = int(userOut.UserID)
 		user.Username = userOut.Username

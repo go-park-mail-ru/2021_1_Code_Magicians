@@ -14,7 +14,17 @@ message UserReg {
   string  FirstName = 3;
   string  LastName = 4;
   string  Email = 5;
+}
 
+message UserEditInput {
+  string  Username = 1;
+  string  Password = 2;
+  string  FirstName = 3;
+  string  LastName = 4;
+  string  Email = 5;
+  string  Salt = 6;
+  string  AvatarLink = 7;
+  int64   UserID = 8;
 }
 
 message UserAuth {
@@ -76,7 +86,7 @@ message Error {}
 
 service User {
   rpc   CreateUser(UserReg) returns (UserID) {}
-  rpc   SaveUser(UserReg) returns (Error) {}
+  rpc   SaveUser(UserEditInput) returns (Error) {}
   rpc   DeleteUser(UserID) returns (Error) {}
   rpc   GetUser(UserID) returns (UserOutput) {}
   rpc   GetUserByUsername(Username) returns (UserOutput) {}
