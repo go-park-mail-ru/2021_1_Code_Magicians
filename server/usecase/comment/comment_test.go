@@ -272,15 +272,12 @@ func TestComments(t *testing.T) {
 
 	expectedComments := []entity.Comment{comment1, comment2}
 
-	mockPinApp.EXPECT().GetPin(expectedPinFirst.PinID).Return(&expectedPinFirst, nil).Times(3)
-
 	mockCommentApp.EXPECT().AddComment(gomock.Any()).Return(nil).Times(2)
 
-	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
+	mockCommentApp.EXPECT().GetComments(3).Return(nil, entity.PinNotFoundError).Times(1)
 
 	mockCommentApp.EXPECT().GetComments(expectedPinFirst.PinID).Return(expectedComments, nil)
 
-	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinID).Return(&expectedPinSecond, nil).Times(1)
 	mockCommentApp.EXPECT().GetComments(expectedPinSecond.PinID).Return([]entity.Comment{}, nil)
 
 	testAuthInfo = *auth.NewAuthInfo(

@@ -40,15 +40,6 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
-	_, err = commentInfo.pinApp.GetPin(pinID)
-	if err != nil {
-		commentInfo.logger.Info(
-			err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -76,7 +67,12 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		commentInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
+		switch err {
+		case entity.PinNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -95,24 +91,22 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 
 func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
+	pinID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, err = commentInfo.pinApp.GetPin(pinId)
+	pinComments, err := commentInfo.commentApp.GetComments(pinID)
 	if err != nil {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	pinComments, err := commentInfo.commentApp.GetComments(pinId)
-	if err != nil {
-		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		switch err {
+		case entity.PinNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+		}
 		return
 	}
 
