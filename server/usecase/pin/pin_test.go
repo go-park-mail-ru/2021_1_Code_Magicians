@@ -124,10 +124,10 @@ var pinTest = []struct {
 				`Content-Disposition: form-data; name="pinInfo"` + "\n" +
 				"\n" +
 				`{"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"; filename="a.txt"` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"; filename="a.jpg"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
 				"\n" +
 				`some image that is 1 black pixel` + "\n" +
@@ -156,10 +156,10 @@ var pinTest = []struct {
 				`Content-Disposition: form-data; name="pinInfo"` + "\n" +
 				"\n" +
 				`{"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"description":"exampleDescription"}` + "\n" +
 				`-----------------------------9051914041544843365972754266` + "\n" +
-				`Content-Disposition: form-data; name="pinImage"; filename="a.txt"` + "\n" +
+				`Content-Disposition: form-data; name="pinImage"; filename="a.jpg"` + "\n" +
 				`Content-Type: image/jpeg` + "\n" +
 				"\n" +
 				`some image that is 1 black pixel` + "\n" +
@@ -215,7 +215,7 @@ var pinTest = []struct {
 				`"userID":0,` +
 				`"boardID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -241,7 +241,7 @@ var pinTest = []struct {
 			[]byte(`{"pins":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -249,7 +249,7 @@ var pinTest = []struct {
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -275,7 +275,7 @@ var pinTest = []struct {
 			[]byte(`{"pins":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -283,7 +283,7 @@ var pinTest = []struct {
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -309,7 +309,7 @@ var pinTest = []struct {
 			[]byte(`{"pins":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -317,7 +317,7 @@ var pinTest = []struct {
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
-				`"imageLink":"example/link",` +
+				`"imageLink":"example/link.jpg",` +
 				`"imageHeight":1,` +
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
@@ -378,7 +378,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing delete pin", // I don't know right now how to easily check if password changed
+		"Testing remove pin from board", // I don't know right now how to easily check if password changed
 	},
 	{
 		InputStruct{
@@ -414,7 +414,7 @@ var pinTest = []struct {
 			nil,
 			nil,
 		},
-		"Testing delete not existent pin", // I don't know right now how to easily check if password changed
+		"Testing remove not existent pin from board",
 	},
 }
 
@@ -465,7 +465,7 @@ func TestPins(t *testing.T) {
 		PinID:         0,
 		UserID:        0,
 		Title:         "exampletitle",
-		ImageLink:     "example/link",
+		ImageLink:     "example/link.jpg",
 		ImageHeight:   1,
 		ImageWidth:    1,
 		ImageAvgColor: "FFFFFF",
@@ -483,7 +483,7 @@ func TestPins(t *testing.T) {
 		PinID:         1,
 		UserID:        0,
 		Title:         "exampletitle",
-		ImageLink:     "example/link",
+		ImageLink:     "example/link.jpg",
 		ImageHeight:   1,
 		ImageWidth:    1,
 		ImageAvgColor: "FFFFFF",
@@ -495,9 +495,9 @@ func TestPins(t *testing.T) {
 		*expectedPinSecond,
 	}
 
-	mockPinApp.EXPECT().CreatePin(gomock.Any()).Return(expectedPinFirst.PinID, nil).Times(1)
-	mockPinApp.EXPECT().UploadPicture(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(2)
-	mockPinApp.EXPECT().CreatePin(gomock.Any()).Return(expectedPinSecond.PinID, nil).Times(1)
+	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinFirst.PinID, nil).Times(1)
+
+	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinSecond.PinID, nil).Times(1)
 
 	mockBoardApp.EXPECT().AddBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
@@ -514,11 +514,11 @@ func TestPins(t *testing.T) {
 	mockBoardApp.EXPECT().CheckBoard(0, 0).Return(nil).Times(3)
 	mockPinApp.EXPECT().AddPin(expectedBoardFirst.BoardID, expectedPinFirst.PinID).Return(nil).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(0, expectedPinFirst.PinID).Return(nil).Times(1)
+	mockPinApp.EXPECT().RemovePin(expectedBoardFirst.BoardID, expectedPinFirst.PinID).Return(nil).Times(1)
 
-	mockPinApp.EXPECT().GetPin(3).Return(nil, fmt.Errorf("No pin found")).Times(1)
+	mockPinApp.EXPECT().GetPin(3).Return(nil, entity.PinNotFoundError).Times(1)
 
-	mockPinApp.EXPECT().DeletePin(expectedPinFirst.PinID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockPinApp.EXPECT().RemovePin(expectedBoardFirst.BoardID, expectedPinFirst.PinID).Return(entity.PinNotFoundError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(mockUserApp,
 		mockAuthApp,

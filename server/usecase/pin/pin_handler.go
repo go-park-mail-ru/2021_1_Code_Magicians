@@ -63,27 +63,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	currPin.UserID = userID
-	if currPin.BoardID != 0 {
-		err = pinInfo.boardApp.CheckBoard(userID, currPin.BoardID)
-		if err != nil {
-			pinInfo.logger.Info(
-				err.Error(), zap.String("url", r.RequestURI),
-				zap.Int("for user", userID), zap.String("method", r.Method))
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-	}
 
-	currPin.PinID, err = pinInfo.pinApp.CreatePin(&currPin)
-	if err != nil {
-		pinInfo.logger.Info(
-			err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	file, header, err := r.FormFile("pinImage")
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
@@ -91,13 +72,19 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	extension := filepath.Ext(header.Filename)
-	err = pinInfo.pinApp.UploadPicture(currPin.PinID, file, extension)
+
+	currPin.PinID, err = pinInfo.pinApp.CreatePin(&currPin, file, extension)
 	if err != nil {
-		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+		pinInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
+		switch err {
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -105,6 +92,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	body, err := json.Marshal(pinID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		pinInfo.pinApp.DeletePin(currPin.PinID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -202,7 +190,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = pinInfo.pinApp.DeletePin(boardID, pinID)
+	err = pinInfo.pinApp.RemovePin(boardID, pinID)
 	if err != nil {
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
@@ -264,7 +252,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	//Pins := entity.PinsOutput{boardPins}
+
 	pins := new(entity.PinsListOutput)
 
 	for _, pin := range boardPins {
@@ -300,8 +288,6 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	//Pins := entity.PinsOutput{feedPins}
 
 	pins := new(entity.PinsListOutput)
 

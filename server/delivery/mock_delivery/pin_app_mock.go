@@ -36,175 +36,175 @@ func (m *MockPinAppInterface) EXPECT() *MockPinAppInterfaceMockRecorder {
 }
 
 // AddPin mocks base method.
-func (m *MockPinAppInterface) AddPin(arg0, arg1 int) error {
+func (m *MockPinAppInterface) AddPin(boardID, pinID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddPin", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddPin", boardID, pinID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddPin indicates an expected call of AddPin.
-func (mr *MockPinAppInterfaceMockRecorder) AddPin(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) AddPin(boardID, pinID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPin", reflect.TypeOf((*MockPinAppInterface)(nil).AddPin), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPin", reflect.TypeOf((*MockPinAppInterface)(nil).AddPin), boardID, pinID)
 }
 
 // CreatePin mocks base method.
-func (m *MockPinAppInterface) CreatePin(arg0 *entity.Pin) (int, error) {
+func (m *MockPinAppInterface) CreatePin(pin *entity.Pin, file io.Reader, extension string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePin", arg0)
+	ret := m.ctrl.Call(m, "CreatePin", pin, file, extension)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePin indicates an expected call of CreatePin.
-func (mr *MockPinAppInterfaceMockRecorder) CreatePin(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) CreatePin(pin, file, extension interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePin", reflect.TypeOf((*MockPinAppInterface)(nil).CreatePin), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePin", reflect.TypeOf((*MockPinAppInterface)(nil).CreatePin), pin, file, extension)
 }
 
 // DeletePin mocks base method.
-func (m *MockPinAppInterface) DeletePin(arg0, arg1 int) error {
+func (m *MockPinAppInterface) DeletePin(pinID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePin", arg0, arg1)
+	ret := m.ctrl.Call(m, "DeletePin", pinID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeletePin indicates an expected call of DeletePin.
-func (mr *MockPinAppInterfaceMockRecorder) DeletePin(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) DeletePin(pinID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePin", reflect.TypeOf((*MockPinAppInterface)(nil).DeletePin), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePin", reflect.TypeOf((*MockPinAppInterface)(nil).DeletePin), pinID)
 }
 
-// GetLastUserPinID mocks base method.
-func (m *MockPinAppInterface) GetLastUserPinID(arg0 int) (int, error) {
+// GetLastPinID mocks base method.
+func (m *MockPinAppInterface) GetLastPinID(userID int) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastUserPinID", arg0)
+	ret := m.ctrl.Call(m, "GetLastPinID", userID)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLastUserPinID indicates an expected call of GetLastUserPinID.
-func (mr *MockPinAppInterfaceMockRecorder) GetLastUserPinID(arg0 interface{}) *gomock.Call {
+// GetLastPinID indicates an expected call of GetLastPinID.
+func (mr *MockPinAppInterfaceMockRecorder) GetLastPinID(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastUserPinID", reflect.TypeOf((*MockPinAppInterface)(nil).GetLastUserPinID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastPinID", reflect.TypeOf((*MockPinAppInterface)(nil).GetLastPinID), userID)
 }
 
 // GetNumOfPins mocks base method.
-func (m *MockPinAppInterface) GetNumOfPins(arg0 int) ([]entity.Pin, error) {
+func (m *MockPinAppInterface) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumOfPins", arg0)
+	ret := m.ctrl.Call(m, "GetNumOfPins", numOfPins)
 	ret0, _ := ret[0].([]entity.Pin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNumOfPins indicates an expected call of GetNumOfPins.
-func (mr *MockPinAppInterfaceMockRecorder) GetNumOfPins(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) GetNumOfPins(numOfPins interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumOfPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetNumOfPins), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumOfPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetNumOfPins), numOfPins)
 }
 
 // GetPin mocks base method.
-func (m *MockPinAppInterface) GetPin(arg0 int) (*entity.Pin, error) {
+func (m *MockPinAppInterface) GetPin(pinID int) (*entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPin", arg0)
+	ret := m.ctrl.Call(m, "GetPin", pinID)
 	ret0, _ := ret[0].(*entity.Pin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPin indicates an expected call of GetPin.
-func (mr *MockPinAppInterfaceMockRecorder) GetPin(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) GetPin(pinID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPin", reflect.TypeOf((*MockPinAppInterface)(nil).GetPin), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPin", reflect.TypeOf((*MockPinAppInterface)(nil).GetPin), pinID)
 }
 
 // GetPins mocks base method.
-func (m *MockPinAppInterface) GetPins(arg0 int) ([]entity.Pin, error) {
+func (m *MockPinAppInterface) GetPins(boardID int) ([]entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPins", arg0)
+	ret := m.ctrl.Call(m, "GetPins", boardID)
 	ret0, _ := ret[0].([]entity.Pin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPins indicates an expected call of GetPins.
-func (mr *MockPinAppInterfaceMockRecorder) GetPins(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) GetPins(boardID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetPins), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetPins), boardID)
 }
 
 // RemovePin mocks base method.
-func (m *MockPinAppInterface) RemovePin(arg0, arg1 int) error {
+func (m *MockPinAppInterface) RemovePin(boardID, pinID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemovePin", arg0, arg1)
+	ret := m.ctrl.Call(m, "RemovePin", boardID, pinID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemovePin indicates an expected call of RemovePin.
-func (mr *MockPinAppInterfaceMockRecorder) RemovePin(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) RemovePin(boardID, pinID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePin", reflect.TypeOf((*MockPinAppInterface)(nil).RemovePin), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePin", reflect.TypeOf((*MockPinAppInterface)(nil).RemovePin), boardID, pinID)
 }
 
 // SavePicture mocks base method.
-func (m *MockPinAppInterface) SavePicture(arg0 *entity.Pin) error {
+func (m *MockPinAppInterface) SavePicture(pin *entity.Pin) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePicture", arg0)
+	ret := m.ctrl.Call(m, "SavePicture", pin)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SavePicture indicates an expected call of SavePicture.
-func (mr *MockPinAppInterfaceMockRecorder) SavePicture(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) SavePicture(pin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePicture", reflect.TypeOf((*MockPinAppInterface)(nil).SavePicture), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePicture", reflect.TypeOf((*MockPinAppInterface)(nil).SavePicture), pin)
 }
 
 // SavePin mocks base method.
-func (m *MockPinAppInterface) SavePin(arg0, arg1 int) error {
+func (m *MockPinAppInterface) SavePin(userID, pinID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePin", arg0, arg1)
+	ret := m.ctrl.Call(m, "SavePin", userID, pinID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SavePin indicates an expected call of SavePin.
-func (mr *MockPinAppInterfaceMockRecorder) SavePin(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) SavePin(userID, pinID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePin", reflect.TypeOf((*MockPinAppInterface)(nil).SavePin), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePin", reflect.TypeOf((*MockPinAppInterface)(nil).SavePin), userID, pinID)
 }
 
 // SearchPins mocks base method.
-func (m *MockPinAppInterface) SearchPins(arg0 string) ([]entity.Pin, error) {
+func (m *MockPinAppInterface) SearchPins(keywords string) ([]entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchPins", arg0)
+	ret := m.ctrl.Call(m, "SearchPins", keywords)
 	ret0, _ := ret[0].([]entity.Pin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchPins indicates an expected call of SearchPins.
-func (mr *MockPinAppInterfaceMockRecorder) SearchPins(arg0 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) SearchPins(keywords interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPins", reflect.TypeOf((*MockPinAppInterface)(nil).SearchPins), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPins", reflect.TypeOf((*MockPinAppInterface)(nil).SearchPins), keywords)
 }
 
 // UploadPicture mocks base method.
-func (m *MockPinAppInterface) UploadPicture(arg0 int, arg1 io.Reader, arg2 string) error {
+func (m *MockPinAppInterface) UploadPicture(pinID int, file io.Reader, extension string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadPicture", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UploadPicture", pinID, file, extension)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UploadPicture indicates an expected call of UploadPicture.
-func (mr *MockPinAppInterfaceMockRecorder) UploadPicture(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) UploadPicture(pinID, file, extension interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadPicture", reflect.TypeOf((*MockPinAppInterface)(nil).UploadPicture), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadPicture", reflect.TypeOf((*MockPinAppInterface)(nil).UploadPicture), pinID, file, extension)
 }

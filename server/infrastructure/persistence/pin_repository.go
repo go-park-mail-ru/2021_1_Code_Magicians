@@ -73,7 +73,7 @@ func (r *PinsRepo) AddPin(boardID int, pinID int) error {
 	return nil
 }
 
-const deletePinQuery string = "DELETE FROM pins WHERE pinID=$1"
+const deletePinQuery string = "DELETE CASCADE FROM pins WHERE pinID=$1"
 
 // DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure
@@ -263,7 +263,7 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
 // GetLastUserPinID
-func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
+func (r *PinsRepo) GetLastPinID(userID int) (int, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError

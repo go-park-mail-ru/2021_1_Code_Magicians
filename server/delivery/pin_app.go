@@ -47,44 +47,49 @@ func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3A
 }
 
 type PinAppInterface interface {
-	CreatePin(*entity.Pin) (int, error)
-	SavePin(int, int) error
-	AddPin(int, int) error             // Saving user's pin
-	GetPin(int) (*entity.Pin, error)   // Get pin by pinID
-	GetPins(int) ([]entity.Pin, error) // Get pins by boardID
-	GetLastUserPinID(int) (int, error)
-	SavePicture(*entity.Pin) error
-	RemovePin(int, int) error
-	DeletePin(int, int) error                   // Removes pin by ID
-	UploadPicture(int, io.Reader, string) error // Upload pin
-	GetNumOfPins(int) ([]entity.Pin, error)
-	SearchPins(string) ([]entity.Pin, error)
+	CreatePin(pin *entity.Pin, file io.Reader, extension string) (int, error)
+	SavePin(userID int, pinID int) error                             // Add pin to user's initial board
+	AddPin(boardID int, pinID int) error                             // Add pin to specified board
+	GetPin(pinID int) (*entity.Pin, error)                           // Get pin by pinID
+	GetPins(boardID int) ([]entity.Pin, error)                       // Get pins by boardID
+	GetLastPinID(userID int) (int, error)                            // Get user's last pin's ID
+	SavePicture(pin *entity.Pin) error                               // Update pin's picture properties
+	RemovePin(boardID int, pinID int) error                          // Delete pin from board
+	DeletePin(pinID int) error                                       // Delete pin entirely
+	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
+	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
+	SearchPins(keywords string) ([]entity.Pin, error)
 }
 
 // CreatePin creates passed pin and adds it to native user's board
 // It returns pin's assigned ID and nil on success, any number and error on failure
-func (pn *PinApp) CreatePin(pin *entity.Pin) (int, error) {
-	initBoardID, err := pn.boardApp.GetInitUserBoard(pin.UserID)
+func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension string) (int, error) {
+	initBoardID, err := pinApp.boardApp.GetInitUserBoard(pin.UserID)
 	if err != nil {
 		return -1, err
 	}
-	pinID, err := pn.p.CreatePin(pin)
+	pinID, err := pinApp.p.CreatePin(pin)
 	if err != nil {
 		return -1, err
 	}
 
-	err = pn.p.AddPin(initBoardID, pinID)
+	err = pinApp.p.AddPin(initBoardID, pinID)
 	if err != nil {
-		pn.p.DeletePin(pinID)
+		pinApp.p.DeletePin(pinID)
 		return -1, err
 	}
 
 	if pin.BoardID != initBoardID && pin.BoardID != 0 {
-		err = pn.p.AddPin(pin.BoardID, pinID)
+		err = pinApp.p.AddPin(pin.BoardID, pinID)
 		if err != nil {
-			pn.p.DeletePin(pinID)
+			pinApp.p.DeletePin(pinID)
 			return -1, err
 		}
+	}
+
+	err = pinApp.UploadPicture(pinID, file, extension)
+	if err != nil {
+		return -1, err
 	}
 
 	return pinID, nil
@@ -92,13 +97,13 @@ func (pn *PinApp) CreatePin(pin *entity.Pin) (int, error) {
 
 // SavePin adds any pin to native user's board
 // It returns nil on success, error on failure
-func (pn *PinApp) SavePin(userID int, pinID int) error {
-	initBoardID, err := pn.boardApp.GetInitUserBoard(userID)
+func (pinApp *PinApp) SavePin(userID int, pinID int) error {
+	initBoardID, err := pinApp.boardApp.GetInitUserBoard(userID)
 	if err != nil {
 		return err
 	}
 
-	err = pn.p.AddPin(initBoardID, pinID)
+	err = pinApp.p.AddPin(initBoardID, pinID)
 	if err != nil {
 		return err
 	}
@@ -108,72 +113,81 @@ func (pn *PinApp) SavePin(userID int, pinID int) error {
 
 // AddPin adds pin to chosen board
 // It returns nil on success, error on failure
-func (pn *PinApp) AddPin(boardID int, pinID int) error {
-	return pn.p.AddPin(boardID, pinID)
+func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
+	return pinApp.p.AddPin(boardID, pinID)
 }
 
 // GetPin returns pin with passed pinID
 // It returns that pin and nil on success, nil and error on failure
-func (pn *PinApp) GetPin(pinID int) (*entity.Pin, error) {
-	return pn.p.GetPin(pinID)
+func (pinApp *PinApp) GetPin(pinID int) (*entity.Pin, error) {
+	return pinApp.p.GetPin(pinID)
 }
 
 // GetPins returns all the pins with passed boardID
 // It returns slice of pins and nil on success, nil and error on failure
-func (pn *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
-	return pn.p.GetPins(boardID)
+func (pinApp *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
+	return pinApp.p.GetPins(boardID)
 }
 
-// DeletePin deletes pin with passed pinID
+// DeletePin deletes pin with passed pinID, deleting associated comments and board relations
 // It returns nil on success and error on failure
-func (pn *PinApp) DeletePin(boardID int, pinID int) error {
-	pin, err := pn.p.GetPin(pinID)
+func (pinApp *PinApp) DeletePin(pinID int) error {
+	pin, err := pinApp.p.GetPin(pinID)
 	if err != nil {
 		return err
 	}
 
-	err = pn.p.RemovePin(boardID, pinID)
+	err = pinApp.p.DeletePin(pinID)
+	if err != nil {
+		return err
+	}
+	return pinApp.s3App.DeleteFile(pin.ImageLink)
+}
+
+// RemovePin deletes pin from user's passed board, deleting pin if no boards reference it
+// It returns nil on success and error on failure
+func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
+	pin, err := pinApp.p.GetPin(pinID)
 	if err != nil {
 		return err
 	}
 
-	refCount, err := pn.p.PinRefCount(pinID)
+	err = pinApp.p.RemovePin(boardID, pinID)
+	if err != nil {
+		return err
+	}
+
+	refCount, err := pinApp.p.PinRefCount(pinID)
 	if err != nil {
 		return err
 	}
 
 	if refCount == 0 {
-		err = pn.p.DeletePin(pinID)
+		err = pinApp.p.DeletePin(pinID)
 		if err != nil {
 			return err
 		}
-		return pn.s3App.DeleteFile(pin.ImageLink)
+		return pinApp.s3App.DeleteFile(pin.ImageLink)
 	}
 	return nil
 }
 
-// RemovePin deletes pin from user's passed board
-// It returns nil on success and error on failure
-func (pn *PinApp) RemovePin(boardID int, pinID int) error {
-	return pn.p.RemovePin(boardID, pinID)
-}
-
 // SavePicture saves path to image of current pin in database
 // It returns nil on success and error on failure
-func (pn *PinApp) SavePicture(pin *entity.Pin) error {
-	return pn.p.SavePicture(pin)
+func (pinApp *PinApp) SavePicture(pin *entity.Pin) error {
+	return pinApp.p.SavePicture(pin)
 }
 
 // GetLastUserPinID returns path to image of current pin in database
 // It returns nil on success and error on failure
-func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
-	return pn.p.GetLastUserPinID(userID)
+func (pinApp *PinApp) GetLastPinID(userID int) (int, error) {
+	return pinApp.p.GetLastPinID(userID)
 }
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
 // It returns nil on success and error on failure
-func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) error {
-	pin, err := pn.GetPin(pinID)
+func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string) error {
+	pin, err := pinApp.GetPin(pinID)
 	if err != nil {
 		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
 	}
@@ -192,7 +206,7 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) err
 	}
 
 	picturePath := "pins/" + filenamePrefix + extension
-	err = pn.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
+	err = pinApp.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
 	if err != nil {
 		return fmt.Errorf("File upload failed")
 	}
@@ -202,9 +216,9 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) err
 	pin.ImageWidth = imageStruct.width
 	pin.ImageAvgColor = imageStruct.averageColor
 
-	err = pn.SavePicture(pin)
+	err = pinApp.SavePicture(pin)
 	if err != nil {
-		pn.s3App.DeleteFile(picturePath)
+		pinApp.s3App.DeleteFile(picturePath)
 		return fmt.Errorf("Pin saving failed")
 	}
 
@@ -213,12 +227,12 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) err
 
 // GetNumOfPins generates the main feed
 // It returns numOfPins pins and nil on success, nil and error on failure
-func (pn *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
-	return pn.p.GetNumOfPins(numOfPins)
+func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
+	return pinApp.p.GetNumOfPins(numOfPins)
 }
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
-func (pn *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
-	return pn.p.SearchPins(keyWords)
+func (pinApp *PinApp) SearchPins(keywords string) ([]entity.Pin, error) {
+	return pinApp.p.SearchPins(keywords)
 }
