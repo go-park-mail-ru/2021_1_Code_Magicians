@@ -252,6 +252,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
+		return
 	}
 
 	currentUserID := cookie.UserID
