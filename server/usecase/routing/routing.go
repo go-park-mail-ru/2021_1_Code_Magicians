@@ -51,7 +51,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	s3App := delivery.NewS3App(sess, s3BucketName)
 	userApp := delivery.NewUserApp(repoUsers, boardApp, s3App)
 	pinApp := delivery.NewPinApp(repoPins, boardApp, s3App)
-	commentApp := delivery.NewCommentApp(repoComments)
+	commentApp := delivery.NewCommentApp(repoComments, pinApp)
 	websocketApp := delivery.NewWebsocketApp(userApp)
 	notificationApp := delivery.NewNotificationApp(userApp, websocketApp)
 	chatApp := delivery.NewChatApp(userApp, websocketApp)

@@ -97,7 +97,7 @@ func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 	}
 
 	cookieApp.mu.Lock()
-	cookieApp.sessionsByValue[cookieInfo.Cookie.Value] = &(*cookieInfo) // Copying by value
+	cookieApp.sessionsByValue[cookieInfo.Cookie.Value] = cookieInfo
 	cookieApp.sessionsByUserID[cookieInfo.UserID] = cookieApp.sessionsByValue[cookieInfo.Cookie.Value]
 	cookieApp.mu.Unlock()
 	return nil

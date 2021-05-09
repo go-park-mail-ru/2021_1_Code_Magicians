@@ -6,11 +6,15 @@ import (
 )
 
 type CommentApp struct {
-	c repository.CommentRepository
+	c      repository.CommentRepository
+	pinApp PinAppInterface
 }
 
-func NewCommentApp(c repository.CommentRepository) *CommentApp {
-	return &CommentApp{c}
+func NewCommentApp(c repository.CommentRepository, pinApp PinAppInterface) *CommentApp {
+	return &CommentApp{
+		c:      c,
+		pinApp: pinApp,
+	}
 }
 
 type CommentAppInterface interface {
@@ -20,18 +24,28 @@ type CommentAppInterface interface {
 	EditComment(comment *entity.Comment) error       // Edit pin's comment
 }
 
-func (com *CommentApp) AddComment(comment *entity.Comment) error {
-	return com.c.AddComment(comment)
+func (commentApp *CommentApp) AddComment(comment *entity.Comment) error {
+	_, err := commentApp.pinApp.GetPin(comment.PinID)
+	if err != nil {
+		return err
+	}
+
+	return commentApp.c.AddComment(comment)
 }
 
-func (com *CommentApp) GetComments(pinID int) ([]entity.Comment, error) {
-	return com.c.GetComments(pinID)
+func (commentApp *CommentApp) GetComments(pinID int) ([]entity.Comment, error) {
+	_, err := commentApp.pinApp.GetPin(pinID)
+	if err != nil {
+		return nil, err
+	}
+
+	return commentApp.c.GetComments(pinID)
 }
 
-func (com *CommentApp) DeleteComment(comment *entity.Comment) error {
+func (commentApp *CommentApp) DeleteComment(comment *entity.Comment) error {
 	return nil
 }
 
-func (com *CommentApp) EditComment(comment *entity.Comment) error {
+func (commentApp *CommentApp) EditComment(comment *entity.Comment) error {
 	return nil
 }

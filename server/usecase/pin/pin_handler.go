@@ -143,7 +143,7 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 
 func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
+	pinID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
@@ -152,7 +152,7 @@ func (pinInfo *PinInfo) HandleSavePin(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
-	err = pinInfo.pinApp.SavePin(userID, pinId)
+	err = pinInfo.pinApp.SavePin(userID, pinID)
 	if err != nil {
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
@@ -205,14 +205,14 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	pinId, err := strconv.Atoi(vars[string(entity.IDKey)])
+	pinID, err := strconv.Atoi(vars[string(entity.IDKey)])
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resultPin, err := pinInfo.pinApp.GetPin(pinId)
+	resultPin, err := pinInfo.pinApp.GetPin(pinID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusNotFound)

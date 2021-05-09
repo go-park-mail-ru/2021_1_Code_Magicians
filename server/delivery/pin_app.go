@@ -189,7 +189,7 @@ func (pinApp *PinApp) GetLastPinID(userID int) (int, error) {
 func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string) error {
 	pin, err := pinApp.GetPin(pinID)
 	if err != nil {
-		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
+		return entity.PinNotFoundError
 	}
 
 	fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
