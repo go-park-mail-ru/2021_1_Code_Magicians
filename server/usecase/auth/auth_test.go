@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"go.uber.org/zap/zaptest"
 
@@ -178,13 +179,29 @@ func TestAuthSuccess(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
-	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(nil, nil).Times(1) // CreateUser handler checks user uniqueness
+	expectedCookie := http.Cookie{
+		Name:     entity.CookieNameKey,
+		Value:    "someRandomSessionValue",
+		Path:     "/", // Cookie should be usable on entire website
+		Expires:  time.Now().Add(10 * time.Hour),
+		HttpOnly: true,
+	}
+	expectedCookieInfo := entity.CookieInfo{
+		UserID: expectedUser.UserID,
+		Cookie: &expectedCookie,
+	}
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 
-	mockUserApp.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedUser, nil).Times(1) // Logging user in
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).Times(1)
+	mockAuthApp.EXPECT().LogoutUser(expectedUser.UserID).Return(nil).Times(1)
 
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(nil, false).Times(1)
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
+
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).Times(1)
 
 	testInfo = AuthInfo{
 		userApp:      mockUserApp,
@@ -413,10 +430,11 @@ func TestAuthFailure(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
-	mockUserApp.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
-	mockUserApp.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1)      // Checking incorrect username/password pair
-	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1)                                  // CreateUser handler checks user uniqueness
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
 
+	mockAuthApp.EXPECT().LoginUser(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1) // Checking incorrect username/password pair
+
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(-1, entity.UsernameEmailDuplicateError).Times(1)
 	testInfo = AuthInfo{
 		userApp:      mockUserApp,
 		authApp:      mockAuthApp,
