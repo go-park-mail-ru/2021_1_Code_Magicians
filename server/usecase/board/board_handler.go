@@ -93,7 +93,6 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	boardId, err := strconv.Atoi(vars[string(entity.IDKey)])
-
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -122,7 +121,6 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars[string(entity.IDKey)])
-
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
