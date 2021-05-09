@@ -478,7 +478,6 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
 
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)
-
 	users, err := profileInfo.userApp.SearchUsers(strings.ToLower(keyString))
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))

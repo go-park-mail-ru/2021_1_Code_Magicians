@@ -1,11 +1,13 @@
 package usage
 
 import (
+	"bufio"
 	"context"
 	"io"
 	"log"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
+	"time"
 )
 
 type UserApp struct {
@@ -86,7 +88,6 @@ func (u *UserApp) DeleteUser(userID int) error {
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
 func (u *UserApp) GetUser(userID int) (*entity.User, error) {
-	log.Println("wrfreverververerrvrere")
 	userOutput, err := u.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
 		return nil, err
@@ -126,22 +127,55 @@ func (u *UserApp) UpdateAvatar(userID int, file io.Reader, extension string) err
 		return entity.UserNotFoundError
 	}
 
-	filenamePrefix, err := GenerateRandomString(40) // generating random filename
-	if err != nil {
-		return entity.FilenameGenerationError
-	}
-
-	newAvatarPath := "avatars/" + filenamePrefix + extension // TODO: avatars folder sharding by date
-	err = u.s3App.UploadFile(file, newAvatarPath)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stream, err := u.grpcClient.UpdateAvatar(ctx)
 	if err != nil {
 		return entity.FileUploadError
 	}
+	req := &grpcUser.UploadAvatar{
+		Data: &grpcUser.UploadAvatar_Extension{
+			Extension: extension,
+		},
+	}
+	err = stream.Send(req)
+	if err != nil {
+		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
+	}
+	reader := bufio.NewReader(file)
+	buffer := make([]byte,  8 * 1024 * 1024 )
+
+	for {
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal("cannot read chunk to buffer: ", err)
+		}
+
+		req = &grpcUser.UploadAvatar{
+			Data: &grpcUser.UploadAvatar_ChunkData{
+				ChunkData: buffer[:n],
+			},
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			log.Fatal("cannot send chunk to server: ", err)
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatal("cannot receive response: ", err)
+	}
 
 	oldAvatarPath := user.Avatar
-	user.Avatar = newAvatarPath
+	user.Avatar = res.Path
 	err = u.SaveUser(user)
 	if err != nil {
-		u.s3App.DeleteFile(newAvatarPath)
+		u.s3App.DeleteFile(res.Path)
 		return entity.UserSavingError
 	}
 

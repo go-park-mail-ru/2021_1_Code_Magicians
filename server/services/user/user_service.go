@@ -379,23 +379,19 @@ const SearchUsersQuery string = "SELECT userID, username, email, first_name, las
 // SearchUsers fetches all users from database suitable with passed keywords
 // It returns slice of users and nil on success, nil and error on failure
 func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*UsersListOutput, error) {
-	log.Println("lllllllllll")
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
-	log.Println(">>>>>>>>>>>>>>>>>>")
 	users := make([]*UserOutput, 0)
 	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%" + keyWords.KeyWords + "%")
 	if err != nil {
-		log.Println(">>>>>>>>>>>>>>>>>>")
 		if err == pgx.ErrNoRows {
 			return nil, entity.NoResultSearch
 		}
 		return nil, err
 	}
-	log.Println(">>>>>>>>>>>>>>>>>>")
 	for rows.Next() {
 		user := UserOutput{}
 
@@ -435,7 +431,7 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 	if err != nil {
 		return entity.FilenameGenerationError
 	}
-	newAvatarPath := "avatars/" + filenamePrefix + req.GetInfo().GetExtension() // TODO: avatars folder sharding by date
+	newAvatarPath := "avatars/" + filenamePrefix + req.GetExtension() // TODO: avatars folder sharding by date
 
 	for {
 		log.Print("waiting to receive more data")
