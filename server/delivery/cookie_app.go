@@ -33,7 +33,7 @@ type CookieAppInterface interface {
 	AddCookieInfo(cookieInfo *entity.CookieInfo) error
 	SearchByValue(sessionValue string) (*entity.CookieInfo, bool)
 	SearchByUserID(userID int) (*entity.CookieInfo, bool)
-	RemoveCookie(*entity.CookieInfo) error
+	RemoveCookie(cookieInfo *entity.CookieInfo) error
 }
 
 // generateRandomBytes returns securely generated random bytes.

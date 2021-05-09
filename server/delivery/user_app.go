@@ -17,18 +17,17 @@ func NewUserApp(us repository.UserRepository, boardApp BoardAppInterface, s3App 
 }
 
 type UserAppInterface interface {
-	CreateUser(*entity.User) (int, error)                      // Create user, returns created user's ID
-	SaveUser(*entity.User) error                               // Save changed user to database
-	DeleteUser(int) error                                      // Delete user with passed userID from database
-	GetUser(int) (*entity.User, error)                         // Get user by his ID
-	GetUsers() ([]entity.User, error)                          // Get all users
-	GetUserByUsername(string) (*entity.User, error)            // Get user by his username
-	CheckUserCredentials(string, string) (*entity.User, error) // Check if passed username and password are correct
-	UpdateAvatar(int, io.Reader, string) error                 // Replace user's avatar with one passed as second parameter
-	Follow(int, int) error                                     // Make first user follow second
-	Unfollow(int, int) error                                   // Make first user unfollow second
-	CheckIfFollowed(int, int) (bool, error)                    // Check if first user follows second. Err != nil if those users are the same
-	SearchUsers(string) ([]entity.User, error)                 // Get all users by passed keywords
+	CreateUser(user *entity.User) (int, error)                       // Create user, returns created user's ID
+	SaveUser(user *entity.User) error                                // Save changed user to database
+	DeleteUser(userID int) error                                     // Delete user with passed userID from database
+	GetUser(userID int) (*entity.User, error)                        // Get user by his ID
+	GetUsers() ([]entity.User, error)                                // Get all users
+	GetUserByUsername(username string) (*entity.User, error)         // Get user by his username
+	UpdateAvatar(userID int, file io.Reader, extension string) error // Replace user's avatar with one passed as second parameter
+	Follow(followerID int, followedID int) error                     // Make first user follow second
+	Unfollow(followerID int, followedID int) error                   // Make first user unfollow second
+	CheckIfFollowed(followerID int, followedID int) (bool, error)    // Check if first user follows second. Err != nil if those users are the same
+	SearchUsers(keywords string) ([]entity.User, error)              // Get all users by passed keywords
 }
 
 // CreateUser add new user to database with passed fields

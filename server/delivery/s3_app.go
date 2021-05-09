@@ -21,8 +21,8 @@ func NewS3App(sess *session.Session, bucketName string) *S3App {
 }
 
 type S3AppInterface interface {
-	UploadFile(io.Reader, string) error // Upload file to s3 bucket
-	DeleteFile(string) error            // Delete file from s3 bucket
+	UploadFile(file io.Reader, extension string) error // Upload file to s3 bucket
+	DeleteFile(filename string) error                  // Delete file from s3 bucket
 }
 
 func (s3App *S3App) UploadFile(file io.Reader, filename string) error {

@@ -14,10 +14,10 @@ func NewCommentApp(c repository.CommentRepository) *CommentApp {
 }
 
 type CommentAppInterface interface {
-	AddComment(*entity.Comment) error // Add comment to pin
-	GetComments(int) ([]entity.Comment, error)
-	DeleteComment(*entity.Comment) error // Delete pin's comment
-	EditComment(*entity.Comment) error   // Edit pin's comment
+	AddComment(comment *entity.Comment) error        // Add comment to pin
+	GetComments(pinID int) ([]entity.Comment, error) // Get pin's comments
+	DeleteComment(comment *entity.Comment) error     // Delete pin's comment
+	EditComment(comment *entity.Comment) error       // Edit pin's comment
 }
 
 func (com *CommentApp) AddComment(comment *entity.Comment) error {

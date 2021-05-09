@@ -324,12 +324,11 @@ func TestBoards(t *testing.T) {
 
 	mockBoardApp.EXPECT().GetBoards(expectedUser.UserID).Return(expectedUserBoards, nil).Times(1)
 
-	mockBoardApp.EXPECT().DeleteBoard(expectedBoardFirst.BoardID, expectedUser.UserID).Return(nil).Times(1)
+	mockBoardApp.EXPECT().DeleteBoard(expectedUser.UserID, expectedBoardFirst.BoardID).Return(nil).Times(1)
 
-	mockBoardApp.EXPECT().GetBoard(3).Return(nil, fmt.Errorf("No board found")).Times(1)
+	mockBoardApp.EXPECT().GetBoard(3).Return(nil, entity.BoardNotFoundError).Times(1)
 
-	mockBoardApp.EXPECT().DeleteBoard(
-		expectedBoardFirst.BoardID, expectedUser.UserID).Return(fmt.Errorf("pin not found")).Times(1)
+	mockBoardApp.EXPECT().DeleteBoard(expectedUser.UserID, expectedBoardFirst.BoardID).Return(entity.BoardNotFoundError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,

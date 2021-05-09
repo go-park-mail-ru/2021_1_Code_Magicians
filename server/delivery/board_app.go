@@ -15,13 +15,13 @@ func NewBoardApp(b repository.BoardRepository /*, pinRepo repository.PinReposito
 }
 
 type BoardAppInterface interface {
-	AddBoard(*entity.Board) (int, error)     // Creating user's board
-	GetBoard(int) (*entity.BoardInfo, error) // Get description of the board
-	GetBoards(int) ([]entity.Board, error)   // Get boards by authorID
-	GetInitUserBoard(int) (int, error)
-	DeleteBoard(int, int) error // Removes user's board by ID
-	CheckBoard(int, int) error
-	UploadBoardAvatar(int, string) error
+	AddBoard(board *entity.Board) (int, error)       // Creating user's board
+	GetBoard(boardID int) (*entity.BoardInfo, error) // Get description of the board
+	GetBoards(userID int) ([]entity.Board, error)    // Get boards by authorID
+	GetInitUserBoard(userID int) (int, error)
+	DeleteBoard(userID int, boardID int) error // Removes user's board by ID
+	CheckBoard(userID int, boardID int) error
+	UploadBoardAvatar(boardID int, avatarLink string) error
 }
 
 // AddBoard adds user's board to database
@@ -54,7 +54,7 @@ func (brd *BoardApp) GetBoards(authorID int) ([]entity.Board, error) {
 
 // DeleteBoard deletes user's board with passed boardID
 // It returns nil on success and error on failure
-func (brd *BoardApp) DeleteBoard(boardID int, userID int) error {
+func (brd *BoardApp) DeleteBoard(userID int, boardID int) error {
 	initBoardID, err := brd.b.GetInitUserBoard(userID)
 	if err != nil {
 		return err

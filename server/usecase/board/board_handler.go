@@ -78,7 +78,7 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 	}
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-	err = boardInfo.boardApp.DeleteBoard(boardID, userID)
+	err = boardInfo.boardApp.DeleteBoard(userID, boardID)
 	if err != nil {
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
