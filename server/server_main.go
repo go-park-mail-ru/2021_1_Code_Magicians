@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"pinterest/usecase/routing"
+	"pinterest/delivery/routing"
 
 	"go.uber.org/zap"
 

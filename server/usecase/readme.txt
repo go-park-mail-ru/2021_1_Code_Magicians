@@ -1,1 +1,1 @@
-All handlers (functions that directly handle http requests/responses) go here
+This layer is a pad between domain (DB) and delivery (JSON interfaces)
