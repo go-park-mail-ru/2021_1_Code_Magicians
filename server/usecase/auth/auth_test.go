@@ -190,6 +190,7 @@ func TestAuthSuccess(t *testing.T) {
 		UserID: expectedUser.UserID,
 		Cookie: &expectedCookie,
 	}
+
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
@@ -430,11 +431,13 @@ func TestAuthFailure(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
+
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
 
 	mockAuthApp.EXPECT().LoginUser(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1) // Checking incorrect username/password pair
 
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(-1, entity.UsernameEmailDuplicateError).Times(1)
+
 	testInfo = AuthInfo{
 		userApp:      mockUserApp,
 		authApp:      mockAuthApp,
