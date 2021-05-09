@@ -88,8 +88,8 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pinID := entity.PinID{currPin.PinID}
-	body, err := json.Marshal(pinID)
+	pinIDOutput := entity.PinID{currPin.PinID}
+	body, err := json.Marshal(pinIDOutput)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		pinInfo.pinApp.DeletePin(currPin.PinID)
@@ -118,7 +118,14 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.CheckBoardOwnerError:
+			w.WriteHeader(http.StatusForbidden)
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -179,7 +186,14 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.CheckBoardOwnerError:
+			w.WriteHeader(http.StatusForbidden)
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -215,7 +229,12 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 	resultPin, err := pinInfo.pinApp.GetPin(pinID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.PinNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -243,7 +262,12 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 	boardPins, err := pinInfo.pinApp.GetPins(boardID)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		switch err {
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -285,7 +309,12 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	feedPins, err := pinInfo.pinApp.GetNumOfPins(numOfPins)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		switch err {
+		case entity.NonPositiveNumOfPinsError:
+			w.WriteHeader(http.StatusBadRequest)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 

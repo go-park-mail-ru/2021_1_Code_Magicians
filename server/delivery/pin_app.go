@@ -228,6 +228,9 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 // GetNumOfPins generates the main feed
 // It returns numOfPins pins and nil on success, nil and error on failure
 func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
+	if numOfPins <= 0 {
+		return nil, entity.NonPositiveNumOfPinsError
+	}
 	return pinApp.p.GetNumOfPins(numOfPins)
 }
 
