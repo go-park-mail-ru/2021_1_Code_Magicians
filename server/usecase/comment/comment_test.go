@@ -212,7 +212,7 @@ func TestComments(t *testing.T) {
 	mockAuthApp := mock_delivery.NewMockAuthAppInterface(mockCtrl)
 	mockPinApp := mock_delivery.NewMockPinAppInterface(mockCtrl)
 	mockCommentApp := mock_delivery.NewMockCommentAppInterface(mockCtrl)
-	mockWebsocket := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
+	mockWebsocketApp := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -240,7 +240,7 @@ func TestComments(t *testing.T) {
 
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
@@ -288,7 +288,7 @@ func TestComments(t *testing.T) {
 		mockAuthApp,
 		nil, // We don't need S3 or board in these tests
 		nil,
-		mockWebsocket,
+		mockWebsocketApp,
 		testLogger)
 
 	testCommentInfo = CommentInfo{

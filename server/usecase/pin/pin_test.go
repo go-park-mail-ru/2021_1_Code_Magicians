@@ -427,7 +427,7 @@ func TestPins(t *testing.T) {
 	mockUserApp := mock_delivery.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_delivery.NewMockAuthAppInterface(mockCtrl)
 	mockPinApp := mock_delivery.NewMockPinAppInterface(mockCtrl)
-	mockWebsocket := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
+	mockWebsocketApp := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
 	mockBoardApp := mock_delivery.NewMockBoardAppInterface(mockCtrl)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -455,7 +455,7 @@ func TestPins(t *testing.T) {
 
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
@@ -524,7 +524,7 @@ func TestPins(t *testing.T) {
 		mockAuthApp,
 		nil, // We don't need S3 or board in these tests
 		nil,
-		mockWebsocket,
+		mockWebsocketApp,
 		testLogger)
 
 	testBoardInfo = *board.NewBoardInfo(mockBoardApp, testLogger)

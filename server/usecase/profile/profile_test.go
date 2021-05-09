@@ -9,6 +9,7 @@ import (
 	"pinterest/domain/entity"
 	"pinterest/usecase/auth"
 	"testing"
+	"time"
 
 	"go.uber.org/zap/zaptest"
 
@@ -399,10 +400,23 @@ func TestProfileSuccess(t *testing.T) {
 		Avatar:    "avatars/1",
 		Salt:      "",
 	}
+	expectedCookie := http.Cookie{
+		Name:     entity.CookieNameKey,
+		Value:    "someRandomSessionValue",
+		Path:     "/", // Cookie should be usable on entire website
+		Expires:  time.Now().Add(10 * time.Hour),
+		HttpOnly: true,
+	}
+	expectedCookieInfo := entity.CookieInfo{
+		UserID: expectedUser.UserID,
+		Cookie: &expectedCookie,
+	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Normal user output using cookie's userID
 
@@ -470,6 +484,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().UpdateAvatar(expectedUser.UserID, gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
+	mockAuthApp.EXPECT().LogoutUser(expectedUser.UserID).Return(nil).Times(1)
 	mockUserApp.EXPECT().DeleteUser(expectedUserEdited.UserID).Return(nil).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
@@ -771,9 +786,23 @@ func TestProfileFailure(t *testing.T) {
 		Salt:      "",
 	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1) // Handler will request user info
+	expectedCookie := http.Cookie{
+		Name:     entity.CookieNameKey,
+		Value:    "someRandomSessionValue",
+		Path:     "/", // Cookie should be usable on entire website
+		Expires:  time.Now().Add(10 * time.Hour),
+		HttpOnly: true,
+	}
+	expectedCookieInfo := entity.CookieInfo{
+		UserID: expectedUser.UserID,
+		Cookie: &expectedCookie,
+	}
+
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
 	// During password change, if anything is wrong with JSON input, handler does not interact with database, hence no mocks
 

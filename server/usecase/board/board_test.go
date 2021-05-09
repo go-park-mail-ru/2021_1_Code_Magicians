@@ -259,7 +259,7 @@ func TestBoards(t *testing.T) {
 	mockUserApp := mock_delivery.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_delivery.NewMockAuthAppInterface(mockCtrl)
 	mockBoardApp := mock_delivery.NewMockBoardAppInterface(mockCtrl)
-	mockWebsocket := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
+	mockWebsocketApp := mock_delivery.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -287,7 +287,7 @@ func TestBoards(t *testing.T) {
 
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
-	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
@@ -336,7 +336,7 @@ func TestBoards(t *testing.T) {
 		mockAuthApp,
 		nil, // We don't need S3 in these tests
 		mockBoardApp,
-		mockWebsocket,
+		mockWebsocketApp,
 		testLogger,
 	)
 
