@@ -13,6 +13,7 @@ import (
 	"pinterest/usecase/auth"
 	"pinterest/usecase/middleware"
 	"testing"
+	"time"
 
 	"go.uber.org/zap/zaptest"
 
@@ -225,11 +226,23 @@ func TestComments(t *testing.T) {
 		Avatar:    "avatars/1",
 		Salt:      "",
 	}
+	expectedCookie := http.Cookie{
+		Name:     entity.CookieNameKey,
+		Value:    "someRandomSessionValue",
+		Path:     "/", // Cookie should be usable on entire website
+		Expires:  time.Now().Add(10 * time.Hour),
+		HttpOnly: true,
+	}
+	expectedCookieInfo := entity.CookieInfo{
+		UserID: expectedUser.UserID,
+		Cookie: &expectedCookie,
+	}
 
-	mockUserApp.EXPECT().GetUserByUsername(gomock.Any()).Return(nil, entity.UserNotFoundError).Times(1)
-	// Handler will request user info
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
+	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
 	expectedPinFirst := entity.Pin{
 		PinID:       1,

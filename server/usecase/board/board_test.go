@@ -289,6 +289,8 @@ func TestBoards(t *testing.T) {
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocket.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
 
+	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
+
 	expectedBoardFirst := entity.Board{
 		BoardID:     0,
 		UserID:      0,
@@ -313,8 +315,6 @@ func TestBoards(t *testing.T) {
 		expectedBoardFirst,
 		expectedBoardSecond,
 	}
-
-	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
 	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
