@@ -98,7 +98,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "usecase/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
@@ -246,7 +246,7 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "usecase/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
@@ -293,7 +293,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "usecase/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
 }
@@ -334,7 +334,7 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "usecase/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
 }
@@ -371,7 +371,7 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "usecase/json")
+	w.Header().Set("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }

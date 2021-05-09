@@ -249,7 +249,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			return
 		}
 
-		w.Header().Add("Content-Type", "usecase/json")
+		w.Header().Add("Content-Type", "usage/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
 		return
@@ -278,7 +278,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.Header().Add("Content-Type", "usecase/json")
+	w.Header().Add("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
@@ -510,7 +510,7 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 		return
 	}
 
-	w.Header().Add("Content-Type", "usecase/json")
+	w.Header().Add("Content-Type", "usage/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
