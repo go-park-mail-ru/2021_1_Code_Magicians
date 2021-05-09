@@ -4,10 +4,23 @@ import (
 	"context"
 	"fmt"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"pinterest/domain/entity"
+	"pinterest/infrastructure/persistence"
+	"pinterest/interfaces/auth"
+	"pinterest/interfaces/board"
+	"pinterest/interfaces/chat"
+	"pinterest/interfaces/comment"
+	"pinterest/interfaces/notification"
+	"pinterest/interfaces/pin"
+	"pinterest/interfaces/profile"
 	"pinterest/interfaces/routing"
+	"pinterest/interfaces/websocket"
+	protoUser "pinterest/services/user/proto"
+	"pinterest/usage"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -44,10 +57,51 @@ func runServer(addr string) {
 		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
 		return
 	}
-
 	defer conn.Close()
+	sess := entity.ConnectAws()
+	// TODO divide file
+	zapLogger, _ := zap.NewDevelopment()
+	defer zapLogger.Sync()
+	//
+	//var kacp = keepalive.ClientParameters{
+	//	Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+	//	Timeout:             time.Second,      // wait 1 second for ping back
+	//	PermitWithoutStream: true,             // send pings even without active streams
+	//}
+
+	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+
+	defer sessionUser.Close()
+	repo := protoUser.NewUserClient(sessionUser)
+	repo1 := persistence.NewUserRepository(conn)
+	repoPins := persistence.NewPinsRepository(conn)
+	repoBoards := persistence.NewBoardsRepository(conn)
+	repoComments := persistence.NewCommentsRepository(conn)
+
+	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
+	authApp := usage.NewAuthApp(repo1, cookieApp)
+	boardApp := usage.NewBoardApp(repoBoards)
+	s3App := usage.NewS3App(sess, os.Getenv("BUCKET_NAME"))
+	userApp := usage.NewUserApp(repo, boardApp, s3App)
+	pinApp := usage.NewPinApp(repoPins, boardApp, s3App)
+	commentApp := usage.NewCommentApp(repoComments)
+	websocketApp := usage.NewWebsocketApp(userApp)
+	notificationApp := usage.NewNotificationApp(userApp, websocketApp)
+	chatApp := usage.NewChatApp(userApp, websocketApp)
+
+	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
+	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, zapLogger)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
+	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
+	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", zapLogger)
+	notificationInfo := notification.NewNotificationInfo(notificationApp, zapLogger)
+	chatInfo := chat.NewChatnfo(chatApp, userApp, zapLogger)
+	// TODO divide file
+
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn, entity.ConnectAws(), os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
+	r := routing.CreateRouter(authApp, boardsInfo, authInfo, profileInfo, pinsInfo, commentsInfo,
+		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {

@@ -3,6 +3,7 @@ package usage
 import (
 	"context"
 	"io"
+	"log"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
 )
@@ -85,6 +86,7 @@ func (u *UserApp) DeleteUser(userID int) error {
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
 func (u *UserApp) GetUser(userID int) (*entity.User, error) {
+	log.Println("wrfreverververerrvrere")
 	userOutput, err := u.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
 		return nil, err

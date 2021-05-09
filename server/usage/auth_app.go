@@ -1,7 +1,6 @@
 package usage
 
 import (
-	"log"
 	"net/http"
 	"pinterest/domain/entity"
 	"pinterest/domain/repository"
@@ -26,12 +25,10 @@ type AuthAppInterface interface {
 }
 
 func (authApp *AuthApp) LoginUser(username string, password string) (*entity.CookieInfo, error) {
-	log.Println("EBELEX1")
 	user, err := authApp.us.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("EBELEX2")
 	if user.Password != password { // TODO: hashing
 		return nil, entity.IncorrectPasswordError
 	}
@@ -40,14 +37,12 @@ func (authApp *AuthApp) LoginUser(username string, password string) (*entity.Coo
 	for err == entity.DuplicatingCookieValueError {
 		cookie, err = authApp.cookieApp.GenerateCookie()
 	}
-	log.Println("EBELEX3")
+
 	resultCookieInfo := &entity.CookieInfo{UserID: user.UserID, Cookie: cookie}
-	log.Println("EBELEX4")
 	err = authApp.cookieApp.AddCookieInfo(resultCookieInfo)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("EBELEX5")
 
 	return resultCookieInfo, nil
 }

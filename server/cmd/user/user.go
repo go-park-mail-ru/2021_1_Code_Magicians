@@ -52,34 +52,6 @@ func runService(addr string) {
 	sess := entity.ConnectAws()
 
 	fmt.Println("Successfully connected to database")
-	//r := routing.CreateRouter(conn, sess, os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
-	//
-	//allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
-	//switch os.Getenv("HTTPS_ON") {
-	//case "true":
-	//	allowedOrigins = append(allowedOrigins, "https://pinter-best.com:8081", "https://pinter-best.com", "https://127.0.0.1:8081")
-	//case "false":
-	//	allowedOrigins = append(allowedOrigins, "http://pinter-best.com:8081", "http://pinter-best.com", "http://127.0.0.1:8081")
-	//default:
-	//	sugarLogger.Fatal("HTTPS_ON variable is not set")
-	//}
-	//
-	//c := cors.New(cors.Options{
-	//	AllowedOrigins:   allowedOrigins,
-	//	AllowCredentials: true,
-	//	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-	//})
-
-	//handler := c.Handler(r)
-	//fmt.Printf("Starting server at localhost%s\n", addr)
-
-	//switch os.Getenv("HTTPS_ON") {
-	//case "true":
-	//	sugarLogger.Fatal(http.ListenAndServeTLS(addr, "cert.pem", "key.pem", handler))
-	//case "false":
-	//	sugarLogger.Fatal(http.ListenAndServe(addr, handler))
-	//}
-
 	server := grpc.NewServer()
 
 	service := userService.NewService(conn, sess)

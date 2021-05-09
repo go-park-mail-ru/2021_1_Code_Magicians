@@ -244,7 +244,7 @@ func (s *service) GetUserByUsername(ctx context.Context, username *Username) (*U
 	secondNamePtr := new(string)
 	avatarPtr := new(string)
 
-	row := tx.QueryRow(context.Background(), getUserByUsernameQuery, username)
+	row := tx.QueryRow(context.Background(), getUserByUsernameQuery, username.Username)
 	err = row.Scan(&user.UserID, &user.Email, &firstNamePtr,
 		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 	if err != nil {
@@ -373,27 +373,29 @@ func (s *service) CheckIfFollowed(ctx context.Context, follows *Follows) (*IfFol
 	return &IfFollowedResponse{IsFollowed: true}, nil
 }
 
-const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+const SearchUsersQuery string = "SELECT userID, username, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
 	"WHERE LOWER(username) LIKE $1;"
 
 // SearchUsers fetches all users from database suitable with passed keywords
 // It returns slice of users and nil on success, nil and error on failure
 func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*UsersListOutput, error) {
+	log.Println("lllllllllll")
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
-
+	log.Println(">>>>>>>>>>>>>>>>>>")
 	users := make([]*UserOutput, 0)
-	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%"+keyWords.KeyWords+"%")
+	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%" + keyWords.KeyWords + "%")
 	if err != nil {
+		log.Println(">>>>>>>>>>>>>>>>>>")
 		if err == pgx.ErrNoRows {
 			return nil, entity.NoResultSearch
 		}
 		return nil, err
 	}
-
+	log.Println(">>>>>>>>>>>>>>>>>>")
 	for rows.Next() {
 		user := UserOutput{}
 

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
@@ -121,7 +120,6 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Println("LOG1")
 	cookieInfo, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))

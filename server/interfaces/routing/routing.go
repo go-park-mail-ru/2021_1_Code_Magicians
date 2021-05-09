@@ -1,12 +1,10 @@
 package routing
 
 import (
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
+	"github.com/gorilla/csrf"
+	"github.com/gorilla/mux"
 	"net/http"
 	"os"
-	"pinterest/usage"
-	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
@@ -16,18 +14,12 @@ import (
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"pinterest/interfaces/websocket"
-	protoUser "pinterest/services/user/proto"
-	"time"
-
-	"go.uber.org/zap"
-
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/gorilla/csrf"
-	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"pinterest/usage"
 )
 
-func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string, csrfOn bool) *mux.Router {
+func CreateRouter(authApp *usage.AuthApp, boardsInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
+	pinsInfo *pin.PinInfo, commentsInfo *comment.CommentInfo, websocketInfo *websocket.WebsocketInfo,
+	notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
@@ -40,42 +32,6 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 		r.Use(csrfMid)
 		r.Use(mid.CSRFSettingMid)
 	}
-	zapLogger, _ := zap.NewDevelopment()
-	defer zapLogger.Sync()
-
-	var kacp = keepalive.ClientParameters{
-		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
-		Timeout:             time.Second,      // wait 1 second for ping back
-		PermitWithoutStream: true,             // send pings even without active streams
-	}
-
-	sessionUser, _ := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure(),grpc.WithKeepaliveParams(kacp))
-	defer sessionUser.Close()
-	repo := protoUser.NewUserClient(sessionUser)
-	repo1 := persistence.NewUserRepository(conn)
-	repoPins := persistence.NewPinsRepository(conn)
-	repoBoards := persistence.NewBoardsRepository(conn)
-	repoComments := persistence.NewCommentsRepository(conn)
-
-	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
-	authApp := usage.NewAuthApp(repo1, cookieApp)
-	boardApp := usage.NewBoardApp(repoBoards)
-	s3App := usage.NewS3App(sess, s3BucketName)
-	userApp := usage.NewUserApp(repo, boardApp, s3App)
-	pinApp := usage.NewPinApp(repoPins, boardApp, s3App)
-	commentApp := usage.NewCommentApp(repoComments)
-	websocketApp := usage.NewWebsocketApp(userApp)
-	notificationApp := usage.NewNotificationApp(userApp, websocketApp)
-	chatApp := usage.NewChatApp(userApp, websocketApp)
-
-	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
-	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, cookieApp, s3App, notificationApp, zapLogger)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
-	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
-	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)
-	notificationInfo := notification.NewNotificationInfo(notificationApp, zapLogger)
-	chatInfo := chat.NewChatnfo(chatApp, userApp, zapLogger)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authApp)).Methods("POST")

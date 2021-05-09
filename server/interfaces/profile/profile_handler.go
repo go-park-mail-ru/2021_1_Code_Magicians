@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"pinterest/usage"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
+	"pinterest/usage"
 	"strconv"
 	"strings"
 	"time"
@@ -27,11 +27,12 @@ type ProfileInfo struct {
 	logger          *zap.Logger
 }
 
-func NewProfileInfo(userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
+func NewProfileInfo(userApp usage.UserAppInterface, authApp usage.AuthAppInterface, cookieApp usage.CookieAppInterface,
 	s3App usage.S3AppInterface, notificationApp usage.NotificationAppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
+		authApp:         authApp,
 		cookieApp:       cookieApp,
 		s3App:           s3App,
 		notificationApp: notificationApp,
@@ -168,7 +169,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
-
 	switch passedID {
 	case true:
 		{
@@ -249,7 +249,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 			return
 		}
 
-		w.Header().Add("Content-Type", "usage/json")
+		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
 	}
@@ -277,7 +277,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.Header().Add("Content-Type", "usage/json")
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
@@ -505,7 +505,7 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 		return
 	}
 
-	w.Header().Add("Content-Type", "usage/json")
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }

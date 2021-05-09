@@ -3,7 +3,6 @@ package usage
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"log"
 	"net/http"
 	"os"
 	"pinterest/domain/entity"
@@ -87,18 +86,16 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 }
 
 func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
-	log.Println("SHREK1")
 	oldCookieInfo, found := cookieApp.SearchByUserID(cookieInfo.UserID)
 	if found {
 		cookieApp.RemoveCookie(oldCookieInfo)
 	}
-	log.Println("SHREK2")
 
 	_, found = cookieApp.SearchByValue(cookieInfo.Cookie.Value)
 	if found {
 		return entity.DuplicatingCookieValueError
 	}
-	log.Println("SHREK3")
+
 	cookieApp.mu.Lock()
 	cookieApp.sessionsByValue[cookieInfo.Cookie.Value] = &(*cookieInfo) // Copying by value
 	cookieApp.sessionsByUserID[cookieInfo.UserID] = cookieApp.sessionsByValue[cookieInfo.Cookie.Value]
