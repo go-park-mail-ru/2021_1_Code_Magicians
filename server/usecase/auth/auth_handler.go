@@ -64,7 +64,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser.UserID, err = info.userApp.CreateUser(&newUser)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		if err.Error() == entity.UsernameEmailDuplicateError.Error() {
+		if err == entity.UsernameEmailDuplicateError {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}

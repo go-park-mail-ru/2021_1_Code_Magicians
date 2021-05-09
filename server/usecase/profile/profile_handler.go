@@ -124,8 +124,8 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		switch err.Error() {
-		case entity.UsernameEmailDuplicateError.Error():
+		switch err {
+		case entity.UsernameEmailDuplicateError:
 			w.WriteHeader(http.StatusConflict)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -178,7 +178,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 				profileInfo.logger.Info(err.Error(),
 					zap.String("url", r.RequestURI),
 					zap.String("method", r.Method))
-				if err.Error() == string(entity.UserNotFoundError) {
+				if err == entity.UserNotFoundError {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -197,7 +197,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 						profileInfo.logger.Info(err.Error(),
 							zap.String("url", r.RequestURI),
 							zap.String("method", r.Method))
-						if err.Error() == string(entity.UserNotFoundError) {
+						if err == entity.UserNotFoundError {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -222,7 +222,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 						profileInfo.logger.Info(err.Error(),
 							zap.String("url", r.RequestURI),
 							zap.String("method", r.Method))
-						if err.Error() == string(entity.UserNotFoundError) {
+						if err == entity.UserNotFoundError {
 							w.WriteHeader(http.StatusNotFound)
 							return
 						}
@@ -340,7 +340,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			if err != nil {
 				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err.Error() == string(entity.UserNotFoundError) {
+				if err == entity.UserNotFoundError {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -355,7 +355,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 			if err != nil {
 				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err.Error() == string(entity.UserNotFoundError) {
+				if err == entity.UserNotFoundError {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -370,7 +370,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", followerID), zap.String("method", r.Method))
-		if err.Error() == "This follow relation already exists" {
+		if err == entity.FollowAlreadyExistsError {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
@@ -416,7 +416,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			if err != nil {
 				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err.Error() == string(entity.UserNotFoundError) {
+				if err == entity.UserNotFoundError {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -431,7 +431,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 			if err != nil {
 				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err.Error() == string(entity.UserNotFoundError) {
+				if err == entity.UserNotFoundError {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
@@ -446,7 +446,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", followerID), zap.String("method", r.Method))
-		if err.Error() == "That follow relation does not exist" {
+		if err == entity.FollowNotFoundError {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
