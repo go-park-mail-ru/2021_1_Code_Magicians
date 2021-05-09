@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"pinterest/domain/entity"
+	authProto "pinterest/services/auth/proto"
 	"sync"
 	"time"
 )
@@ -59,30 +60,7 @@ func GenerateRandomString(s int) (string, error) {
 }
 
 func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
-	sessionValue, err := GenerateRandomString(cookieApp.cookieLength) // cookie value - random string
-	if err != nil {
-		return nil, entity.CookieGenerationError
-	}
-
-	expirationTime := time.Now().Add(cookieApp.duration)
-	if os.Getenv("HTTPS_ON") == "true" {
-		return &http.Cookie{
-			Name:     entity.CookieNameKey,
-			Value:    sessionValue,
-			Path:     "/", // Cookie should be usable on entire website
-			Expires:  expirationTime,
-			Secure:   true, // We use HTTPS
-			HttpOnly: true, // So that frontend won't have direct access to cookies
-			SameSite: http.SameSiteNoneMode,
-		}, nil
-	}
-	return &http.Cookie{
-		Name:     entity.CookieNameKey,
-		Value:    sessionValue,
-		Path:     "/", // Cookie should be usable on entire website
-		Expires:  expirationTime,
-		HttpOnly: true, // So that frontend won't have direct access to cookies
-	}, nil
+	grpcCookie, err := authProto.
 }
 
 func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
@@ -143,4 +121,13 @@ func (cookieApp *CookieApp) RemoveCookie(cookieInfo *entity.CookieInfo) error {
 	delete(cookieApp.sessionsByUserID, cookieInfo.UserID)
 	cookieApp.mu.Unlock()
 	return nil
+}
+
+func FillGRPCCookie (cookie *http.Cookie, grpcCookie *authProto.Cookie) {
+	cookie.Name = grpcCookie.Name
+	cookie.Path = grpcCookie.Path
+	cookie.SameSite = http.SameSite(grpcCookie.SameSite)
+	cookie.HttpOnly = grpcCookie.HttpOnly
+	cookie.Value = grpcCookie.Value
+	cookie.Expires = grpcCookie.Expires.AsTime()
 }

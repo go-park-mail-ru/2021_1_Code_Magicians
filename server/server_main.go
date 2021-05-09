@@ -19,6 +19,7 @@ import (
 	"pinterest/interfaces/routing"
 	"pinterest/interfaces/websocket"
 	protoUser "pinterest/services/user/proto"
+	protoAuth "pinterest/services/auth/proto"
 	"pinterest/usage"
 	"time"
 
@@ -70,18 +71,20 @@ func runServer(addr string) {
 
 	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
 	defer sessionUser.Close()
+	sessionAuth, err := grpc.Dial("127.0.0.1:8083", grpc.WithInsecure())
+	defer sessionAuth.Close()
 
-	repo := protoUser.NewUserClient(sessionUser)
-	repo1 := persistence.NewUserRepository(conn)
+	repoUser := protoUser.NewUserClient(sessionUser)
+	repoAuth := protoAuth.NewAuthClient(sessionAuth)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
 	repoComments := persistence.NewCommentsRepository(conn)
 
 	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
-	authApp := usage.NewAuthApp(repo1, cookieApp)
 	boardApp := usage.NewBoardApp(repoBoards)
 	s3App := usage.NewS3App(sess, os.Getenv("BUCKET_NAME"))
-	userApp := usage.NewUserApp(repo, boardApp)
+	userApp := usage.NewUserApp(repoUser, boardApp)
+	authApp := usage.NewAuthApp(repoAuth, userApp, cookieApp)
 	pinApp := usage.NewPinApp(repoPins, boardApp, s3App)
 	commentApp := usage.NewCommentApp(repoComments)
 	websocketApp := usage.NewWebsocketApp(userApp)
