@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"pinterest/usage"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
+	"pinterest/usage"
 	"strconv"
 	"strings"
 	"time"
@@ -252,6 +252,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 		w.Header().Add("Content-Type", "usage/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(responseBody)
+		return
 	}
 
 	currentUserID := cookie.UserID
