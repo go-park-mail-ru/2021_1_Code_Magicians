@@ -8,9 +8,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"pinterest/domain/entity"
-	pinService "pinterest/services/pins"
-	pinProto "pinterest/services/pins/proto"
+	commentsService "pinterest/services/comments"
+	commentsProto "pinterest/services/comments/proto"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -49,13 +48,11 @@ func runService(addr string) {
 
 	defer conn.Close()
 
-	sess := entity.ConnectAws()
-
 	fmt.Println("Successfully connected to database")
 	server := grpc.NewServer()
 
-	service := pinService.NewService(conn, sess)
-	pinProto.RegisterPinsServer(server, service)
+	service := commentsService.NewService(conn)
+	commentsProto.RegisterCommentsServer(server, service)
 
 	lis, err := net.Listen("tcp", addr)
 
@@ -67,5 +64,5 @@ func runService(addr string) {
 }
 
 func main() {
-	runService(":8084")
+	runService(":8085")
 }

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+// protoc --go_out=plugins=grpc:. *.proto
+// PATH="${PATH}:${HOME}/go/bin" protoc --go_out=plugins=grpc:. *.proto
+
+option go_package = "./";
+
+package comments;
+
+message PinID {
+  int64 pinID = 1;
+}
+
+message Comment {
+  int64  UserID = 1;
+  int64  PinID = 2;
+  string PinComment = 3;
+}
+
+message CommentsList {
+  repeated Comment comments = 1;
+}
+
+message Error {}
+
+service Comments {
+  rpc AddComment(Comment) returns (Error) {}
+  rpc GetComments(PinID) returns (CommentsList) {}
+}

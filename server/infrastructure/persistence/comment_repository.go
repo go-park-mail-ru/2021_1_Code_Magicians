@@ -19,8 +19,8 @@ func NewCommentsRepository(db *pgxpool.Pool) *CommentsRepo {
 const addCommentQuery string = "INSERT INTO comments (userID, pinID, text)\n" +
 	"values ($1, $2, $3);"
 
-func (r *CommentsRepo) AddComment(comment *entity.Comment) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *CommentsRepo) AddComment(comment *entity.Comment) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -48,8 +48,8 @@ func (r *CommentsRepo) AddComment(comment *entity.Comment) error {
 const getCommentsByPinQuery string = "SELECT userID, pinID, text FROM comments\n" +
 	"WHERE pinID=$1;"
 
-func (r *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -80,8 +80,8 @@ func (r *CommentsRepo) GetComments(pinID int) ([]entity.Comment, error) {
 	return comments, nil
 }
 
-func (r *CommentsRepo) DeleteComment(*entity.Comment) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *CommentsRepo) DeleteComment(*entity.Comment) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -94,8 +94,8 @@ func (r *CommentsRepo) DeleteComment(*entity.Comment) error {
 	return nil
 }
 
-func (r *CommentsRepo) EditComment(*entity.Comment) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *CommentsRepo) EditComment(*entity.Comment) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
