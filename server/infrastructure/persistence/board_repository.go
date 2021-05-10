@@ -22,8 +22,8 @@ const createBoardQuery string = "INSERT INTO Boards (userID, title, description)
 
 // AddBoard add new board to database with passed fields
 // It returns board's assigned ID and nil on success, any number and error on failure
-func (r *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) AddBoard(board *entity.Board) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -47,8 +47,8 @@ const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1"
 
 // DeleteBoard deletes board with passed id belonging to passed user.
 // It returns error if board is not found or if there were problems with database
-func (r *BoardsRepo) DeleteBoard(boardID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) DeleteBoard(boardID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -73,8 +73,8 @@ const getBoardQuery string = "SELECT userID, title, description FROM Boards WHER
 
 // GetBoard fetches board with passed ID from database
 // It returns that board, nil on success and nil, error on failure
-func (r *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) GetBoard(boardID int) (*entity.Board, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -103,8 +103,8 @@ const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boa
 
 // GetBoards fetches all boards created by user with specified ID from database
 // It returns slice of these boards, nil on success and nil, error on failure
-func (r *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) GetBoards(userID int) ([]entity.Board, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -143,8 +143,8 @@ const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.descriptio
 
 // GetInitUserBoard gets user's first board from database
 // It returns that board and nil on success, nil and error on failure
-func (r *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) GetInitUserBoard(userID int) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -171,8 +171,8 @@ const saveBoardPictureQuery string = "UPDATE boards\n" +
 	"SET imageLink=$1\n" +
 	"WHERE boardID=$2"
 
-func (r *BoardsRepo) UploadBoardAvatar(boardID int, imageLink string) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *BoardsRepo) UploadBoardAvatar(boardID int, imageLink string) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}

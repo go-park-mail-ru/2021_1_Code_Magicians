@@ -23,8 +23,8 @@ const createPinQuery string = "INSERT INTO Pins (title, imageLink, imageHeight, 
 
 // CreatePin creates new pin with passed fields
 // It returns pin's assigned ID and nil on success, any number and error on failure
-func (r *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) CreatePin(pin *entity.Pin) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -51,8 +51,8 @@ const createPairQuery string = "INSERT INTO pairs (boardID, pinID)\n" +
 
 // AddPin add new pin to specified board with passed fields
 // It returns nil on success, error on failure
-func (r *PinsRepo) AddPin(boardID int, pinID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) AddPin(boardID int, pinID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -77,8 +77,8 @@ const deletePinQuery string = "DELETE FROM pins WHERE pinID=$1"
 
 // DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure
-func (r *PinsRepo) DeletePin(pinID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) DeletePin(pinID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -103,8 +103,8 @@ const deletePairQuery string = "DELETE FROM pairs WHERE pinID = $1 AND boardID =
 
 // RemovePin removes pin with passed boardID
 // It returns nil on success and error on failure
-func (r *PinsRepo) RemovePin(boardID int, pinID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) RemovePin(boardID int, pinID int) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -129,8 +129,8 @@ const getPinRefCount string = "SELECT COUNT(pinID) FROM pairs WHERE pinID = $1"
 
 // PinRefCount count the number of pin references
 // It returns number of references and nil on success and any number and error on failure
-func (r *PinsRepo) PinRefCount(pinID int) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) PinRefCount(pinID int) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -159,8 +159,8 @@ const getPinQuery string = "SELECT pinID, userID, title," +
 
 // GetPin fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
-func (r *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) GetPin(pinID int) (*entity.Pin, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -192,8 +192,8 @@ const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, 
 
 // GetPins fetches all pins from board
 // It returns slice of all pins in board, nil on success and nil, error on failure
-func (r *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) GetPins(boardID int) ([]entity.Pin, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -235,8 +235,8 @@ const savePictureQuery string = "UPDATE pins\n" +
 
 // SavePicture saves pin's picture to database
 // It returns nil on success and error on failure
-func (r *PinsRepo) SavePicture(pin *entity.Pin) error {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) SavePicture(pin *entity.Pin) error {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -263,8 +263,8 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
 // GetLastUserPinID
-func (r *PinsRepo) GetLastUserPinID(userID int) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) GetLastUserPinID(userID int) (int, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -295,8 +295,8 @@ const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " 
 
 // GetNumOfPins generates the main feed
 // It returns numOfPins pins and nil on success, nil and error on failure
-func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -334,8 +334,8 @@ const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
-func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
-	tx, err := r.db.Begin(context.Background())
+func (s *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
