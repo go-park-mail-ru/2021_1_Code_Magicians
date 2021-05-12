@@ -20,6 +20,7 @@ import (
 	"pinterest/interfaces/websocket"
 	protoUser "pinterest/services/user/proto"
 	protoAuth "pinterest/services/auth/proto"
+	protoComments "pinterest/services/comments/proto"
 	"pinterest/usage"
 	"time"
 
@@ -73,12 +74,14 @@ func runServer(addr string) {
 	defer sessionUser.Close()
 	sessionAuth, err := grpc.Dial("127.0.0.1:8083", grpc.WithInsecure())
 	defer sessionAuth.Close()
+	sessionComments, err := grpc.Dial("127.0.0.1:8085", grpc.WithInsecure())
+	defer sessionComments.Close()
 
 	repoUser := protoUser.NewUserClient(sessionUser)
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)
 	repoPins := persistence.NewPinsRepository(conn)
 	repoBoards := persistence.NewBoardsRepository(conn)
-	repoComments := persistence.NewCommentsRepository(conn)
+	repoComments := protoComments.NewCommentsClient(sessionComments)
 
 	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
 	boardApp := usage.NewBoardApp(repoBoards)
