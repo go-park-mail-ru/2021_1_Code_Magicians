@@ -9,6 +9,7 @@ const DuplicatingCookieValueError customError = "Cookie with such session value 
 const UserNotLoggedInError customError = "User is not logged in"
 
 const UserNotFoundError customError = "User not found"
+const UsersNotFoundError customError = "Users not found"
 const UsernameEmailDuplicateError customError = "Username or email is already taken"
 const IncorrectPasswordError customError = "Password is incorrect"
 const UserSavingError customError = "User saving failed"

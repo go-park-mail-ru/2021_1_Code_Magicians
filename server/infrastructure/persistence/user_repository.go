@@ -36,8 +36,8 @@ const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwor
 
 // CreateUser add new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (r *UserRepo) CreateUser(user *entity.User) (int, error) {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) CreateUser(user *entity.User) (int, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return -1, entity.TransactionBeginError
 	}
@@ -88,8 +88,8 @@ const saveUserQuery string = "UPDATE Users\n" +
 
 // SaveUser saves user to database with passed fields
 // It returns nil on success and error on failure
-func (r *UserRepo) SaveUser(user *entity.User) error {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) SaveUser(user *entity.User) error {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -119,8 +119,8 @@ const deleteUserQuery string = "DELETE FROM Users WHERE userID=$1"
 
 // SaveUser deletes user with passed ID
 // It returns nil on success and error on failure
-func (r *UserRepo) DeleteUser(userID int) error {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) DeleteUser(userID int) error {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -146,8 +146,8 @@ const getUserQuery string = "SELECT username, passwordhash, salt, email, first_n
 
 // GetUser fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
-func (r *UserRepo) GetUser(userID int) (*entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) GetUser(userID int) (*entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -185,8 +185,8 @@ const getUsersQuery string = "SELECT userID, username, passwordhash, salt, email
 
 // GetUsers fetches all users from database
 // It returns slice of all users, nil on success and nil, error on failure
-func (r *UserRepo) GetUsers() ([]entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) GetUsers() ([]entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -196,7 +196,7 @@ func (r *UserRepo) GetUsers() ([]entity.User, error) {
 	rows, err := tx.Query(context.Background(), getUsersQuery)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, entity.UserNotFoundError
+			return nil, entity.UsersNotFoundError
 		}
 
 		// Other errors
@@ -233,8 +233,8 @@ const getUserByUsernameQuery string = "SELECT userID, passwordhash, salt, email,
 
 // GetUserByUsername fetches user with passed username from database
 // It returns that user, nil on success and nil, error on failure
-func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+func (userRepo *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
@@ -268,12 +268,61 @@ func (r *UserRepo) GetUserByUsername(username string) (*entity.User, error) {
 	return &user, nil
 }
 
+const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"WHERE LOWER(username) LIKE $1;"
+
+// SearchUsers fetches all users from database suitable with passed keywords
+// It returns slice of users and nil on success, nil and error on failure
+func (userRepo *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	users := make([]entity.User, 0)
+	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%"+keyWords+"%")
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.NoResultSearch
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		user := entity.User{}
+
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
+		if err != nil {
+			return nil, entity.SearchingError
+		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
+		users = append(users, user)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return users, nil
+}
+
 const followQuery string = "INSERT INTO Followers(followerID, followedID) VALUES ($1, $2)"
 const updateFollowingQuery string = "UPDATE Users SET following = following + 1 WHERE userID=$1"
 const updateFollowedByQuery string = "UPDATE Users SET followed_by = followed_by + 1 WHERE userID=$1"
 
-func (r *UserRepo) Follow(followerID int, followedID int) error {
-	tx, err := r.db.Begin(context.Background())
+// Follow adds follow relation between follower and followed
+// It returns nil on success, error on failure
+func (userRepo *UserRepo) Follow(followerID int, followedID int) error {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -316,8 +365,10 @@ const unfollowQuery string = "DELETE FROM Followers WHERE followerID=$1 AND foll
 const updateUnfollowingQuery string = "UPDATE Users SET following = following - 1 WHERE userID=$1"
 const updateUnfollowedByQuery string = "UPDATE Users SET followed_by = followed_by - 1 WHERE userID=$1"
 
-func (r *UserRepo) Unfollow(followerID int, followedID int) error {
-	tx, err := r.db.Begin(context.Background())
+// unfollow removes follow relation between follower and followed
+// It returns nil on success, error on failure
+func (userRepo *UserRepo) Unfollow(followerID int, followedID int) error {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return entity.TransactionBeginError
 	}
@@ -348,8 +399,10 @@ func (r *UserRepo) Unfollow(followerID int, followedID int) error {
 
 const checkIfFollowedQuery string = "SELECT 1 FROM Followers WHERE followerID=$1 AND followedID=$2" // returns 1 if found, no rows otherwise
 
-func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
-	tx, err := r.db.Begin(context.Background())
+// CheckIfFollowed checks if relation between follower and followed exists
+// It returns true, nil if it does, false, nil if not, false, error on failure
+func (userRepo *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return false, entity.TransactionBeginError
 	}
@@ -374,30 +427,33 @@ func (r *UserRepo) CheckIfFollowed(followerID int, followedID int) (bool, error)
 	return true, nil
 }
 
-const SearchUsersQuery string = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
-	"WHERE LOWER(username) LIKE $1;"
+const getAllFollowersQuery = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"INNER JOIN (SELECT * FROM Followers WHERE followedID = $1) as users_followers\n" +
+	"ON followerID = userID"
 
-// SearchUsers fetches all users from database suitable with passed keywords
-// It returns slice of users and nil on success, nil and error on failure
-func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
-	tx, err := r.db.Begin(context.Background())
+// GetAllFollowers fetches all users that follow user with passed ID
+// It returns slice of users, nil on success, nil, error on failure
+// ! No followers found also counts as an error, entity.UsersNotFoundError
+func (userRepo *UserRepo) GetAllFollowers(userID int) ([]entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
 	if err != nil {
 		return nil, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
 
-	users := make([]entity.User, 0)
-	rows, err := tx.Query(context.Background(), SearchUsersQuery,"%" + keyWords + "%")
+	followers := make([]entity.User, 0)
+	rows, err := tx.Query(context.Background(), getAllFollowersQuery, userID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, entity.NoResultSearch
+			return nil, entity.UsersNotFoundError
 		}
+
+		// Other errors
 		return nil, err
 	}
 
 	for rows.Next() {
 		user := entity.User{}
-
 		firstNamePtr := new(string)
 		secondNamePtr := new(string)
 		avatarPtr := new(string)
@@ -405,18 +461,68 @@ func (r *UserRepo) SearchUsers(keyWords string) ([]entity.User, error) {
 		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
-			return nil, entity.SearchingError
+			return nil, err // TODO: error handling
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)
 		user.LastName = *emptyIfNil(secondNamePtr)
 		user.Avatar = *emptyIfNil(avatarPtr)
-		users = append(users, user)
+		followers = append(followers, user)
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return nil, entity.TransactionCommitError
 	}
-	return users, nil
+	return followers, nil
+}
+
+const getAllFollowedQuery = "SELECT userID, username, passwordhash, salt, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"INNER JOIN (SELECT * FROM Followers WHERE followerID = $1) as users_followed\n" +
+	"ON followedID = userID"
+
+// GetAllFollowed fetches all users that are followed by user with passed ID
+// It returns slice of users, nil on success, nil, error on failure
+// ! No followers found also counts as an error, entity.UsersNotFoundError
+func (userRepo *UserRepo) GetAllFollowed(userID int) ([]entity.User, error) {
+	tx, err := userRepo.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	followed := make([]entity.User, 0)
+	rows, err := tx.Query(context.Background(), getAllFollowedQuery, userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.UsersNotFoundError
+		}
+
+		// Other errors
+		return nil, err
+	}
+
+	for rows.Next() {
+		user := entity.User{}
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Password, &user.Salt, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
+		if err != nil {
+			return nil, err // TODO: error handling
+		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
+		followed = append(followed, user)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return followed, nil
 }

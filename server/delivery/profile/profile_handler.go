@@ -19,25 +19,23 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp         usecase.UserAppInterface
-	authApp         usecase.AuthAppInterface
-	followApp       usecase.FollowAppInterface
-	s3App           usecase.S3AppInterface
-	notificationApp usecase.NotificationAppInterface
-	logger          *zap.Logger
+	userApp   usecase.UserAppInterface
+	authApp   usecase.AuthAppInterface
+	followApp usecase.FollowAppInterface
+	s3App     usecase.S3AppInterface
+	logger    *zap.Logger
 }
 
 func NewProfileInfo(userApp usecase.UserAppInterface, authApp usecase.AuthAppInterface,
 	followApp usecase.FollowAppInterface,
-	s3App usecase.S3AppInterface, notificationApp usecase.NotificationAppInterface,
+	s3App usecase.S3AppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
-		userApp:         userApp,
-		authApp:         authApp,
-		followApp:       followApp,
-		s3App:           s3App,
-		notificationApp: notificationApp,
-		logger:          logger,
+		userApp:   userApp,
+		authApp:   authApp,
+		followApp: followApp,
+		s3App:     s3App,
+		logger:    logger,
 	}
 }
 
@@ -324,158 +322,6 @@ func (profileInfo *ProfileInfo) HandlePostAvatar(w http.ResponseWriter, r *http.
 			zap.Int("for user", userID), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *http.Request) {
-	var followedUser *entity.User = nil
-	var err error // Maybe move this line into switch?
-	vars := mux.Vars(r)
-	idStr, passedID := vars[string(entity.IDKey)]
-	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-
-	switch passedID {
-	case true:
-		{
-			followedID, _ := strconv.Atoi(idStr)
-			followedUser, err = profileInfo.userApp.GetUser(followedID)
-			if err != nil {
-				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err == entity.UserNotFoundError {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-	case false: // ID was not passed
-		{
-			followedUsername := vars[string(entity.UsernameKey)]
-			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
-			if err != nil {
-				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err == entity.UserNotFoundError {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	followedID := followedUser.UserID
-	err = profileInfo.followApp.Follow(followerID, followedID)
-	if err != nil {
-		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", followerID), zap.String("method", r.Method))
-		if err == entity.FollowAlreadyExistsError {
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	followerUser, err := profileInfo.userApp.GetUser(followerID)
-	if err == nil {
-		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
-			UserID:   followedID,
-			Title:    "New follower!",
-			Category: "followers",
-			Text:     "You have received a new follower: " + followerUser.Username,
-			IsRead:   false,
-		})
-		if err == nil {
-			profileInfo.notificationApp.SendNotification(followedID, notificationID) // It's alright if notification could not be sent
-		} else {
-			profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-				zap.Int("for user", followerID), zap.String("method", r.Method))
-		}
-	} else {
-		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", followerID), zap.String("method", r.Method))
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
-	var followedUser *entity.User = nil
-	var err error
-	vars := mux.Vars(r)
-	idStr, passedID := vars[string(entity.IDKey)]
-	followerID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
-
-	switch passedID {
-	case true:
-		{
-			followedID, _ := strconv.Atoi(idStr)
-			followedUser, err = profileInfo.userApp.GetUser(followedID)
-			if err != nil {
-				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err == entity.UserNotFoundError {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-	case false: // ID was not passed
-		{
-			followedUsername := vars[string(entity.UsernameKey)]
-			followedUser, err = profileInfo.userApp.GetUserByUsername(followedUsername)
-			if err != nil {
-				profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-					zap.Int("for user", followerID), zap.String("method", r.Method))
-				if err == entity.UserNotFoundError {
-					w.WriteHeader(http.StatusNotFound)
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	followedID := followedUser.UserID
-	err = profileInfo.followApp.Unfollow(followerID, followedID)
-	if err != nil {
-		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", followerID), zap.String("method", r.Method))
-		if err == entity.FollowNotFoundError {
-			w.WriteHeader(http.StatusConflict)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	followerUser, err := profileInfo.userApp.GetUser(followerID)
-	if err == nil {
-		notificationID, err := profileInfo.notificationApp.AddNotification(&entity.Notification{
-			UserID:   followedID,
-			Title:    "Follower lost!",
-			Category: "followers",
-			Text:     "You have  lost a follower: " + followerUser.Username,
-			IsRead:   false,
-		})
-		if err == nil {
-			profileInfo.notificationApp.SendNotification(followedID, notificationID)
-		} else {
-			profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-				zap.Int("for user", followerID), zap.String("method", r.Method))
-		}
-	} else {
-		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", followerID), zap.String("method", r.Method))
 	}
 
 	w.WriteHeader(http.StatusNoContent)

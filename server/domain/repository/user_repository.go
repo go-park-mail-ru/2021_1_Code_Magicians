@@ -9,8 +9,10 @@ type UserRepository interface {
 	GetUser(userID int) (*entity.User, error)                     // Get user by his ID
 	GetUsers() ([]entity.User, error)                             // Get all users
 	GetUserByUsername(username string) (*entity.User, error)      // Get user by his username
+	SearchUsers(keywords string) ([]entity.User, error)           // Get all users by passed keywords
 	Follow(followerId int, followedID int) error                  // Make first user follow second
 	Unfollow(followerID int, followedID int) error                // Make first user unfollow second
 	CheckIfFollowed(followerID int, followedID int) (bool, error) // Check if first user follows second
-	SearchUsers(keywords string) ([]entity.User, error)           // Get all users by passed keywords
+	GetAllFollowers(userID int) ([]entity.User, error)            // Get all of user's followers
+	GetAllFollowed(userID int) ([]entity.User, error)             // Get all users followed by user
 }

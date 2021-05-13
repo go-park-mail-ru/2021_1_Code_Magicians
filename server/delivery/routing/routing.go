@@ -7,6 +7,7 @@ import (
 	"pinterest/delivery/board"
 	"pinterest/delivery/chat"
 	"pinterest/delivery/comment"
+	"pinterest/delivery/follow"
 	mid "pinterest/delivery/middleware"
 	"pinterest/delivery/notification"
 	"pinterest/delivery/pin"
@@ -59,7 +60,8 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
 	authInfo := auth.NewAuthInfo(userApp, authApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, authApp, followApp, s3App, notificationApp, zapLogger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, followApp, s3App, zapLogger)
+	followInfo := follow.NewFollowInfo(userApp, followApp, notificationApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)
@@ -80,10 +82,12 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, authApp)).Methods("PUT")
 	r.HandleFunc("/profiles/search/{searchKey}", profileInfo.HandleGetProfilesByKeyWords).Methods("GET")
 
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, authApp)).Methods("POST") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleFollowProfile, authApp)).Methods("POST")
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleUnfollowProfile, authApp)).Methods("DELETE") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleUnfollowProfile, authApp)).Methods("DELETE")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(followInfo.HandleFollowProfile, authApp)).Methods("POST") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(followInfo.HandleFollowProfile, authApp)).Methods("POST")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(followInfo.HandleUnfollowProfile, authApp)).Methods("DELETE") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(followInfo.HandleUnfollowProfile, authApp)).Methods("DELETE")
+	r.HandleFunc("/followers/{id:[0-9]+}", followInfo.HandleGetFollowers).Methods("GET")
+	r.HandleFunc("/following/{id:[0-9]+}", followInfo.HandleGetFollowed).Methods("GET")
 
 	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, authApp)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", pinsInfo.HandleGetPinByID).Methods("GET")
