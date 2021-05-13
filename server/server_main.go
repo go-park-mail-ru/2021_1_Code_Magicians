@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"pinterest/domain/entity"
-	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
@@ -21,6 +20,7 @@ import (
 	protoUser "pinterest/services/user/proto"
 	protoAuth "pinterest/services/auth/proto"
 	protoComments "pinterest/services/comments/proto"
+	protoPins "pinterest/services/pins/proto"
 	"pinterest/usage"
 	"time"
 
@@ -71,24 +71,40 @@ func runServer(addr string) {
 	//}
 
 	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for User service")
+	}
 	defer sessionUser.Close()
+
 	sessionAuth, err := grpc.Dial("127.0.0.1:8083", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Auth service")
+	}
 	defer sessionAuth.Close()
+
+	sessionPins, err := grpc.Dial("127.0.0.1:8084", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Pins service")
+	}
+	defer sessionPins.Close()
+
 	sessionComments, err := grpc.Dial("127.0.0.1:8085", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Comments service")
+	}
 	defer sessionComments.Close()
 
 	repoUser := protoUser.NewUserClient(sessionUser)
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)
-	repoPins := persistence.NewPinsRepository(conn)
-	repoBoards := persistence.NewBoardsRepository(conn)
+	repoPins := protoPins.NewPinsClient(sessionPins)
 	repoComments := protoComments.NewCommentsClient(sessionComments)
 
 	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
-	boardApp := usage.NewBoardApp(repoBoards)
+	boardApp := usage.NewBoardApp(repoPins)
 	s3App := usage.NewS3App(sess, os.Getenv("BUCKET_NAME"))
 	userApp := usage.NewUserApp(repoUser, boardApp)
 	authApp := usage.NewAuthApp(repoAuth, userApp, cookieApp)
-	pinApp := usage.NewPinApp(repoPins, boardApp, s3App)
+	pinApp := usage.NewPinApp(repoPins, boardApp)
 	commentApp := usage.NewCommentApp(repoComments)
 	websocketApp := usage.NewWebsocketApp(userApp)
 	notificationApp := usage.NewNotificationApp(userApp, websocketApp)

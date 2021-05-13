@@ -1,22 +1,23 @@
 package usage
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"image"
-	_ "image/jpeg"
-	_ "image/png"
 	"io"
+	"log"
 	"pinterest/domain/entity"
-	"pinterest/domain/repository"
+	grpcPins "pinterest/services/pins/proto"
+	"time"
 
 	"github.com/EdlinOrg/prominentcolor"
 )
 
 type PinApp struct {
-	p        repository.PinRepository
-	boardApp BoardAppInterface
-	s3App    S3AppInterface
+	grpcClient grpcPins.PinsClient
+	boardApp   BoardAppInterface
 }
 
 type imageInfo struct {
@@ -25,25 +26,8 @@ type imageInfo struct {
 	averageColor string
 }
 
-func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
-	image, _, err := image.Decode(imageFile)
-	if err != nil {
-		return fmt.Errorf("Image decoding failed")
-	}
-
-	imageStruct.height, imageStruct.width = image.Bounds().Dy(), image.Bounds().Dx()
-
-	colors, err := prominentcolor.Kmeans(image)
-	if err != nil {
-		return fmt.Errorf("Could not determine image's most prominent color")
-	}
-	imageStruct.averageColor = colors[0].AsString()
-
-	return nil
-}
-
-func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3AppInterface) *PinApp {
-	return &PinApp{p, boardApp, s3App}
+func NewPinApp(grpcClient grpcPins.PinsClient, boardApp BoardAppInterface) *PinApp {
+	return &PinApp{grpcClient, boardApp}
 }
 
 type PinAppInterface interface {
@@ -68,26 +52,29 @@ func (pn *PinApp) CreatePin(pin *entity.Pin) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	pinID, err := pn.p.CreatePin(pin)
+	grpcPin := grpcPins.Pin{}
+	ConvertToGrpcPin(&grpcPin, pin)
+	pinID, err := pn.grpcClient.CreatePin(context.Background(), &grpcPin)
 	if err != nil {
 		return -1, err
 	}
 
-	err = pn.p.AddPin(initBoardID, pinID)
+	_, err = pn.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
+		BoardID: int64(initBoardID), PinID: pinID.PinID})
 	if err != nil {
-		pn.p.DeletePin(pinID)
+		pn.grpcClient.DeletePin(context.Background(), pinID)
 		return -1, err
 	}
 
-	if pin.BoardID != initBoardID && pin.BoardID != 0 {
-		err = pn.p.AddPin(pin.BoardID, pinID)
+	if grpcPin.BoardID != int64(initBoardID) && grpcPin.BoardID != 0 {
+		err = pn.AddPin(int(grpcPin.BoardID), int(pinID.PinID))
 		if err != nil {
-			pn.p.DeletePin(pinID)
+			pn.grpcClient.DeletePin(context.Background(), pinID)
 			return -1, err
 		}
 	}
 
-	return pinID, nil
+	return int(pinID.PinID), nil
 }
 
 // SavePin adds any pin to native user's board
@@ -98,7 +85,7 @@ func (pn *PinApp) SavePin(userID int, pinID int) error {
 		return err
 	}
 
-	err = pn.p.AddPin(initBoardID, pinID)
+	err = pn.AddPin(initBoardID, pinID)
 	if err != nil {
 		return err
 	}
@@ -109,45 +96,59 @@ func (pn *PinApp) SavePin(userID int, pinID int) error {
 // AddPin adds pin to chosen board
 // It returns nil on success, error on failure
 func (pn *PinApp) AddPin(boardID int, pinID int) error {
-	return pn.p.AddPin(boardID, pinID)
+	_, err := pn.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
+		BoardID: int64(boardID), PinID: int64(pinID),
+	})
+	return err
 }
 
 // GetPin returns pin with passed pinID
 // It returns that pin and nil on success, nil and error on failure
 func (pn *PinApp) GetPin(pinID int) (*entity.Pin, error) {
-	return pn.p.GetPin(pinID)
+	grpcPin, err := pn.grpcClient.GetPin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
+	if err != nil {
+		return nil, err
+	}
+	pin := entity.Pin{}
+	ConvertFromGrpcPin(&pin, grpcPin)
+	return &pin, nil
 }
 
 // GetPins returns all the pins with passed boardID
 // It returns slice of pins and nil on success, nil and error on failure
 func (pn *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
-	return pn.p.GetPins(boardID)
+	grpcPinsList, err := pn.grpcClient.GetPins(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
+	if err != nil {
+		return nil, err
+	}
+	return ConvertGrpcPins(grpcPinsList), nil
 }
 
 // DeletePin deletes pin with passed pinID
 // It returns nil on success and error on failure
 func (pn *PinApp) DeletePin(boardID int, pinID int) error {
-	pin, err := pn.p.GetPin(pinID)
+	pin, err := pn.GetPin(pinID)
 	if err != nil {
 		return err
 	}
 
-	err = pn.p.RemovePin(boardID, pinID)
+	err = pn.RemovePin(boardID, pinID)
 	if err != nil {
 		return err
 	}
 
-	refCount, err := pn.p.PinRefCount(pinID)
+	refCount, err := pn.grpcClient.PinRefCount(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
 		return err
 	}
 
-	if refCount == 0 {
-		err = pn.p.DeletePin(pinID)
+	if refCount.Number == 0 {
+		_, err = pn.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 		if err != nil {
 			return err
 		}
-		return pn.s3App.DeleteFile(pin.ImageLink)
+		_, err = pn.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
+		return err
 	}
 	return nil
 }
@@ -155,19 +156,29 @@ func (pn *PinApp) DeletePin(boardID int, pinID int) error {
 // RemovePin deletes pin from user's passed board
 // It returns nil on success and error on failure
 func (pn *PinApp) RemovePin(boardID int, pinID int) error {
-	return pn.p.RemovePin(boardID, pinID)
+	_, err := pn.grpcClient.RemovePin(context.Background(), &grpcPins.PinInBoard{
+		BoardID: int64(boardID), PinID: int64(pinID),
+	})
+	return err
 }
 
 // SavePicture saves path to image of current pin in database
 // It returns nil on success and error on failure
 func (pn *PinApp) SavePicture(pin *entity.Pin) error {
-	return pn.p.SavePicture(pin)
+	grpcPin := grpcPins.Pin{}
+	ConvertToGrpcPin(&grpcPin, pin)
+	_, err := pn.grpcClient.SavePicture(context.Background(), &grpcPin)
+	return err
 }
 
 // GetLastUserPinID returns path to image of current pin in database
 // It returns nil on success and error on failure
 func (pn *PinApp) GetLastUserPinID(userID int) (int, error) {
-	return pn.p.GetLastUserPinID(userID)
+	grpcPinID, err := pn.grpcClient.GetLastUserPinID(context.Background(), &grpcPins.UserID{ Uid: int64(userID)})
+	if err != nil {
+		return 0, err
+	}
+	return int(grpcPinID.PinID), err
 }
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
@@ -178,33 +189,73 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) err
 		return fmt.Errorf("No pin found to place picture") // TODO: put these errors in entity/errors
 	}
 
-	fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
 
+	fileAsBytes := make([]byte, 0)
 	imageStruct := new(imageInfo)
-	err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
-	if err != nil {
-		return fmt.Errorf("Image parsing failed")
+	switch extension {
+	case ".png":
+	case ".jpg":
+	case ".gif":
+		fileAsBytes, _ = io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
+		err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
+		if err != nil {
+			return fmt.Errorf("Image parsing failed")
+		}
+	default:
+		return fmt.Errorf("File extension not supported")
 	}
 
-	filenamePrefix, err := entity.GenerateRandomString(40) // generating random filename
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stream, err := pn.grpcClient.UploadPicture(ctx)
 	if err != nil {
-		return fmt.Errorf("Could not generate filename")
+		return entity.FileUploadError
+	}
+	req := &grpcPins.UploadImage{
+		Data: &grpcPins.UploadImage_Extension{
+			Extension: extension,
+		},
+	}
+	err = stream.Send(req)
+	if err != nil {
+		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
+	}
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 8*1024*1024)
+
+	for {
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal("cannot read chunk to buffer: ", err)
+		}
+
+		req = &grpcPins.UploadImage{
+			Data: &grpcPins.UploadImage_ChunkData{
+				ChunkData: buffer[:n],
+			},
+		}
+		err = stream.Send(req)
+		if err != nil {
+			log.Fatal("cannot send chunk to server: ", err)
+		}
 	}
 
-	picturePath := "pins/" + filenamePrefix + extension
-	err = pn.s3App.UploadFile(bytes.NewReader(fileAsBytes), picturePath)
+	res, err := stream.CloseAndRecv()
 	if err != nil {
-		return fmt.Errorf("File upload failed")
+		log.Fatal("cannot receive response: ", err)
 	}
 
-	pin.ImageLink = picturePath
+	pin.ImageLink = res.Path
 	pin.ImageHeight = imageStruct.height
 	pin.ImageWidth = imageStruct.width
 	pin.ImageAvgColor = imageStruct.averageColor
 
 	err = pn.SavePicture(pin)
 	if err != nil {
-		pn.s3App.DeleteFile(picturePath)
+		pn.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: res.Path})
 		return fmt.Errorf("Pin saving failed")
 	}
 
@@ -214,11 +265,72 @@ func (pn *PinApp) UploadPicture(pinID int, file io.Reader, extension string) err
 // GetNumOfPins generates the main feed
 // It returns numOfPins pins and nil on success, nil and error on failure
 func (pn *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
-	return pn.p.GetNumOfPins(numOfPins)
+	grpcPinsList, err := pn.grpcClient.GetNumOfPins(context.Background(), &grpcPins.Number{Number: int64(numOfPins)})
+	if err != nil {
+		return nil, err
+	}
+
+	return ConvertGrpcPins(grpcPinsList), nil
 }
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
 func (pn *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
-	return pn.p.SearchPins(keyWords)
+	grpcPinsList, err := pn.grpcClient.SearchPins(context.Background(), &grpcPins.SearchInput{KeyWords: keyWords})
+	if err != nil {
+		return nil, err
+	}
+
+	return ConvertGrpcPins(grpcPinsList), nil
+}
+
+func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
+	image, _, err := image.Decode(imageFile)
+	if err != nil {
+		return fmt.Errorf("Image decoding failed")
+	}
+
+	imageStruct.height, imageStruct.width = image.Bounds().Dy(), image.Bounds().Dx()
+
+	colors, err := prominentcolor.Kmeans(image)
+	if err != nil {
+		return fmt.Errorf("Could not determine image's most prominent color")
+	}
+	imageStruct.averageColor = colors[0].AsString()
+
+	return nil
+}
+
+func ConvertToGrpcPin(grpcPin *grpcPins.Pin, pin *entity.Pin) {
+	grpcPin.UserID = int64(pin.UserID)
+	grpcPin.PinID = int64(pin.PinID)
+	grpcPin.BoardID = int64(pin.BoardID)
+	grpcPin.Title = pin.Title
+	grpcPin.Description = pin.Description
+	grpcPin.ImageAvgColor = pin.ImageAvgColor
+	grpcPin.ImageWidth = int32(pin.ImageWidth)
+	grpcPin.ImageHeight = int32(pin.ImageHeight)
+	grpcPin.ImageLink = pin.ImageLink
+}
+
+func ConvertFromGrpcPin(pin *entity.Pin, grpcPin *grpcPins.Pin) {
+	pin.UserID = int(grpcPin.UserID)
+	pin.PinID = int(grpcPin.PinID)
+	pin.BoardID = int(grpcPin.BoardID)
+	pin.Title = grpcPin.Title
+	pin.Description = grpcPin.Description
+	pin.ImageAvgColor = grpcPin.ImageAvgColor
+	pin.ImageWidth = int(grpcPin.ImageWidth)
+	pin.ImageHeight = int(grpcPin.ImageHeight)
+	pin.ImageLink = grpcPin.ImageLink
+}
+
+func ConvertGrpcPins(grpcPins *grpcPins.PinsList) []entity.Pin {
+	pins := make([]entity.Pin, 0)
+	for _, grpcPin := range grpcPins.Pins {
+		pin := entity.Pin{}
+		ConvertFromGrpcPin(&pin, grpcPin)
+		pins = append(pins, pin)
+	}
+	return pins
 }

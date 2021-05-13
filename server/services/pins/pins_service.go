@@ -612,6 +612,14 @@ func (s *service) PinRefCount(ctx context.Context, pinID *PinID) (*Number, error
 	return &Number{Number: int64(refCount)}, nil
 }
 
+func (s *service) DeleteFile(ctx context.Context, filename *FilePath) (*Error, error) {
+	deleter := s3.New(s.s3)
+	_, err := deleter.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
+		Key:    aws.String(filename.ImagePath),
+	})
+	return &Error{}, handleS3Error(err)
+}
 
 func handleS3Error(err error) error {
 	if err == nil {

@@ -87,6 +87,10 @@ message Number {
   int64 number = 1;
 }
 
+message FilePath {
+  string imagePath = 1;
+}
+
 message Error {}
 
 service Pins {
@@ -108,4 +112,5 @@ service Pins {
   rpc  GetNumOfPins(Number) returns (PinsList) {}
   rpc  SearchPins(SearchInput) returns (PinsList) {}
   rpc  PinRefCount(PinID) returns (Number) {}
+  rpc  DeleteFile(FilePath) returns (Error) {}
 }
