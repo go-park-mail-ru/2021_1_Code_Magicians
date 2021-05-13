@@ -47,6 +47,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	cookieApp := usecase.NewCookieApp(40, 10*time.Hour)
 	authApp := usecase.NewAuthApp(repoUsers, cookieApp)
+	followApp := usecase.NewFollowApp(repoUsers)
 	boardApp := usecase.NewBoardApp(repoBoards)
 	s3App := usecase.NewS3App(sess, s3BucketName)
 	userApp := usecase.NewUserApp(repoUsers, boardApp, s3App)
@@ -58,7 +59,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 
 	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
 	authInfo := auth.NewAuthInfo(userApp, authApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, authApp, s3App, notificationApp, zapLogger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, followApp, s3App, notificationApp, zapLogger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)

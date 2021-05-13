@@ -24,9 +24,6 @@ type UserAppInterface interface {
 	GetUsers() ([]entity.User, error)                                // Get all users
 	GetUserByUsername(username string) (*entity.User, error)         // Get user by his username
 	UpdateAvatar(userID int, file io.Reader, extension string) error // Replace user's avatar with one passed as second parameter
-	Follow(followerID int, followedID int) error                     // Make first user follow second
-	Unfollow(followerID int, followedID int) error                   // Make first user unfollow second
-	CheckIfFollowed(followerID int, followedID int) (bool, error)    // Check if first user follows second. Err != nil if those users are the same
 	SearchUsers(keywords string) ([]entity.User, error)              // Get all users by passed keywords
 }
 
@@ -142,27 +139,6 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 	}
 
 	return nil
-}
-
-func (userApp *UserApp) Follow(followerID int, followedID int) error {
-	if followerID == followedID {
-		return entity.SelfFollowError
-	}
-	return userApp.us.Follow(followerID, followedID)
-}
-
-func (userApp *UserApp) Unfollow(followerID int, followedID int) error {
-	if followerID == followedID {
-		return entity.SelfFollowError
-	}
-	return userApp.us.Unfollow(followerID, followedID)
-}
-
-func (userApp *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
-	if followerID == followedID {
-		return false, entity.SelfFollowError
-	}
-	return userApp.us.CheckIfFollowed(followerID, followedID)
 }
 
 // SearchUsers fetches all users from database suitable with passed keywords

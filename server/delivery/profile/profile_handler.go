@@ -21,17 +21,20 @@ import (
 type ProfileInfo struct {
 	userApp         usecase.UserAppInterface
 	authApp         usecase.AuthAppInterface
+	followApp       usecase.FollowAppInterface
 	s3App           usecase.S3AppInterface
 	notificationApp usecase.NotificationAppInterface
 	logger          *zap.Logger
 }
 
 func NewProfileInfo(userApp usecase.UserAppInterface, authApp usecase.AuthAppInterface,
+	followApp usecase.FollowAppInterface,
 	s3App usecase.S3AppInterface, notificationApp usecase.NotificationAppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
 		authApp:         authApp,
+		followApp:       followApp,
 		s3App:           s3App,
 		notificationApp: notificationApp,
 		logger:          logger,
@@ -259,7 +262,7 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	otherUserID := user.UserID
 	if currentUserID != otherUserID {
 		userOutput.Email = ""
-		followed, err := profileInfo.userApp.CheckIfFollowed(currentUserID, otherUserID)
+		followed, err := profileInfo.followApp.CheckIfFollowed(currentUserID, otherUserID)
 		if err != nil {
 			profileInfo.logger.Info(err.Error(),
 				zap.String("url", r.RequestURI),
@@ -367,7 +370,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	}
 
 	followedID := followedUser.UserID
-	err = profileInfo.userApp.Follow(followerID, followedID)
+	err = profileInfo.followApp.Follow(followerID, followedID)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", followerID), zap.String("method", r.Method))
@@ -443,7 +446,7 @@ func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *
 	}
 
 	followedID := followedUser.UserID
-	err = profileInfo.userApp.Unfollow(followerID, followedID)
+	err = profileInfo.followApp.Unfollow(followerID, followedID)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", followerID), zap.String("method", r.Method))
