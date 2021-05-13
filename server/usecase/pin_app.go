@@ -199,7 +199,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	case ".png":
 	case ".jpg":
 	case ".gif":
-		fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
+		fileAsBytes, _ = io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
 		err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
 		if err != nil {
 			return fmt.Errorf("Image parsing failed")
