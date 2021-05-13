@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -192,12 +193,19 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		return entity.PinNotFoundError
 	}
 
-	fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
-
+	fileAsBytes := make([]byte, 0)
 	imageStruct := new(imageInfo)
-	err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
-	if err != nil {
-		return fmt.Errorf("Image parsing failed")
+	switch extension {
+	case ".png":
+	case ".jpg":
+	case ".gif":
+		fileAsBytes, _ := io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
+		err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
+		if err != nil {
+			return fmt.Errorf("Image parsing failed")
+		}
+	default:
+		return fmt.Errorf("File extension not supported")
 	}
 
 	filenamePrefix, err := GenerateRandomString(40) // generating random filename
