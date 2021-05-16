@@ -13,8 +13,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"pinterest/usage"
-	"pinterest/usage/mock_application"
+	"pinterest/application"
+	"pinterest/application/mock_application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
 
@@ -30,7 +30,7 @@ type authInputStruct struct {
 	headers    map[string][]string
 	postBody   []byte
 	authFunc   func(w http.ResponseWriter, r *http.Request)
-	middleware func(next http.HandlerFunc, cookieApp usage.CookieAppInterface) http.HandlerFunc
+	middleware func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms authInputStruct to http.Request, adding global cookies
@@ -188,7 +188,7 @@ func TestAuthSuccess(t *testing.T) {
 
 	testInfo = AuthInfo{
 		userApp:      mockUser,
-		cookieApp:    usage.NewCookieApp(40, 10*time.Hour),
+		cookieApp:    application.NewCookieApp(40, 10*time.Hour),
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
 		websocketApp: mockWebsocket,
@@ -418,7 +418,7 @@ func TestAuthFailure(t *testing.T) {
 
 	testInfo = AuthInfo{
 		userApp:      mockUser,
-		cookieApp:    usage.NewCookieApp(40, 10*time.Hour),
+		cookieApp:    application.NewCookieApp(40, 10*time.Hour),
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
 		websocketApp: mockWebsocket,

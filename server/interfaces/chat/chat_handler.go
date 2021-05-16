@@ -3,7 +3,7 @@ package chat
 import (
 	"encoding/json"
 	"net/http"
-	"pinterest/usage"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
 
@@ -12,12 +12,12 @@ import (
 )
 
 type ChatInfo struct {
-	chatApp usage.ChatAppInterface
-	userApp usage.UserAppInterface
+	chatApp application.ChatAppInterface
+	userApp application.UserAppInterface
 	logger  *zap.Logger
 }
 
-func NewChatnfo(chatApp usage.ChatAppInterface, userApp usage.UserAppInterface,
+func NewChatnfo(chatApp application.ChatAppInterface, userApp application.UserAppInterface,
 	logger *zap.Logger) *ChatInfo {
 	return &ChatInfo{
 		chatApp: chatApp,

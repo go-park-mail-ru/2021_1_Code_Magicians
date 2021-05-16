@@ -3,7 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"net/http"
-	"pinterest/usage"
+	"pinterest/application"
 	"pinterest/domain/entity"
 
 	"github.com/gorilla/websocket"
@@ -11,15 +11,15 @@ import (
 )
 
 type WebsocketInfo struct {
-	notificationApp usage.NotificationAppInterface
-	chatApp         usage.ChatAppInterface
-	websocketApp    usage.WebsocketAppInterface
+	notificationApp application.NotificationAppInterface
+	chatApp         application.ChatAppInterface
+	websocketApp    application.WebsocketAppInterface
 	csrfOn          bool
 	logger          *zap.Logger
 }
 
-func NewWebsocketInfo(notificationApp usage.NotificationAppInterface, chatApp usage.ChatAppInterface,
-	websocketApp usage.WebsocketAppInterface,
+func NewWebsocketInfo(notificationApp application.NotificationAppInterface, chatApp application.ChatAppInterface,
+	websocketApp application.WebsocketAppInterface,
 	csrfOn bool, logger *zap.Logger) *WebsocketInfo {
 	return &WebsocketInfo{
 		notificationApp: notificationApp,

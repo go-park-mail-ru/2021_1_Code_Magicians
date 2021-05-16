@@ -2,24 +2,29 @@ package auth
 
 import (
 	"context"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	"net/http"
-	"os"
 	"pinterest/domain/entity"
 	. "pinterest/services/auth/proto"
+	"sync"
 	"time"
 )
 
 type service struct {
-	db *pgxpool.Pool
+	db               *pgxpool.Pool
+	sessionsByValue  map[string]*CookieInfo
+	sessionsByUserID map[int64]*CookieInfo // Each value from sessionsByUserID is also sessionsByValue and vice versa
+	mu               sync.Mutex
 }
 
 func NewService(db *pgxpool.Pool) *service {
-	return &service{db}
+	return &service{
+		db:               db,
+		sessionsByValue:  make(map[string]*CookieInfo),
+		sessionsByUserID: make(map[int64]*CookieInfo),
+		mu:               sync.Mutex{},
+	}
 }
 
 const GetUserPasswordQuery = "SELECT passwordhash FROM Users WHERE username=$1;"
@@ -53,50 +58,52 @@ func (s *service) LoginUser(ctx context.Context, userCredentials *UserAuth) (*Er
 	return &Error{}, nil
 }
 
-func (s *service) GenerateCookie(ctx context.Context, nothing *empty.Empty) (*Cookie, error) {
-	sessionValue, err := entity.GenerateRandomString(40) // cookie value - random string
-	if err != nil {
-		return nil, entity.CookieGenerationError
-	}
-
-	expirationTime := time.Now().Add(10 * time.Hour)
-	if os.Getenv("HTTPS_ON") == "true" {
-		return &Cookie{
-			Name:     entity.CookieNameKey,
-			Value:    sessionValue,
-			Path:     "/", // Cookie should be usable on entire website
-			Expires:  timestamppb.New(expirationTime),
-			Secure:   true, // We use HTTPS
-			HttpOnly: true, // So that frontend won't have direct access to cookies
-			SameSite: int64(http.SameSiteNoneMode),
-		}, nil
-	}
-	return &Cookie{
-		Name:     entity.CookieNameKey,
-		Value:    sessionValue,
-		Path:     "/", // Cookie should be usable on entire website
-		Expires:  timestamppb.New(expirationTime),
-		HttpOnly: true, // So that frontend won't have direct access to cookies
-	}, nil
-}
-
 func (s *service) AddCookieInfo(ctx context.Context, cookieInfo *CookieInfo) (*Error, error) {
-	return nil, nil
+	s.mu.Lock()
+	s.sessionsByValue[cookieInfo.Cookie.Value] = &(*cookieInfo) // Copying by value
+	s.sessionsByUserID[cookieInfo.UserID] = s.sessionsByValue[cookieInfo.Cookie.Value]
+	s.mu.Unlock()
+
+	return &Error{}, nil
 }
-func (s *service) SearchByValue(ctx context.Context, cookie *Cookie) (*CheckCookieResponse, error) {
-	return nil, nil
+
+func (s *service) SearchByValue(ctx context.Context, cookieVal *CookieValue) (*CheckCookieResponse, error) {
+	s.mu.Lock()
+	cookieInfo, found := s.sessionsByValue[cookieVal.CookieValue]
+	s.mu.Unlock()
+
+	if !found {
+		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	}
+
+	if cookieInfo.Cookie.Expires.AsTime().Before(time.Now()) { // We check if cookie is not past it's expiration date
+		s.RemoveCookie(ctx, cookieInfo)
+		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	}
+
+	return &CheckCookieResponse{CookieInfo: cookieInfo, IsCookie: found}, nil
 }
+
 func (s *service) SearchByUserID(ctx context.Context, userID *UserID) (*CheckCookieResponse, error) {
-	return nil, nil
+	s.mu.Lock()
+	cookieInfo, found := s.sessionsByUserID[userID.Uid]
+	s.mu.Unlock()
+
+	if !found {
+		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	}
+
+	if cookieInfo.Cookie.Expires.AsTime().Before(time.Now()) { // We check if cookie is not past it's expiration date
+		s.RemoveCookie(ctx, cookieInfo)
+		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	}
+	return &CheckCookieResponse{CookieInfo: cookieInfo, IsCookie: found}, nil
 }
+
 func (s *service) RemoveCookie(ctx context.Context, cookieInfo *CookieInfo) (*Error, error) {
-	return nil, nil
-}
-
-func (s *service) LogoutUser(ctx context.Context, userID *UserID) (*Error, error) {
-	return nil, nil
-}
-
-func (s *service) CheckCookie(ctx context.Context, cookie *Cookie) (*CheckCookieResponse, error) {
-	return nil, nil
+	s.mu.Lock()
+	delete(s.sessionsByValue, cookieInfo.Cookie.Value)
+	delete(s.sessionsByUserID, cookieInfo.UserID)
+	s.mu.Unlock()
+	return &Error{}, nil
 }

@@ -21,7 +21,7 @@ import (
 	protoAuth "pinterest/services/auth/proto"
 	protoComments "pinterest/services/comments/proto"
 	protoPins "pinterest/services/pins/proto"
-	"pinterest/usage"
+	"pinterest/application"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -99,16 +99,16 @@ func runServer(addr string) {
 	repoPins := protoPins.NewPinsClient(sessionPins)
 	repoComments := protoComments.NewCommentsClient(sessionComments)
 
-	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
-	boardApp := usage.NewBoardApp(repoPins)
-	s3App := usage.NewS3App(sess, os.Getenv("BUCKET_NAME"))
-	userApp := usage.NewUserApp(repoUser, boardApp)
-	authApp := usage.NewAuthApp(repoAuth, userApp, cookieApp)
-	pinApp := usage.NewPinApp(repoPins, boardApp)
-	commentApp := usage.NewCommentApp(repoComments)
-	websocketApp := usage.NewWebsocketApp(userApp)
-	notificationApp := usage.NewNotificationApp(userApp, websocketApp)
-	chatApp := usage.NewChatApp(userApp, websocketApp)
+	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
+	boardApp := application.NewBoardApp(repoPins)
+	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
+	userApp := application.NewUserApp(repoUser, boardApp)
+	authApp := application.NewAuthApp(repoAuth, userApp, cookieApp)
+	pinApp := application.NewPinApp(repoPins, boardApp)
+	commentApp := application.NewCommentApp(repoComments)
+	websocketApp := application.NewWebsocketApp(userApp)
+	notificationApp := application.NewNotificationApp(userApp, websocketApp)
+	chatApp := application.NewChatApp(userApp, websocketApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp, logger)
 	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, logger)

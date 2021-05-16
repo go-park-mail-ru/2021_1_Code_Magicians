@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"log"
@@ -10,9 +12,6 @@ import (
 	"os"
 	authService "pinterest/services/auth"
 	authProto "pinterest/services/auth/proto"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func runService(addr string) {

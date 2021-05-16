@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"path/filepath"
-	"pinterest/usage"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
 	"strings"
@@ -15,15 +15,15 @@ import (
 )
 
 type PinInfo struct {
-	pinApp   usage.PinAppInterface
-	boardApp usage.BoardAppInterface
-	s3App    usage.S3AppInterface
+	pinApp   application.PinAppInterface
+	boardApp application.BoardAppInterface
+	s3App    application.S3AppInterface
 	logger   *zap.Logger
 }
 
-func NewPinInfo(pinApp usage.PinAppInterface,
-	s3App usage.S3AppInterface,
-	boardApp usage.BoardAppInterface,
+func NewPinInfo(pinApp application.PinAppInterface,
+	s3App application.S3AppInterface,
+	boardApp application.BoardAppInterface,
 	logger *zap.Logger) *PinInfo {
 	return &PinInfo{
 		pinApp:   pinApp,
@@ -109,7 +109,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "usage/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
@@ -238,7 +238,7 @@ func (pinInfo *PinInfo) HandleGetPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "usage/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
 }
@@ -280,7 +280,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "usage/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
 }
@@ -318,7 +318,7 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "usage/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(pinsBody)
 }
@@ -355,7 +355,7 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "usage/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }

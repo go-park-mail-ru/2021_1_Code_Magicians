@@ -14,10 +14,10 @@ import (
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"pinterest/interfaces/websocket"
-	"pinterest/usage"
+	"pinterest/application"
 )
 
-func CreateRouter(authApp *usage.AuthApp, boardsInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
+func CreateRouter(authApp *application.AuthApp, boardsInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
 	pinsInfo *pin.PinInfo, commentsInfo *comment.CommentInfo, websocketInfo *websocket.WebsocketInfo,
 	notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()

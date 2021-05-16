@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
-	"pinterest/usage"
+	"pinterest/application"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -13,18 +14,18 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	authApp      usage.AuthAppInterface
-	userApp      usage.UserAppInterface
-	cookieApp    usage.CookieAppInterface
-	s3App        usage.S3AppInterface
-	boardApp     usage.BoardAppInterface     // For initial user's board
-	websocketApp usage.WebsocketAppInterface // For setting CSRF token during  login
+	authApp      application.AuthAppInterface
+	userApp      application.UserAppInterface
+	cookieApp    application.CookieAppInterface
+	s3App        application.S3AppInterface
+	boardApp     application.BoardAppInterface     // For initial user's board
+	websocketApp application.WebsocketAppInterface // For setting CSRF token during  login
 	logger       *zap.Logger
 }
 
-func NewAuthInfo(authApp usage.AuthAppInterface, userApp usage.UserAppInterface, cookieApp usage.CookieAppInterface,
-	s3App usage.S3AppInterface, boardApp usage.BoardAppInterface,
-	websocketApp usage.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
+func NewAuthInfo(authApp application.AuthAppInterface, userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
+	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
+	websocketApp application.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
 		authApp:      authApp,
 		userApp:      userApp,
@@ -72,7 +73,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := info.authApp.GenerateCookie()
+	cookie, err := info.cookieApp.GenerateCookie()
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -82,7 +83,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser.UserID, err = info.userApp.CreateUser(&newUser)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		if err.Error() == entity.UsernameEmailDuplicateError.Error() {
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}

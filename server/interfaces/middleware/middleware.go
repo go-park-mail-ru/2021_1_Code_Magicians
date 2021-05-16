@@ -2,16 +2,22 @@ package middleware
 
 import (
 	"context"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 
-	"pinterest/usage"
 	"pinterest/domain/entity"
+	"pinterest/application"
 
 	"github.com/gorilla/csrf"
 )
 
-func AuthMid(next http.HandlerFunc, cookieApp usage.AuthAppInterface) http.HandlerFunc {
+var logger *zap.Logger
+
+func init() {
+	logger, _ = zap.NewDevelopment()
+}
+
+func AuthMid(next http.HandlerFunc, cookieApp application.AuthAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, found := CheckCookies(r, cookieApp)
 		if !found {
@@ -26,7 +32,7 @@ func AuthMid(next http.HandlerFunc, cookieApp usage.AuthAppInterface) http.Handl
 	})
 }
 
-func NoAuthMid(next http.HandlerFunc, cookieApp usage.AuthAppInterface) http.HandlerFunc {
+func NoAuthMid(next http.HandlerFunc, cookieApp application.AuthAppInterface) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, found := CheckCookies(r, cookieApp)
 		if found {
@@ -43,7 +49,7 @@ func PanicMid(next http.Handler) http.Handler {
 		defer func() {
 			err := recover()
 			if err != nil {
-				log.Println(err)
+				logger.Info(err.(error).Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
@@ -64,7 +70,7 @@ func CSRFSettingMid(next http.Handler) http.Handler {
 }
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
-func CheckCookies(r *http.Request, cookieApp usage.AuthAppInterface) (*entity.CookieInfo, bool) {
+func CheckCookies(r *http.Request, cookieApp application.AuthAppInterface) (*entity.CookieInfo, bool) {
 	cookie, err := r.Cookie(entity.CookieNameKey)
 	if err == http.ErrNoCookie {
 		return nil, false

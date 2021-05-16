@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
-	"pinterest/usage"
+	"pinterest/application"
 	"strconv"
 	"strings"
 	"time"
@@ -19,16 +19,16 @@ import (
 
 // ProfileInfo keep information about apps and cookies needed for profile package
 type ProfileInfo struct {
-	userApp         usage.UserAppInterface
-	authApp         usage.AuthAppInterface
-	cookieApp       usage.CookieAppInterface
-	s3App           usage.S3AppInterface
-	notificationApp usage.NotificationAppInterface
+	userApp         application.UserAppInterface
+	authApp         application.AuthAppInterface
+	cookieApp       application.CookieAppInterface
+	s3App           application.S3AppInterface
+	notificationApp application.NotificationAppInterface
 	logger          *zap.Logger
 }
 
-func NewProfileInfo(userApp usage.UserAppInterface, authApp usage.AuthAppInterface, cookieApp usage.CookieAppInterface,
-	s3App usage.S3AppInterface, notificationApp usage.NotificationAppInterface,
+func NewProfileInfo(userApp application.UserAppInterface, authApp application.AuthAppInterface, cookieApp application.CookieAppInterface,
+	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
@@ -143,7 +143,7 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 func (profileInfo *ProfileInfo) HandleDeleteProfile(w http.ResponseWriter, r *http.Request) {
 	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
 
-	err := profileInfo.cookieApp.RemoveCookie(userCookie)
+	err := profileInfo.authApp.LogoutUser(userCookie.UserID)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userCookie.UserID), zap.String("method", r.Method))

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"pinterest/usage"
-	"pinterest/usage/mock_application"
+	"pinterest/application"
+	"pinterest/application/mock_application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/middleware"
@@ -29,7 +29,7 @@ type InputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	profileFunc  func(w http.ResponseWriter, r *http.Request)
-	middleware   func(next http.HandlerFunc, cookieApp usage.CookieAppInterface) http.HandlerFunc
+	middleware   func(next http.HandlerFunc, cookieApp application.CookieAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms InputStruct to http.Request, adding global cookies
@@ -261,7 +261,7 @@ func TestBoards(t *testing.T) {
 	mockWebsocket := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
-	cookieApp := usage.NewCookieApp(40, 10*time.Hour)
+	cookieApp := application.NewCookieApp(40, 10*time.Hour)
 
 	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{

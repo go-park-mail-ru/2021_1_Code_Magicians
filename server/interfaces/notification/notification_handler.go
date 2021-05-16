@@ -2,7 +2,7 @@ package notification
 
 import (
 	"net/http"
-	"pinterest/usage"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"strconv"
 
@@ -12,11 +12,11 @@ import (
 )
 
 type NotificationInfo struct {
-	notificationApp usage.NotificationAppInterface
+	notificationApp application.NotificationAppInterface
 	logger          *zap.Logger
 }
 
-func NewNotificationInfo(notificationApp usage.NotificationAppInterface, logger *zap.Logger) *NotificationInfo {
+func NewNotificationInfo(notificationApp application.NotificationAppInterface, logger *zap.Logger) *NotificationInfo {
 	return &NotificationInfo{
 		notificationApp: notificationApp,
 		logger:          logger,
