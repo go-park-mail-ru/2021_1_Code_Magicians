@@ -14,8 +14,8 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	authApp      application.AuthAppInterface
 	userApp      application.UserAppInterface
+	authApp      application.AuthAppInterface
 	cookieApp    application.CookieAppInterface
 	s3App        application.S3AppInterface
 	boardApp     application.BoardAppInterface     // For initial user's board
@@ -23,12 +23,12 @@ type AuthInfo struct {
 	logger       *zap.Logger
 }
 
-func NewAuthInfo(authApp application.AuthAppInterface, userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
+func NewAuthInfo(userApp application.UserAppInterface, authApp application.AuthAppInterface, cookieApp application.CookieAppInterface,
 	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
 	websocketApp application.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
-		authApp:      authApp,
 		userApp:      userApp,
+		authApp:      authApp,
 		cookieApp:    cookieApp,
 		s3App:        s3App,
 		boardApp:     boardApp,

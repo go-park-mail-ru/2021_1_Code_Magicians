@@ -167,6 +167,7 @@ func TestAuthSuccess(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 
 	expectedUser := entity.User{
@@ -191,9 +192,10 @@ func TestAuthSuccess(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
+	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).Times(1)
 	mockAuthApp.EXPECT().LogoutUser(expectedUser.UserID).Return(nil).Times(1)
@@ -207,6 +209,7 @@ func TestAuthSuccess(t *testing.T) {
 	testInfo = AuthInfo{
 		userApp:      mockUserApp,
 		authApp:      mockAuthApp,
+		cookieApp:    mockCookieApp,
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
 		websocketApp: mockWebsocketApp,
@@ -418,6 +421,7 @@ func TestAuthFailure(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
@@ -431,16 +435,25 @@ func TestAuthFailure(t *testing.T) {
 		Avatar:    string(entity.AvatarDefaultPath),
 		Salt:      "",
 	}
+	expectedCookie := http.Cookie{
+		Name:     entity.CookieNameKey,
+		Value:    "someRandomSessionValue",
+		Path:     "/", // Cookie should be usable on entire website
+		Expires:  time.Now().Add(10 * time.Hour),
+		HttpOnly: true,
+	}
 
 	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
 
 	mockAuthApp.EXPECT().LoginUser(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1) // Checking incorrect username/password pair
 
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(-1, entity.UsernameEmailDuplicateError).Times(1)
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
+	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(-1, entity.UsernameEmailDuplicateError).Times(1) // User creation with username conflict
 
 	testInfo = AuthInfo{
 		userApp:      mockUserApp,
 		authApp:      mockAuthApp,
+		cookieApp:    mockCookieApp,
 		s3App:        nil, // We don't need S3 bucket in these tests
 		boardApp:     nil, // We don't really care about boards in these tests
 		websocketApp: mockWebsocketApp,
