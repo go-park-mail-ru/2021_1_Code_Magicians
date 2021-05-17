@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"net/http"
 	"os"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
@@ -17,12 +16,14 @@ import (
 	"pinterest/interfaces/profile"
 	"pinterest/interfaces/routing"
 	"pinterest/interfaces/websocket"
-	protoUser "pinterest/services/user/proto"
 	protoAuth "pinterest/services/auth/proto"
 	protoComments "pinterest/services/comments/proto"
 	protoPins "pinterest/services/pins/proto"
-	"pinterest/application"
+	protoUser "pinterest/services/user/proto"
 	"time"
+
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -111,7 +112,7 @@ func runServer(addr string) {
 	chatApp := application.NewChatApp(userApp, websocketApp)
 
 	boardsInfo := board.NewBoardInfo(boardApp, logger)
-	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, logger)
+	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)
 	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, logger)
 	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
