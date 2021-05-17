@@ -1,0 +1,1 @@
+This layer is a pad between domain (DB) and interfaces (JSON interfaces)
