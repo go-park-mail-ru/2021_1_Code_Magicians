@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+// protoc --go_out=plugins=grpc:. *.proto
+// PATH="${PATH}:${HOME}/go/bin" protoc --go_out=plugins=grpc:. *.proto
+
+option go_package = "./";
+import "google/protobuf/timestamp.proto";
+
+
+package auth;
+
+message UserAuth {
+  string Username = 1;
+  string Password = 2;
+}
+
+message CookieValue {
+  string cookieValue = 1;
+}
+message UserID {
+  int64 uid = 1;
+}
+
+message Cookie {
+    string Value = 1;
+    google.protobuf.Timestamp Expires = 2;
+}
+
+message CookieInfo {
+  int64 userID = 1;
+  Cookie cookie = 2;
+}
+
+message CheckCookieResponse {
+  CookieInfo cookieInfo = 1;
+  bool isCookie = 2;
+}
+
+message Error {}
+
+service Auth {
+  rpc   LoginUser(UserAuth) returns (Error) {}
+  rpc   AddCookieInfo(CookieInfo) returns (Error) {}
+  rpc   SearchByValue(CookieValue) returns (CheckCookieResponse) {}
+  rpc   SearchByUserID(UserID) returns (CheckCookieResponse) {}
+  rpc   RemoveCookie(CookieInfo) returns (Error) {}
+}

@@ -6,6 +6,7 @@ import (
 	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/middleware"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -13,20 +14,22 @@ import (
 
 // AuthInfo keep information about apps and cookies needed for auth package
 type AuthInfo struct {
-	userApp      application.UserAppInterface
 	authApp      application.AuthAppInterface
+	userApp      application.UserAppInterface
+	cookieApp    application.CookieAppInterface
 	s3App        application.S3AppInterface
 	boardApp     application.BoardAppInterface     // For initial user's board
 	websocketApp application.WebsocketAppInterface // For setting CSRF token during  login
 	logger       *zap.Logger
 }
 
-func NewAuthInfo(userApp application.UserAppInterface, authApp application.AuthAppInterface,
+func NewAuthInfo(authApp application.AuthAppInterface, userApp application.UserAppInterface, cookieApp application.CookieAppInterface,
 	s3App application.S3AppInterface, boardApp application.BoardAppInterface,
 	websocketApp application.WebsocketAppInterface, logger *zap.Logger) *AuthInfo {
 	return &AuthInfo{
-		userApp:      userApp,
 		authApp:      authApp,
+		userApp:      userApp,
+		cookieApp:    cookieApp,
 		s3App:        s3App,
 		boardApp:     boardApp,
 		websocketApp: websocketApp,
@@ -61,10 +64,17 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookie, err := info.cookieApp.GenerateCookie()
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	newUser.UserID, err = info.userApp.CreateUser(&newUser)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		if err == entity.UsernameEmailDuplicateError {
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
 			w.WriteHeader(http.StatusConflict)
 			return
 		}
@@ -72,7 +82,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookieInfo, err := info.authApp.LoginUser(newUser.Username, newUser.Password)
+	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{newUser.UserID, cookie})
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		info.userApp.DeleteUser(newUser.UserID)
@@ -89,7 +99,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, cookieInfo.Cookie)
+	http.SetCookie(w, cookie)
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -102,7 +112,9 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	cookieInfo, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
+
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {

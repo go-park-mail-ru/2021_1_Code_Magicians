@@ -3,39 +3,31 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"net/http"
 	"os"
+	"pinterest/domain/entity"
+	"pinterest/interfaces/auth"
+	"pinterest/interfaces/board"
+	"pinterest/interfaces/chat"
+	"pinterest/interfaces/comment"
+	"pinterest/interfaces/notification"
+	"pinterest/interfaces/pin"
+	"pinterest/interfaces/profile"
 	"pinterest/interfaces/routing"
+	"pinterest/interfaces/websocket"
+	protoUser "pinterest/services/user/proto"
+	protoAuth "pinterest/services/auth/proto"
+	protoComments "pinterest/services/comments/proto"
+	protoPins "pinterest/services/pins/proto"
+	"pinterest/application"
+	"time"
 
-	"go.uber.org/zap"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
-
-// connectAws returns session that can be used to connect to Amazon Web Service
-func connectAws() *session.Session {
-	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
-	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-	myRegion := os.Getenv("AWS_REGION")
-	sess, err := session.NewSession(
-		&aws.Config{
-			Region: aws.String(myRegion),
-			Credentials: credentials.NewStaticCredentials(
-				accessKeyID,
-				secretAccessKey,
-				"", // a token will be created when the session is used.
-			),
-		})
-	if err != nil {
-		panic(err)
-	}
-	return sess
-}
 
 func runServer(addr string) {
 	logger, _ := zap.NewDevelopment()
@@ -67,10 +59,70 @@ func runServer(addr string) {
 		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
 		return
 	}
-
 	defer conn.Close()
+	sess := entity.ConnectAws()
+	// TODO divide file
+
+	//
+	//var kacp = keepalive.ClientParameters{
+	//	Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+	//	Timeout:             time.Second,      // wait 1 second for ping back
+	//	PermitWithoutStream: true,             // send pings even without active streams
+	//}
+
+	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for User service")
+	}
+	defer sessionUser.Close()
+
+	sessionAuth, err := grpc.Dial("127.0.0.1:8083", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Auth service")
+	}
+	defer sessionAuth.Close()
+
+	sessionPins, err := grpc.Dial("127.0.0.1:8084", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Pins service")
+	}
+	defer sessionPins.Close()
+
+	sessionComments, err := grpc.Dial("127.0.0.1:8085", grpc.WithInsecure())
+	if err != nil {
+		sugarLogger.Fatal("Can not create session for Comments service")
+	}
+	defer sessionComments.Close()
+
+	repoUser := protoUser.NewUserClient(sessionUser)
+	repoAuth := protoAuth.NewAuthClient(sessionAuth)
+	repoPins := protoPins.NewPinsClient(sessionPins)
+	repoComments := protoComments.NewCommentsClient(sessionComments)
+
+	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
+	boardApp := application.NewBoardApp(repoPins)
+	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
+	userApp := application.NewUserApp(repoUser, boardApp)
+	authApp := application.NewAuthApp(repoAuth, userApp, cookieApp)
+	pinApp := application.NewPinApp(repoPins, boardApp)
+	commentApp := application.NewCommentApp(repoComments)
+	websocketApp := application.NewWebsocketApp(userApp)
+	notificationApp := application.NewNotificationApp(userApp, websocketApp)
+	chatApp := application.NewChatApp(userApp, websocketApp)
+
+	boardsInfo := board.NewBoardInfo(boardApp, logger)
+	authInfo := auth.NewAuthInfo(authApp, userApp, cookieApp, s3App, boardApp, websocketApp, logger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, logger)
+	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
+	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
+	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
+	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
+	chatInfo := chat.NewChatnfo(chatApp, userApp, logger)
+	// TODO divide file
+
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(conn, connectAws(), os.Getenv("BUCKET_NAME"), os.Getenv("CSRF_ON") == "true")
+	r := routing.CreateRouter(authApp, boardsInfo, authInfo, profileInfo, pinsInfo, commentsInfo,
+		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {

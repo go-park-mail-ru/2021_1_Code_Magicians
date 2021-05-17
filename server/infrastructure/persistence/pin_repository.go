@@ -262,7 +262,7 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"GROUP BY boards.userID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
-// GetLastUserPinID
+// GetLastPinID
 func (r *PinsRepo) GetLastPinID(userID int) (int, error) {
 	tx, err := r.db.Begin(context.Background())
 	if err != nil {

@@ -21,17 +21,19 @@ import (
 type ProfileInfo struct {
 	userApp         application.UserAppInterface
 	authApp         application.AuthAppInterface
+	cookieApp       application.CookieAppInterface
 	s3App           application.S3AppInterface
 	notificationApp application.NotificationAppInterface
 	logger          *zap.Logger
 }
 
-func NewProfileInfo(userApp application.UserAppInterface, authApp application.AuthAppInterface,
+func NewProfileInfo(userApp application.UserAppInterface, authApp application.AuthAppInterface, cookieApp application.CookieAppInterface,
 	s3App application.S3AppInterface, notificationApp application.NotificationAppInterface,
 	logger *zap.Logger) *ProfileInfo {
 	return &ProfileInfo{
 		userApp:         userApp,
 		authApp:         authApp,
+		cookieApp:       cookieApp,
 		s3App:           s3App,
 		notificationApp: notificationApp,
 		logger:          logger,
@@ -70,7 +72,7 @@ func (profileInfo *ProfileInfo) HandleChangePassword(w http.ResponseWriter, r *h
 	}
 
 	user.Password = userInput.Password
-	err = profileInfo.userApp.SaveUser(user)
+	err = profileInfo.userApp.ChangePassword(user)
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -127,8 +129,10 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 		switch err {
 		case entity.UsernameEmailDuplicateError:
 			w.WriteHeader(http.StatusConflict)
+			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		return
 	}
@@ -168,7 +172,6 @@ func (profileInfo *ProfileInfo) HandleGetProfile(w http.ResponseWriter, r *http.
 	var err error
 	vars := mux.Vars(r)
 	idStr, passedID := vars[string(entity.IDKey)]
-
 	switch passedID {
 	case true:
 		{
@@ -400,6 +403,7 @@ func (profileInfo *ProfileInfo) HandleFollowProfile(w http.ResponseWriter, r *ht
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	return
 }
 
 func (profileInfo *ProfileInfo) HandleUnfollowProfile(w http.ResponseWriter, r *http.Request) {
@@ -482,7 +486,6 @@ func (profileInfo *ProfileInfo) HandleGetProfilesByKeyWords(w http.ResponseWrite
 	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
 
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)
-
 	users, err := profileInfo.userApp.SearchUsers(strings.ToLower(keyString))
 	if err != nil {
 		profileInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"pinterest/application"
-	"pinterest/infrastructure/persistence"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
@@ -14,17 +13,14 @@ import (
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
 	"pinterest/interfaces/websocket"
-	"time"
 
-	"go.uber.org/zap"
-
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string, csrfOn bool) *mux.Router {
+func CreateRouter(authApp *application.AuthApp, boardsInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
+	pinsInfo *pin.PinInfo, commentsInfo *comment.CommentInfo, websocketInfo *websocket.WebsocketInfo,
+	notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
@@ -37,33 +33,6 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 		r.Use(csrfMid)
 		r.Use(mid.CSRFSettingMid)
 	}
-	zapLogger, _ := zap.NewDevelopment()
-	defer zapLogger.Sync()
-
-	repoUsers := persistence.NewUserRepository(conn)
-	repoPins := persistence.NewPinsRepository(conn)
-	repoBoards := persistence.NewBoardsRepository(conn)
-	repoComments := persistence.NewCommentsRepository(conn)
-
-	cookieApp := application.NewCookieApp(40, 10*time.Hour)
-	authApp := application.NewAuthApp(repoUsers, cookieApp)
-	boardApp := application.NewBoardApp(repoBoards)
-	s3App := application.NewS3App(sess, s3BucketName)
-	userApp := application.NewUserApp(repoUsers, boardApp, s3App)
-	pinApp := application.NewPinApp(repoPins, boardApp, s3App)
-	commentApp := application.NewCommentApp(repoComments, pinApp)
-	websocketApp := application.NewWebsocketApp(userApp)
-	notificationApp := application.NewNotificationApp(userApp, websocketApp)
-	chatApp := application.NewChatApp(userApp, websocketApp)
-
-	boardsInfo := board.NewBoardInfo(boardApp, zapLogger)
-	authInfo := auth.NewAuthInfo(userApp, authApp, s3App, boardApp, websocketApp, zapLogger)
-	profileInfo := profile.NewProfileInfo(userApp, authApp, s3App, notificationApp, zapLogger)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, zapLogger)
-	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, zapLogger)
-	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, csrfOn, zapLogger)
-	notificationInfo := notification.NewNotificationInfo(notificationApp, zapLogger)
-	chatInfo := chat.NewChatnfo(chatApp, userApp, zapLogger)
 
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authApp)).Methods("POST")

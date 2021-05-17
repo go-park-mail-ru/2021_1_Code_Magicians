@@ -1,1 +1,0 @@
-This layer implements methods of direct DB access from interfaces specified in domain layer

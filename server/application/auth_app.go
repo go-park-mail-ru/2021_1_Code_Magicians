@@ -1,20 +1,25 @@
 package application
 
 import (
+	"context"
 	"net/http"
 	"pinterest/domain/entity"
-	"pinterest/domain/repository"
+	grpcAuth "pinterest/services/auth/proto"
+	_ "pinterest/services/user/proto"
+	"strings"
 )
 
 type AuthApp struct {
-	us        repository.UserRepository
-	cookieApp CookieAppInterface
+	grpcClient grpcAuth.AuthClient
+	us         UserAppInterface
+	cookieApp  CookieAppInterface
 }
 
-func NewAuthApp(us repository.UserRepository, cookieApp CookieAppInterface) *AuthApp {
+func NewAuthApp(grpcClient grpcAuth.AuthClient, us UserAppInterface, cookieApp CookieAppInterface) *AuthApp {
 	return &AuthApp{
-		us:        us,
-		cookieApp: cookieApp,
+		grpcClient: grpcClient,
+		us:         us,
+		cookieApp:  cookieApp,
 	}
 }
 
@@ -29,13 +34,22 @@ func (authApp *AuthApp) LoginUser(username string, password string) (*entity.Coo
 	if err != nil {
 		return nil, err
 	}
-	if user.Password != password { // TODO: hashing
-		return nil, entity.IncorrectPasswordError
+
+	_, err = authApp.grpcClient.LoginUser(context.Background(),
+		&grpcAuth.UserAuth{Username: username, Password: password})
+
+	if err != nil { // TODO: hashing
+		if strings.Contains(err.Error(), entity.IncorrectPasswordError.Error()) {
+			return nil, entity.IncorrectPasswordError
+		}
+		return nil, err
 	}
 
 	cookie, err := authApp.cookieApp.GenerateCookie()
-	for err == entity.DuplicatingCookieValueError {
-		cookie, err = authApp.cookieApp.GenerateCookie()
+	if err != nil {
+		for strings.Contains(err.Error(), entity.DuplicatingCookieValueError.Error()) {
+			cookie, err = authApp.cookieApp.GenerateCookie()
+		}
 	}
 
 	resultCookieInfo := &entity.CookieInfo{UserID: user.UserID, Cookie: cookie}
@@ -57,5 +71,14 @@ func (authApp *AuthApp) LogoutUser(userID int) error {
 }
 
 func (authApp *AuthApp) CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) {
-	return authApp.cookieApp.SearchByValue(cookie.Value)
+	grpcCookieInfo, isCookie := authApp.cookieApp.SearchByValue(cookie.Value)
+
+	if !isCookie {
+		return nil, false
+	}
+
+	return &entity.CookieInfo{
+		UserID: int(grpcCookieInfo.UserID),
+		Cookie: cookie,
+	}, isCookie
 }

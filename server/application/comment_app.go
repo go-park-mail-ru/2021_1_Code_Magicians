@@ -1,20 +1,17 @@
 package application
 
 import (
+	"context"
 	"pinterest/domain/entity"
-	"pinterest/domain/repository"
+	grpcComments "pinterest/services/comments/proto"
 )
 
 type CommentApp struct {
-	c      repository.CommentRepository
-	pinApp PinAppInterface
+	grpcClient grpcComments.CommentsClient
 }
 
-func NewCommentApp(c repository.CommentRepository, pinApp PinAppInterface) *CommentApp {
-	return &CommentApp{
-		c:      c,
-		pinApp: pinApp,
-	}
+func NewCommentApp(grpcClient grpcComments.CommentsClient) *CommentApp {
+	return &CommentApp{grpcClient: grpcClient}
 }
 
 type CommentAppInterface interface {
@@ -25,21 +22,24 @@ type CommentAppInterface interface {
 }
 
 func (commentApp *CommentApp) AddComment(comment *entity.Comment) error {
-	_, err := commentApp.pinApp.GetPin(comment.PinID)
-	if err != nil {
-		return err
+	grpcComment := grpcComments.Comment{
+		PinComment: comment.PinComment,
+		PinID:      int64(comment.PinID),
+		UserID:     int64(comment.UserID),
 	}
-
-	return commentApp.c.AddComment(comment)
+	FillGrpcComment(&grpcComment, comment)
+	_, err := commentApp.grpcClient.AddComment(context.Background(), &grpcComment)
+	return err
 }
 
 func (commentApp *CommentApp) GetComments(pinID int) ([]entity.Comment, error) {
-	_, err := commentApp.pinApp.GetPin(pinID)
+	comments, err := commentApp.grpcClient.GetComments(context.Background(), &grpcComments.PinID{PinID: int64(pinID)})
 	if err != nil {
 		return nil, err
 	}
+	resComments := ConvertGrpcComments(comments)
 
-	return commentApp.c.GetComments(pinID)
+	return resComments, nil
 }
 
 func (commentApp *CommentApp) DeleteComment(comment *entity.Comment) error {
@@ -48,4 +48,20 @@ func (commentApp *CommentApp) DeleteComment(comment *entity.Comment) error {
 
 func (commentApp *CommentApp) EditComment(comment *entity.Comment) error {
 	return nil
+}
+
+func ConvertGrpcComments(grpcComments *grpcComments.CommentsList) []entity.Comment {
+	comments := make([]entity.Comment, 0)
+	for _, grpcComment := range grpcComments.Comments {
+		comment := entity.Comment{}
+		FillGrpcComment(grpcComment, &comment)
+		comments = append(comments, comment)
+	}
+	return comments
+}
+
+func FillGrpcComment(grpcComment *grpcComments.Comment, comment *entity.Comment) {
+	comment.PinID = int(grpcComment.PinID)
+	comment.UserID = int(grpcComment.UserID)
+	comment.PinComment = grpcComment.PinComment
 }
