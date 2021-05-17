@@ -251,9 +251,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	fileAsBytes := make([]byte, 0)
 	imageStruct := new(imageInfo)
 	switch extension {
-	case ".pinAppg":
-	case ".jpg":
-	case ".gif":
+	case ".png", ".jpg", ".gif":
 		fileAsBytes, _ = io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
 		err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
 		if err != nil {
