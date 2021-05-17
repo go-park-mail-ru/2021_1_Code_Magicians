@@ -285,6 +285,7 @@ func TestBoards(t *testing.T) {
 		UserID: expectedUser.UserID,
 		Cookie: &expectedCookie,
 	}
+
 	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)

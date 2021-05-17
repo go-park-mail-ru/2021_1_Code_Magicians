@@ -384,6 +384,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
@@ -412,9 +413,10 @@ func TestProfileSuccess(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
@@ -463,7 +465,7 @@ func TestProfileSuccess(t *testing.T) {
 
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(&expectedUser, nil).Times(1) // Before changing password, handler requests user data
 	expectedUser.Password = "New Password"
-	mockUserApp.EXPECT().SaveUser(gomock.Any()).Return(nil).Times(1) // Password changing
+	mockUserApp.EXPECT().ChangePassword(gomock.Any()).Return(nil).Times(1) // Password changing
 
 	mockUserApp.EXPECT().GetUserByUsername(expectedUser.Username).Return(&expectedUser, nil).Times(1) // Normal user output using username
 
@@ -490,6 +492,7 @@ func TestProfileSuccess(t *testing.T) {
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
 		mockAuthApp,
+		mockCookieApp,
 		nil,
 		nil,
 		mockWebsocketApp,
@@ -770,6 +773,7 @@ func TestProfileFailure(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockS3App := mock_application.NewMockS3AppInterface(mockCtrl)
 	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
@@ -798,9 +802,10 @@ func TestProfileFailure(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
@@ -817,6 +822,7 @@ func TestProfileFailure(t *testing.T) {
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
 		mockAuthApp,
+		mockCookieApp,
 		nil, // We don't need S3 bucket in these tests
 		nil, // We don't really care about boards in these tests
 		mockWebsocketApp,
