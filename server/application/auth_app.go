@@ -47,7 +47,7 @@ func (authApp *AuthApp) LoginUser(username string, password string) (*entity.Coo
 
 	cookie, err := authApp.cookieApp.GenerateCookie()
 	if err != nil {
-		for strings.Contains(err.Error(), entity.DuplicatingCookieValueError.Error()) {
+		for err == entity.DuplicatingCookieValueError {
 			cookie, err = authApp.cookieApp.GenerateCookie()
 		}
 	}

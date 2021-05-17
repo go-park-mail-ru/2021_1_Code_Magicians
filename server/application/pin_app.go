@@ -10,6 +10,7 @@ import (
 	"log"
 	"pinterest/domain/entity"
 	grpcPins "pinterest/services/pins/proto"
+	"strings"
 	"time"
 
 	"github.com/EdlinOrg/prominentcolor"
@@ -63,6 +64,9 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 		BoardID: int64(initBoardID), PinID: pinID.PinID})
 	if err != nil {
 		pinApp.grpcClient.DeletePin(context.Background(), pinID)
+		if strings.Contains(err.Error(), entity.AddPinToBoardError.Error()) {
+			return -1, entity.AddPinToBoardError
+		}
 		return -1, err
 	}
 
@@ -105,7 +109,14 @@ func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
 	_, err := pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
 		BoardID: int64(boardID), PinID: int64(pinID),
 	})
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.AddPinToBoardError.Error()) {
+			return entity.AddPinToBoardError
+		}
+		return err
+	}
+
+	return nil
 }
 
 // GetPin returns pin with passed pinID
@@ -140,10 +151,18 @@ func (pinApp *PinApp) DeletePin(pinID int) error {
 
 	_, err = pinApp.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.DeletePinError.Error()) {
+			return entity.DeletePinError
+		}
 		return err
 	}
+
 	_, err = pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
-	return err
+	if err != nil {
+		return entity.FileDeletionError
+	}
+
+	return nil
 }
 
 // RemovePin deletes pin from user's passed board
@@ -158,21 +177,34 @@ func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
 		BoardID: int64(boardID), PinID: int64(pinID),
 	})
 	if err != nil {
-		return err
+		switch {
+		case strings.Contains(err.Error(), entity.RemovePinError.Error()):
+			return entity.RemovePinError
+		case strings.Contains(err.Error(), entity.DeletePinError.Error()):
+			return entity.DeletePinError
+		default:
+			return err
+		}
 	}
 
 	refCount, err := pinApp.grpcClient.PinRefCount(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.GetPinReferencesCountError.Error()) {
+			return entity.GetPinReferencesCountError
+		}
 		return err
 	}
 
 	if refCount.Number == 0 {
 		_, err = pinApp.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 		if err != nil {
+			if strings.Contains(err.Error(), entity.DeletePinError.Error()) {
+				return entity.DeletePinError
+			}
 			return err
 		}
 		_, err = pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
-		return err
+		return err // S3 errors are not handled in any special way, they all cause InternalServerError
 	}
 
 	return nil
@@ -184,7 +216,14 @@ func (pinApp *PinApp) SavePicture(pin *entity.Pin) error {
 	grpcPin := grpcPins.Pin{}
 	ConvertToGrpcPin(&grpcPin, pin)
 	_, err := pinApp.grpcClient.SavePicture(context.Background(), &grpcPin)
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.PinSavingError.Error()) {
+			return entity.PinSavingError
+		}
+		return err
+	}
+
+	return nil
 }
 
 // GetLastPinID returns path to image of current pin in database
@@ -192,8 +231,12 @@ func (pinApp *PinApp) SavePicture(pin *entity.Pin) error {
 func (pinApp *PinApp) GetLastPinID(userID int) (int, error) {
 	grpcPinID, err := pinApp.grpcClient.GetLastPinID(context.Background(), &grpcPins.UserID{Uid: int64(userID)})
 	if err != nil {
-		return 0, err
+		if strings.Contains(err.Error(), entity.PinNotFoundError.Error()) {
+			return -1, entity.PinNotFoundError
+		}
+		return -1, err
 	}
+
 	return int(grpcPinID.PinID), err
 }
 
@@ -223,9 +266,15 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	stream, err := pinApp.grpcClient.UploadPicture(ctx)
-	if err != nil {
-		return entity.FileUploadError
+	for err != nil {
+		switch {
+		case strings.Contains(err.Error(), entity.FilenameGenerationError.Error()):
+			stream, err = pinApp.grpcClient.UploadPicture(ctx)
+		default:
+			return entity.FileUploadError
+		}
 	}
+
 	req := &grpcPins.UploadImage{
 		Data: &grpcPins.UploadImage_Extension{
 			Extension: extension,
@@ -271,7 +320,11 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	err = pinApp.SavePicture(pin)
 	if err != nil {
 		pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: res.Path})
-		return fmt.Errorf("Pin saving failed")
+
+		if strings.Contains(err.Error(), entity.PinSavingError.Error()) {
+			return entity.PinSavingError
+		}
+		return err
 	}
 
 	return nil
@@ -282,6 +335,9 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	grpcPinsList, err := pinApp.grpcClient.GetNumOfPins(context.Background(), &grpcPins.Number{Number: int64(numOfPins)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.FeedLoadingError.Error()) {
+			return nil, entity.FeedLoadingError
+		}
 		return nil, err
 	}
 
@@ -293,7 +349,14 @@ func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 func (pinApp *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
 	grpcPinsList, err := pinApp.grpcClient.SearchPins(context.Background(), &grpcPins.SearchInput{KeyWords: keyWords})
 	if err != nil {
-		return nil, err
+		switch {
+		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
+			return nil, entity.NoResultSearch
+		case strings.Contains(err.Error(), entity.SearchingError.Error()):
+			return nil, entity.SearchingError
+		default:
+			return nil, err
+		}
 	}
 
 	return ConvertGrpcPins(grpcPinsList), nil

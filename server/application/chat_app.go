@@ -172,7 +172,7 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 	}
 
 	var target *entity.User
-	switch true {
+	switch {
 	case chat.FirstUserID == userID:
 		target, err = chatApp.userApp.GetUser(chat.SecondUserID)
 		if err != nil {
@@ -214,7 +214,7 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 	for _, chat := range chatApp.chats {
 		if chat.FirstUserID == userID || chat.SecondUserID == userID {
 			var target *entity.User
-			switch true {
+			switch {
 			case chat.FirstUserID == userID:
 				target, err = chatApp.userApp.GetUser(chat.SecondUserID)
 				if err != nil {

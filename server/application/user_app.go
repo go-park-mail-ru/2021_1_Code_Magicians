@@ -7,6 +7,7 @@ import (
 	"log"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
+	"strings"
 	"time"
 )
 
@@ -41,6 +42,9 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 	FillRegForm(user, newUser)
 	userID, err := userApp.grpcClient.CreateUser(context.Background(), newUser)
 	if err != nil {
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
+			return -1, entity.UsernameEmailDuplicateError
+		}
 		return -1, err
 	}
 
@@ -61,14 +65,28 @@ func (userApp *UserApp) SaveUser(user *entity.User) error {
 	newUser := grpcUser.UserEditInput{}
 	FillEditForm(user, &newUser)
 	_, err := userApp.grpcClient.SaveUser(context.Background(), &newUser)
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
+			return entity.UsernameEmailDuplicateError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (userApp *UserApp) ChangePassword(user *entity.User) error {
 	_, err := userApp.grpcClient.ChangePassword(context.Background(),
 		&grpcUser.Password{UserID: int64(user.UserID),
 			Password: user.Password})
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
+			return entity.UsernameEmailDuplicateError
+		}
+		return err
+	}
+
+	return nil
 }
 
 // SaveUser deletes user with passed ID
@@ -77,19 +95,28 @@ func (userApp *UserApp) ChangePassword(user *entity.User) error {
 func (userApp *UserApp) DeleteUser(userID int) error {
 	user, err := userApp.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return entity.UserNotFoundError
+		}
 		return err
 	}
 
 	if user.Avatar != string(entity.AvatarDefaultPath) {
 		_, err = userApp.grpcClient.DeleteFile(context.Background(), &grpcUser.FilePath{ImagePath: user.Avatar})
-
 		if err != nil {
-			return err
+			return entity.FileDeletionError
 		}
 	}
 
 	_, err = userApp.grpcClient.DeleteUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return entity.UserNotFoundError
+		}
+		return err
+	}
+
+	return nil
 }
 
 // GetUser fetches user with passed ID from database
@@ -97,11 +124,15 @@ func (userApp *UserApp) DeleteUser(userID int) error {
 func (userApp *UserApp) GetUser(userID int) (*entity.User, error) {
 	userOutput, err := userApp.grpcClient.GetUser(context.Background(), &grpcUser.UserID{Uid: int64(userID)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return nil, entity.UserNotFoundError
+		}
 		return nil, err
 	}
+
 	user := new(entity.User)
 	FillOutForm(user, userOutput)
-	return user, err
+	return user, nil
 }
 
 // GetUsers fetches all users from database
@@ -109,8 +140,12 @@ func (userApp *UserApp) GetUser(userID int) (*entity.User, error) {
 func (userApp *UserApp) GetUsers() ([]entity.User, error) {
 	usersList, err := userApp.grpcClient.GetUsers(context.Background(), nil)
 	if err != nil {
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return nil, entity.UserNotFoundError
+		}
 		return nil, err
 	}
+
 	users := ReturnUsersList(usersList.Users)
 	return users, nil
 }
@@ -121,6 +156,9 @@ func (userApp *UserApp) GetUsers() ([]entity.User, error) {
 func (userApp *UserApp) GetUserByUsername(username string) (*entity.User, error) {
 	userOutput, err := userApp.grpcClient.GetUserByUsername(context.Background(), &grpcUser.Username{Username: username})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return nil, entity.UserNotFoundError
+		}
 		return nil, err
 	}
 
@@ -183,12 +221,15 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 	err = userApp.SaveUser(user)
 	if err != nil {
 		userApp.grpcClient.DeleteFile(context.Background(), &grpcUser.FilePath{ImagePath: res.Path})
-		return entity.UserSavingError
+
+		if strings.Contains(err.Error(), entity.UserSavingError.Error()) {
+			return entity.UserSavingError
+		}
+		return err
 	}
 
 	if oldAvatarPath != string(entity.AvatarDefaultPath) {
 		_, err = userApp.grpcClient.DeleteFile(ctx, &grpcUser.FilePath{ImagePath: oldAvatarPath})
-
 		if err != nil {
 			return entity.FileDeletionError
 		}
@@ -201,8 +242,21 @@ func (userApp *UserApp) Follow(followerID int, followedID int) error {
 	if followerID == followedID {
 		return entity.SelfFollowError
 	}
+
 	_, err := userApp.grpcClient.Follow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
-	return err
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), entity.FollowAlreadyExistsError.Error()):
+			return entity.FollowAlreadyExistsError
+		case strings.Contains(err.Error(), entity.UserNotFoundError.Error()):
+			return entity.UserNotFoundError
+		case strings.Contains(err.Error(), entity.FollowCountUpdateError.Error()):
+			return entity.FollowCountUpdateError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (userApp *UserApp) Unfollow(followerID int, followedID int) error {
@@ -210,7 +264,17 @@ func (userApp *UserApp) Unfollow(followerID int, followedID int) error {
 		return entity.SelfFollowError
 	}
 	_, err := userApp.grpcClient.Unfollow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
-	return err
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), entity.FollowNotFoundError.Error()):
+			return entity.FollowNotFoundError
+		case strings.Contains(err.Error(), entity.FollowCountUpdateError.Error()):
+			return entity.FollowCountUpdateError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (userApp *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
@@ -225,8 +289,18 @@ func (userApp *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, e
 // It returns slice of users and nil on success, nil and error on failure
 func (userApp *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
 	usersList, err := userApp.grpcClient.SearchUsers(context.Background(), &grpcUser.SearchInput{KeyWords: keyWords})
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
+			return nil, entity.NoResultSearch
+		case strings.Contains(err.Error(), entity.SearchingError.Error()):
+			return nil, entity.SearchingError
+		}
+		return nil, err
+	}
+
 	users := ReturnUsersList(usersList.Users)
-	return users, err
+	return users, nil
 }
 
 func FillRegForm(user *entity.User, userReg *grpcUser.UserReg) {

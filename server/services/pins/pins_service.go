@@ -196,7 +196,7 @@ func (s *service) UploadBoardAvatar(ctx context.Context, imageInfo *FileInfo) (*
 		return &Error{}, err
 	}
 	if commandTag.RowsAffected() != 1 {
-		return &Error{}, entity.FileUploadError
+		return &Error{}, entity.BoardAvatarUploadError
 	}
 
 	err = tx.Commit(context.Background())
@@ -355,7 +355,7 @@ func (s *service) GetLastPinID(ctx context.Context, userID *UserID) (*PinID, err
 	err = row.Scan(&lastPinID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &PinID{}, fmt.Errorf("Pin not found")
+			return &PinID{}, entity.PinNotFoundError
 		}
 		// Other errors
 		return &PinID{}, err
@@ -603,7 +603,7 @@ func (s *service) PinRefCount(ctx context.Context, pinID *PinID) (*Number, error
 		if err == pgx.ErrNoRows {
 			return &Number{}, nil
 		}
-		return &Number{}, entity.GetPinReferencesCount
+		return &Number{}, entity.GetPinReferencesCountError
 	}
 
 	err = tx.Commit(context.Background())

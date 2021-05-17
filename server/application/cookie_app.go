@@ -88,12 +88,14 @@ func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 	FillGRPCCookie(&grpcCookie, cookieInfo.Cookie)
 	grpcCookieInfo := authProto.CookieInfo{UserID: int64(cookieInfo.UserID), Cookie: &grpcCookie}
 	_, err := cookieApp.grpcClient.AddCookieInfo(context.Background(), &grpcCookieInfo)
-	return err
+
+	return err // Will actually always be nil
 }
 
 func (cookieApp *CookieApp) RemoveCookie(cookieInfo *authProto.CookieInfo) error {
 	_, err := cookieApp.grpcClient.RemoveCookie(context.Background(), cookieInfo)
-	return err
+
+	return err // TODO: add errors
 }
 
 func FillGRPCCookie(grpcCookie *authProto.Cookie, cookie *http.Cookie) {

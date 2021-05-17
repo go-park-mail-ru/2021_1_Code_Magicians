@@ -4,6 +4,7 @@ import (
 	"context"
 	"pinterest/domain/entity"
 	grpcPins "pinterest/services/pins/proto"
+	"strings"
 )
 
 type BoardApp struct {
@@ -31,7 +32,10 @@ func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 	ConvertToGrpcBoard(&grpcBoard, board)
 	grpcBoardID, err := boardApp.grpcClient.AddBoard(context.Background(), &grpcBoard)
 	if err != nil {
-		return 0, err
+		if strings.Contains(err.Error(), entity.CreateBoardError.Error()) {
+			return -1, entity.CreateBoardError
+		}
+		return -1, err
 	}
 	return int(grpcBoardID.BoardID), nil
 }
@@ -41,6 +45,9 @@ func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 func (boardApp *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
 	board, err := boardApp.grpcClient.GetBoard(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
 	if err != nil {
+		if strings.Contains(err.Error(), entity.BoardNotFoundError.Error()) {
+			return nil, entity.BoardNotFoundError
+		}
 		return nil, err
 	}
 	boardInfo := &entity.BoardInfo{
@@ -80,7 +87,14 @@ func (boardApp *BoardApp) DeleteBoard(boardID int, userID int) error {
 	}
 
 	_, err = boardApp.grpcClient.DeleteBoard(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.DeleteBoardError.Error()) {
+			return entity.DeleteBoardError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (boardApp *BoardApp) GetInitUserBoard(userID int) (int, error) {
@@ -107,7 +121,14 @@ func (boardApp *BoardApp) UploadBoardAvatar(boardID int, imageLink string) error
 	_, err := boardApp.grpcClient.UploadBoardAvatar(context.Background(), &grpcPins.FileInfo{
 		BoardID: int64(boardID), ImagePath: imageLink,
 	})
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.BoardAvatarUploadError.Error()) {
+			return entity.BoardAvatarUploadError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func ConvertToGrpcBoard(grpcPin *grpcPins.Board, pin *entity.Board) {

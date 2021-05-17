@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"pinterest/domain/entity"
+	. "pinterest/services/user/proto"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,12 +22,6 @@ import (
 	_ "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"io"
-	"log"
-	"os"
-	"pinterest/domain/entity"
-	. "pinterest/services/user/proto"
-	"strings"
 )
 
 type service struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"pinterest/domain/entity"
 	grpcComments "pinterest/services/comments/proto"
+	"strings"
 )
 
 type CommentApp struct {
@@ -29,7 +30,14 @@ func (commentApp *CommentApp) AddComment(comment *entity.Comment) error {
 	}
 	FillGrpcComment(&grpcComment, comment)
 	_, err := commentApp.grpcClient.AddComment(context.Background(), &grpcComment)
-	return err
+	if err != nil {
+		if strings.Contains(err.Error(), entity.AddCommentError.Error()) {
+			return entity.AddCommentError
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (commentApp *CommentApp) GetComments(pinID int) ([]entity.Comment, error) {
