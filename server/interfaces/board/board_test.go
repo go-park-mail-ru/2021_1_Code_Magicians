@@ -258,6 +258,7 @@ func TestBoards(t *testing.T) {
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
@@ -284,10 +285,10 @@ func TestBoards(t *testing.T) {
 		UserID: expectedUser.UserID,
 		Cookie: &expectedCookie,
 	}
-
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
@@ -333,6 +334,7 @@ func TestBoards(t *testing.T) {
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
 		mockAuthApp,
+		mockCookieApp,
 		nil, // We don't need S3 in these tests
 		mockBoardApp,
 		mockWebsocketApp,
