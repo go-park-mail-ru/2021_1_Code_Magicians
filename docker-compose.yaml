@@ -1,14 +1,53 @@
 version: "3.7"
 
 services:
-  go:
+  go-main:
     build: server
     ports:
       - 8080:8080
     depends_on:
       - postgres
-    command: ["./wait-for-it.sh", "postgres:5432", "--", "./server_main"]
-        
+      - user-service
+      - auth-service
+      - pins-service
+      - comments-service
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "server_main.go"]
+  
+  user-service:
+    build: server
+    ports:
+      - 8082:8082
+    depends_on:
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/user/"]
+  
+  auth-service:
+    build: server
+    ports:
+      - 8083:8083
+    depends_on:
+      - user-service
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/auth/"]
+
+  pins-service:
+    build: server
+    ports:
+      - 8084:8084
+    depends_on:
+      - user-service
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/pins/"]
+  
+  comments-service:
+    build: server
+    ports:
+      - 8085:8085
+    depends_on:
+      - user-service
+      - pins-service
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/comments/"]
   
   postgres:
     build: postgres

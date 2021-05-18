@@ -8,7 +8,6 @@ RUN go mod download
 
 COPY . .
 RUN chmod +x wait-for-it.sh
-RUN go build server_main.go
 
 EXPOSE 8080/tcp
 

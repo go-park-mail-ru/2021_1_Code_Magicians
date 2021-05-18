@@ -71,25 +71,25 @@ func runServer(addr string) {
 	//	PermitWithoutStream: true,             // send pings even without active streams
 	//}
 
-	sessionUser, err := grpc.Dial("127.0.0.1:8082", grpc.WithInsecure())
+	sessionUser, err := grpc.Dial("user-service:8082", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for User service")
 	}
 	defer sessionUser.Close()
 
-	sessionAuth, err := grpc.Dial("127.0.0.1:8083", grpc.WithInsecure())
+	sessionAuth, err := grpc.Dial("auth-service:8083", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Auth service")
 	}
 	defer sessionAuth.Close()
 
-	sessionPins, err := grpc.Dial("127.0.0.1:8084", grpc.WithInsecure())
+	sessionPins, err := grpc.Dial("pins-service:8084", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Pins service")
 	}
 	defer sessionPins.Close()
 
-	sessionComments, err := grpc.Dial("127.0.0.1:8085", grpc.WithInsecure())
+	sessionComments, err := grpc.Dial("comments-service:8085", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Comments service")
 	}
