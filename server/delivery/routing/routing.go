@@ -52,7 +52,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	boardApp := usecase.NewBoardApp(repoBoards)
 	s3App := usecase.NewS3App(sess, s3BucketName)
 	userApp := usecase.NewUserApp(repoUsers, boardApp, s3App)
-	pinApp := usecase.NewPinApp(repoPins, boardApp, s3App)
+	pinApp := usecase.NewPinApp(repoPins, boardApp, followApp, s3App) // TODO: maybe move GetPinsOfFollowedUsers to followApp???
 	commentApp := usecase.NewCommentApp(repoComments, pinApp)
 	websocketApp := usecase.NewWebsocketApp(userApp)
 	notificationApp := usecase.NewNotificationApp(userApp, websocketApp)
@@ -95,6 +95,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, authApp)).Methods("POST")
 	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinsInfo.HandlePinsFeed).Methods("GET")
 	r.HandleFunc("/pins/search/{searchKey}", pinsInfo.HandleSearchPins).Methods("GET")
+	r.HandleFunc("/pins/followed", mid.AuthMid(pinsInfo.HandleSearchPins, authApp)).Methods("GET")
 
 	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleCreateBoard, authApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", boardsInfo.HandleGetBoardByID).Methods("GET")

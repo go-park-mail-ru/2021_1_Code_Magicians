@@ -14,4 +14,6 @@ type PinRepository interface {
 	GetLastPinID(userID int) (int, error)             // Get user's last pin's ID
 	GetNumOfPins(numOfPins int) ([]entity.Pin, error) // Get specified amount of pins
 	SearchPins(keywords string) ([]entity.Pin, error)
+	GetPinsByUserID(userID int) ([]entity.Pin, error)   // Get all pins that user added
+	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
 }

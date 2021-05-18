@@ -329,7 +329,9 @@ func (r *PinsRepo) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 	return pins, nil
 }
 
-const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
 
 // SearchPins returns pins by keywords
@@ -352,11 +354,82 @@ func (r *PinsRepo) SearchPins(keyWords string) ([]entity.Pin, error) {
 
 	for rows.Next() {
 		pin := entity.Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return nil, entity.SearchingError
 		}
 		pins = append(pins, pin)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return pins, nil
+}
+
+const GetPinsByUserIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
+	"WHERE pins.UserID = $1;"
+
+// GetPinsByUserID outputs all pins of passed user
+// It returns slice of pins, nil on success, nil, error on failure
+func (r *PinsRepo) GetPinsByUserID(userID int) ([]entity.Pin, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	pins := make([]entity.Pin, 0)
+
+	rows, err := tx.Query(context.Background(), GetPinsByUserIDQuery, userID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.GetPinsByUserIdError
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		pin := entity.Pin{}
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
+		if err != nil {
+			return nil, entity.GetPinsByUserIdError
+		}
+		pins = append(pins, pin)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+
+	return pins, nil
+}
+
+// GetPinsOfUsers outputs all pins of passed users
+// It returns slice of pins, nil on success, nil, error on failure
+func (r *PinsRepo) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
+	tx, err := r.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	pins := make([]entity.Pin, 0)
+	for _, userID := range userIDs {
+		userPins, err := r.GetPinsByUserID(userID)
+		if err != nil {
+			return nil, err
+		}
+
+		pins = append(pins, userPins...)
 	}
 
 	err = tx.Commit(context.Background())
