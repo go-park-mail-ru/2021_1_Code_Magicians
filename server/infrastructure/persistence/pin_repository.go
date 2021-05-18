@@ -413,6 +413,12 @@ func (r *PinsRepo) GetPinsByUserID(userID int) ([]entity.Pin, error) {
 	return pins, nil
 }
 
+const GetPinsByUsersIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
+	"WHERE pins.UserID = ANY($1)" +
+	"ORDER BY pins.PinID DESC;" // So that newest pins will come up first
+
 // GetPinsOfUsers outputs all pins of passed users
 // It returns slice of pins, nil on success, nil, error on failure
 func (r *PinsRepo) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
@@ -423,18 +429,30 @@ func (r *PinsRepo) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
 	defer tx.Rollback(context.Background())
 
 	pins := make([]entity.Pin, 0)
-	for _, userID := range userIDs {
-		userPins, err := r.GetPinsByUserID(userID)
-		if err != nil {
-			return nil, err
-		}
 
-		pins = append(pins, userPins...)
+	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.GetPinsByUserIdError
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		pin := entity.Pin{}
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
+		if err != nil {
+			return nil, entity.GetPinsByUserIdError
+		}
+		pins = append(pins, pin)
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return nil, entity.TransactionCommitError
 	}
+
 	return pins, nil
 }

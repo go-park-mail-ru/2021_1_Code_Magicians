@@ -88,6 +88,7 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/follow/{username}", mid.AuthMid(followInfo.HandleUnfollowProfile, authApp)).Methods("DELETE")
 	r.HandleFunc("/followers/{id:[0-9]+}", followInfo.HandleGetFollowers).Methods("GET")
 	r.HandleFunc("/following/{id:[0-9]+}", followInfo.HandleGetFollowed).Methods("GET")
+	r.HandleFunc("/pins/followed", mid.AuthMid(followInfo.HandleGetFollowedPinsList, authApp)).Methods("GET")
 
 	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, authApp)).Methods("POST")
 	r.HandleFunc("/pin/{id:[0-9]+}", pinsInfo.HandleGetPinByID).Methods("GET")
@@ -95,7 +96,6 @@ func CreateRouter(conn *pgxpool.Pool, sess *session.Session, s3BucketName string
 	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, authApp)).Methods("POST")
 	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinsInfo.HandlePinsFeed).Methods("GET")
 	r.HandleFunc("/pins/search/{searchKey}", pinsInfo.HandleSearchPins).Methods("GET")
-	r.HandleFunc("/pins/followed", mid.AuthMid(pinsInfo.HandleSearchPins, authApp)).Methods("GET")
 
 	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleCreateBoard, authApp)).Methods("POST")
 	r.HandleFunc("/board/{id:[0-9]+}", boardsInfo.HandleGetBoardByID).Methods("GET")
