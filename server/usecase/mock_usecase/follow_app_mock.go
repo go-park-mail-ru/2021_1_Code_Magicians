@@ -93,6 +93,21 @@ func (mr *MockFollowAppInterfaceMockRecorder) GetAllFollowers(followedID interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFollowers", reflect.TypeOf((*MockFollowAppInterface)(nil).GetAllFollowers), followedID)
 }
 
+// GetPinsOfFollowedUsers mocks base method.
+func (m *MockFollowAppInterface) GetPinsOfFollowedUsers(userID int) ([]entity.Pin, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPinsOfFollowedUsers", userID)
+	ret0, _ := ret[0].([]entity.Pin)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPinsOfFollowedUsers indicates an expected call of GetPinsOfFollowedUsers.
+func (mr *MockFollowAppInterfaceMockRecorder) GetPinsOfFollowedUsers(userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPinsOfFollowedUsers", reflect.TypeOf((*MockFollowAppInterface)(nil).GetPinsOfFollowedUsers), userID)
+}
+
 // Unfollow mocks base method.
 func (m *MockFollowAppInterface) Unfollow(followerID, followedID int) error {
 	m.ctrl.T.Helper()

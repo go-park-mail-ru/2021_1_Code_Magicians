@@ -7,10 +7,14 @@ import (
 
 type FollowApp struct {
 	userRepository repository.UserRepository
+	pinApp         PinAppInterface
 }
 
-func NewFollowApp(userRepository repository.UserRepository) *FollowApp {
-	return &FollowApp{userRepository}
+func NewFollowApp(userRepository repository.UserRepository, pinApp PinAppInterface) *FollowApp {
+	return &FollowApp{
+		userRepository: userRepository,
+		pinApp:         pinApp,
+	}
 }
 
 type FollowAppInterface interface {
@@ -19,6 +23,7 @@ type FollowAppInterface interface {
 	CheckIfFollowed(followerID int, followedID int) (bool, error) // Check if first user follows second. Err != nil if those users are the same
 	GetAllFollowers(followedID int) ([]entity.User, error)        // Get everyone who follows specified user
 	GetAllFollowed(followerID int) ([]entity.User, error)         // Get everyone who is followed by specified user
+	GetPinsOfFollowedUsers(userID int) ([]entity.Pin, error)      // Get all pins belonging to users that user follows
 }
 
 func (followApp *FollowApp) Follow(followerID int, followedID int) error {
@@ -56,4 +61,18 @@ func (followApp *FollowApp) GetAllFollowed(followerID int) ([]entity.User, error
 		return nil, err
 	}
 	return followApp.userRepository.GetAllFollowed(followerID)
+}
+
+func (followApp *FollowApp) GetPinsOfFollowedUsers(userID int) ([]entity.Pin, error) {
+	followedUsers, err := followApp.GetAllFollowed(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userIDs := make([]int, 0, len(followedUsers))
+	for _, user := range followedUsers {
+		userIDs = append(userIDs, user.UserID)
+	}
+
+	return followApp.pinApp.GetPinsOfUsers(userIDs)
 }

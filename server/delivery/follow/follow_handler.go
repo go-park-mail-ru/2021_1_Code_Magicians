@@ -254,3 +254,38 @@ func (followInfo *FollowInfo) HandleGetFollowed(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
 }
+
+func (followInfo *FollowInfo) HandleGetFollowedPinsList(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
+	resultPins, err := followInfo.followApp.GetPinsOfFollowedUsers(userID)
+	if err != nil {
+		followInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(resultPins) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	pins := new(entity.PinsListOutput)
+
+	for _, pin := range resultPins {
+		var pinOutput entity.PinOutput
+		pinOutput.FillFromPin(&pin)
+		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	responseBody, err := json.Marshal(pins)
+	if err != nil {
+		followInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "usage/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(responseBody)
+}

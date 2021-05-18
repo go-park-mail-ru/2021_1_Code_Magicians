@@ -14,10 +14,9 @@ import (
 )
 
 type PinApp struct {
-	p         repository.PinRepository
-	boardApp  BoardAppInterface
-	followApp FollowAppInterface
-	s3App     S3AppInterface
+	p        repository.PinRepository
+	boardApp BoardAppInterface
+	s3App    S3AppInterface
 }
 
 type imageInfo struct {
@@ -43,12 +42,11 @@ func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
 	return nil
 }
 
-func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, followApp FollowAppInterface, s3App S3AppInterface) *PinApp {
+func NewPinApp(p repository.PinRepository, boardApp BoardAppInterface, s3App S3AppInterface) *PinApp {
 	return &PinApp{
-		p:         p,
-		boardApp:  boardApp,
-		followApp: followApp,
-		s3App:     s3App,
+		p:        p,
+		boardApp: boardApp,
+		s3App:    s3App,
 	}
 }
 
@@ -65,7 +63,7 @@ type PinAppInterface interface {
 	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
 	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
 	SearchPins(keywords string) ([]entity.Pin, error)
-	GetPinsOfFollowedUsers(userID int) ([]entity.Pin, error) // Get all pins belonging to users
+	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
 }
 
 // CreatePin creates passed pin and adds it to native user's board
@@ -249,16 +247,6 @@ func (pinApp *PinApp) SearchPins(keywords string) ([]entity.Pin, error) {
 
 // GetPinsOfUsers outputs all pins of passed users
 // It returns slice of pins, nil on success, nil, error on failure
-func (pinApp *PinApp) GetPinsOfFollowedUsers(userID int) ([]entity.Pin, error) {
-	followedUsers, err := pinApp.followApp.GetAllFollowed(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	userIDs := make([]int, 0, len(followedUsers))
-	for _, user := range followedUsers {
-		userIDs = append(userIDs, user.UserID)
-	}
-
+func (pinApp *PinApp) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
 	return pinApp.p.GetPinsOfUsers(userIDs)
 }
