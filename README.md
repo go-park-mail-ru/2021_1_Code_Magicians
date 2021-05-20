@@ -14,7 +14,10 @@ Instructions with docker:
 To get AWS access key id and AWS secret access key, visit https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/setting-up.html#w2aab7b9b3b5
 
 - install docker
+- if running postgres locally, run:
 - $docker-compose -f docker-compose.yaml up
+- otherwise, run:
+- $docker-compose -f docker-compose-no-postgres.yaml up
 - To stop server, press Ctrl+C
 
 NOTE: right now to start server properly you may need to run docker-compose, then stop it and run it again (check in console whether or not go server has connected to databaser).
