@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"pinterest/application"
 	"pinterest/domain/entity"
 	"pinterest/interfaces/auth"
-	"pinterest/usecase"
 	"testing"
 	"time"
 
@@ -20,8 +20,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
-	"pinterest/delivery/middleware"
-	"pinterest/usecase/mock_usecase"
+	"pinterest/application/mock_application"
+	"pinterest/interfaces/middleware"
 )
 
 // followInputStruct stores information which will be parsed into request
@@ -32,7 +32,7 @@ type followInputStruct struct {
 	headers      map[string][]string
 	postBody     []byte // JSON
 	followFunc   func(w http.ResponseWriter, r *http.Request)
-	middleware   func(next http.HandlerFunc, authApp usecase.AuthAppInterface) http.HandlerFunc
+	middleware   func(next http.HandlerFunc, authApp application.AuthAppInterface) http.HandlerFunc
 }
 
 // toHTTPRequest transforms followInputStruct to http.Request, adding global cookies
@@ -245,11 +245,12 @@ func TestFollowSuccess(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockUserApp := mock_usecase.NewMockUserAppInterface(mockCtrl)
-	mockAuthApp := mock_usecase.NewMockAuthAppInterface(mockCtrl)
-	mockFollowApp := mock_usecase.NewMockFollowAppInterface(mockCtrl)
-	mockNotificationApp := mock_usecase.NewMockNotificationAppInterface(mockCtrl)
-	mockWebsocketApp := mock_usecase.NewMockWebsocketAppInterface(mockCtrl)
+	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
+	mockFollowApp := mock_application.NewMockFollowAppInterface(mockCtrl)
+	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -275,9 +276,10 @@ func TestFollowSuccess(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
+	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
+	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
+	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
@@ -327,6 +329,7 @@ func TestFollowSuccess(t *testing.T) {
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
 		mockAuthApp,
+		mockCookieApp,
 		nil,
 		nil,
 		mockWebsocketApp,
@@ -429,11 +432,12 @@ func TestFollowFailure(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockUserApp := mock_usecase.NewMockUserAppInterface(mockCtrl)
-	mockAuthApp := mock_usecase.NewMockAuthAppInterface(mockCtrl)
-	mockFollowApp := mock_usecase.NewMockFollowAppInterface(mockCtrl)
-	mockNotificationApp := mock_usecase.NewMockNotificationAppInterface(mockCtrl)
-	mockWebsocketApp := mock_usecase.NewMockWebsocketAppInterface(mockCtrl)
+	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
+	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
+	mockFollowApp := mock_application.NewMockFollowAppInterface(mockCtrl)
+	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
+	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
 	// TODO: maybe replace this with JSON parsing?
@@ -455,6 +459,7 @@ func TestFollowFailure(t *testing.T) {
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
 		mockAuthApp,
+		mockCookieApp,
 		nil,
 		nil,
 		mockWebsocketApp,
