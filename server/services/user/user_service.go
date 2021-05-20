@@ -68,7 +68,6 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return nil, entity.UsernameEmailDuplicateError
 		}
-
 		// Other errors
 		return nil, err
 	}
@@ -92,6 +91,7 @@ func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, erro
 		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
+
 	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Email,
 		user.FirstName, user.LastName, user.Avatar, user.UserID)
 	if err != nil {
@@ -105,10 +105,76 @@ func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, erro
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		log.Println(err, "COMMIT ERROR")
 		return &Error{}, entity.TransactionCommitError
 	}
 	return &Error{}, nil
+}
+
+var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
+func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
+	imageData := bytes.Buffer{}
+	imageSize := 0
+	req, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot receive image info")
+	}
+
+	filenamePrefix, err := entity.GenerateRandomString(40) // generating random filename
+	if err != nil {
+		return entity.FilenameGenerationError
+	}
+	newAvatarPath := "avatars/" + filenamePrefix + req.GetExtension() // TODO: avatars folder sharding by date
+
+	for {
+		req, err = stream.Recv()
+		if err == io.EOF {
+			log.Print("no more data")
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err)
+		}
+		chunk := req.GetChunkData()
+		size := len(chunk)
+
+		imageSize += size
+		if imageSize > maxPostAvatarBodySize {
+			return status.Errorf(codes.InvalidArgument, "image is too large: %d > %d", imageSize, maxPostAvatarBodySize)
+		}
+		_, err = imageData.Write(chunk)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot write chunk data: %v", err)
+		}
+	}
+	uploader := s3manager.NewUploader(s.s3)
+
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
+		ACL:    aws.String("public-read"),
+		Key:    aws.String(newAvatarPath),
+		Body:   bytes.NewReader(imageData.Bytes()),
+	})
+
+	res := &UploadAvatarResponse{
+		Path: newAvatarPath,
+		Size: uint32(imageSize),
+	}
+
+	err = stream.SendAndClose(res)
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot send response: %v", err)
+	}
+
+	return handleS3Error(err)
+}
+
+func (s *service) DeleteFile(ctx context.Context, filename *FilePath) (*Error, error) {
+	deleter := s3.New(s.s3)
+	_, err := deleter.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
+		Key:    aws.String(filename.ImagePath),
+	})
+	return &Error{}, handleS3Error(err)
 }
 
 const changePasswordQuery string = "UPDATE Users\n" +
@@ -121,6 +187,7 @@ func (s *service) ChangePassword(ctx context.Context, pswrd *Password) (*Error, 
 		return &Error{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
+
 	_, err = tx.Exec(context.Background(), changePasswordQuery, pswrd.Password, pswrd.UserID)
 	if err != nil {
 		// If username/email is already taken
@@ -133,7 +200,6 @@ func (s *service) ChangePassword(ctx context.Context, pswrd *Password) (*Error, 
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		log.Println(err, "COMMIT ERROR")
 		return &Error{}, entity.TransactionCommitError
 	}
 	return &Error{}, nil
@@ -150,7 +216,7 @@ func (s *service) DeleteUser(ctx context.Context, userID *UserID) (*Error, error
 	}
 	defer tx.Rollback(context.Background())
 
-	commandTag, err := tx.Exec(context.Background(), deleteUserQuery, int(userID.Uid))
+	commandTag, err := tx.Exec(context.Background(), deleteUserQuery, userID.Uid)
 	if err != nil {
 		return &Error{}, err
 	}
@@ -408,14 +474,16 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 		return nil, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
+
 	users := make([]*UserOutput, 0)
 	rows, err := tx.Query(context.Background(), SearchUsersQuery, "%"+keyWords.KeyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, entity.NoResultSearch
+			return nil, entity.UsersNotFoundError
 		}
 		return nil, err
 	}
+
 	for rows.Next() {
 		user := UserOutput{}
 
@@ -442,71 +510,102 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 	return &UsersListOutput{Users: users}, nil
 }
 
-var maxPostAvatarBodySize = 8 * 1024 * 1024 // 8 mB
-func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
-	imageData := bytes.Buffer{}
-	imageSize := 0
-	req, err := stream.Recv()
-	if err != nil {
-		return status.Errorf(codes.Unknown, "cannot receive image info")
-	}
+const getAllFollowersQuery = "SELECT userID, username, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"INNER JOIN (SELECT * FROM Followers WHERE followedID = $1) as users_followers\n" +
+	"ON followerID = userID"
 
-	filenamePrefix, err := entity.GenerateRandomString(40) // generating random filename
+// GetAllFollowers fetches all users that follow user with passed ID
+// It returns slice of users, nil on success, nil, error on failure
+// ! No followers found also counts as an error, entity.UsersNotFoundError
+func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersListOutput, error) {
+	tx, err := s.db.Begin(context.Background())
 	if err != nil {
-		return entity.FilenameGenerationError
+		return nil, entity.TransactionBeginError
 	}
-	newAvatarPath := "avatars/" + filenamePrefix + req.GetExtension() // TODO: avatars folder sharding by date
+	defer tx.Rollback(context.Background())
 
-	for {
-		req, err = stream.Recv()
-		if err == io.EOF {
-			log.Print("no more data")
-			break
+	followers := make([]*UserOutput, 0)
+	rows, err := tx.Query(context.Background(), getAllFollowersQuery, userID.Uid)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.UsersNotFoundError
 		}
+
+		return nil, err
+	}
+
+	for rows.Next() {
+		user := UserOutput{}
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
 		if err != nil {
-			return status.Errorf(codes.Unknown, "cannot receive chunk data: %v", err)
+			return nil, entity.SearchingError
 		}
-		chunk := req.GetChunkData()
-		size := len(chunk)
 
-		imageSize += size
-		if imageSize > maxPostAvatarBodySize {
-			return status.Errorf(codes.InvalidArgument, "image is too large: %d > %d", imageSize, maxPostAvatarBodySize)
-		}
-		_, err = imageData.Write(chunk)
-		if err != nil {
-			return status.Errorf(codes.Internal, "cannot write chunk data: %v", err)
-		}
-	}
-	uploader := s3manager.NewUploader(s.s3)
-
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
-		ACL:    aws.String("public-read"),
-		Key:    aws.String(newAvatarPath),
-		Body:   bytes.NewReader(imageData.Bytes()),
-	})
-
-	res := &UploadAvatarResponse{
-		Path: newAvatarPath,
-		Size: uint32(imageSize),
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
+		followers = append(followers, &user)
 	}
 
-	err = stream.SendAndClose(res)
+	err = tx.Commit(context.Background())
 	if err != nil {
-		return status.Errorf(codes.Unknown, "cannot send response: %v", err)
+		return nil, entity.TransactionCommitError
 	}
-
-	return handleS3Error(err)
+	return &UsersListOutput{Users: followers}, nil
 }
 
-func (s *service) DeleteFile(ctx context.Context, filename *FilePath) (*Error, error) {
-	deleter := s3.New(s.s3)
-	_, err := deleter.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(os.Getenv("BUCKET_NAME")),
-		Key:    aws.String(filename.ImagePath),
-	})
-	return &Error{}, handleS3Error(err)
+const getAllFollowedQuery = "SELECT userID, username, email, first_name, last_name, avatar, followed_by, following FROM Users\n" +
+	"INNER JOIN (SELECT * FROM Followers WHERE followerID = $1) as users_followed\n" +
+	"ON followedID = userID"
+
+// GetAllFollowed fetches all users that are followed by user with passed ID
+// It returns slice of users, nil on success, nil, error on failure
+// ! No followers found also counts as an error, entity.UsersNotFoundError
+func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersListOutput, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	followed := make([]*UserOutput, 0)
+	rows, err := tx.Query(context.Background(), getAllFollowersQuery, userID.Uid)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, entity.UsersNotFoundError
+		}
+
+		return nil, err
+	}
+
+	for rows.Next() {
+		user := UserOutput{}
+		firstNamePtr := new(string)
+		secondNamePtr := new(string)
+		avatarPtr := new(string)
+
+		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following)
+		if err != nil {
+			return nil, entity.SearchingError
+		}
+
+		user.FirstName = *emptyIfNil(firstNamePtr)
+		user.LastName = *emptyIfNil(secondNamePtr)
+		user.Avatar = *emptyIfNil(avatarPtr)
+		followed = append(followed, &user)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return nil, entity.TransactionCommitError
+	}
+	return &UsersListOutput{Users: followed}, nil
 }
 
 func FillFromRegForm(us *UserReg) entity.User {

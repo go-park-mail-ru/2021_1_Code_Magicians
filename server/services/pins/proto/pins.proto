@@ -31,6 +31,10 @@ message UserID {
   int64 uid = 1;
 }
 
+message UserIDList {
+  repeated int64 ids = 1;
+}
+
 message BoardID {
   int64 boardID = 1;
 }
@@ -113,4 +117,5 @@ service Pins {
   rpc  SearchPins(SearchInput) returns (PinsList) {}
   rpc  PinRefCount(PinID) returns (Number) {}
   rpc  DeleteFile(FilePath) returns (Error) {}
+  rpc  GetPinsOfUsers(UserIDList) returns (PinsList) {}
 }

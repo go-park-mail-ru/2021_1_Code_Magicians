@@ -96,15 +96,17 @@ message Error {}
 service User {
   rpc   CreateUser(UserReg) returns (UserID) {}
   rpc   SaveUser(UserEditInput) returns (Error) {}
+  rpc   UpdateAvatar(stream UploadAvatar) returns (UploadAvatarResponse) {}
+  rpc   DeleteFile(FilePath) returns (Error) {}
   rpc   DeleteUser(UserID) returns (Error) {}
   rpc   GetUser(UserID) returns (UserOutput) {}
   rpc   GetUserByUsername(Username) returns (UserOutput) {}
   rpc   GetUsers(google.protobuf.Empty) returns (UsersListOutput) {}
-  rpc   UpdateAvatar(stream UploadAvatar) returns (UploadAvatarResponse) {}
   rpc   Follow(Follows) returns (Error) {}
   rpc   Unfollow(Follows) returns (Error) {}
   rpc   CheckIfFollowed(Follows) returns (IfFollowedResponse) {}
   rpc   SearchUsers(SearchInput) returns (UsersListOutput) {}
-  rpc   DeleteFile(FilePath) returns (Error) {}
   rpc   ChangePassword(Password) returns (Error) {}
-}
+  rpc   GetAllFollowers(UserID) returns (UsersListOutput) {}
+	rpc   GetAllFollowed(UserID) returns (UsersListOutput) {}
+  }

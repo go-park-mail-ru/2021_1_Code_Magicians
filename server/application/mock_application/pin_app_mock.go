@@ -138,6 +138,21 @@ func (mr *MockPinAppInterfaceMockRecorder) GetPins(boardID interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPins", reflect.TypeOf((*MockPinAppInterface)(nil).GetPins), boardID)
 }
 
+// GetPinsOfUsers mocks base method.
+func (m *MockPinAppInterface) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPinsOfUsers", userIDs)
+	ret0, _ := ret[0].([]entity.Pin)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPinsOfUsers indicates an expected call of GetPinsOfUsers.
+func (mr *MockPinAppInterfaceMockRecorder) GetPinsOfUsers(userIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPinsOfUsers", reflect.TypeOf((*MockPinAppInterface)(nil).GetPinsOfUsers), userIDs)
+}
+
 // RemovePin mocks base method.
 func (m *MockPinAppInterface) RemovePin(boardID, pinID int) error {
 	m.ctrl.T.Helper()

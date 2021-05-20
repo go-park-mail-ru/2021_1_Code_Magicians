@@ -11,6 +11,7 @@ import (
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
 	"pinterest/interfaces/comment"
+	"pinterest/interfaces/follow"
 	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
 	"pinterest/interfaces/profile"
@@ -106,15 +107,17 @@ func runServer(addr string) {
 	userApp := application.NewUserApp(repoUser, boardApp)
 	authApp := application.NewAuthApp(repoAuth, userApp, cookieApp)
 	pinApp := application.NewPinApp(repoPins, boardApp)
+	followApp := application.NewFollowApp(repoUser, pinApp)
 	commentApp := application.NewCommentApp(repoComments)
 	websocketApp := application.NewWebsocketApp(userApp)
 	notificationApp := application.NewNotificationApp(userApp, websocketApp)
 	chatApp := application.NewChatApp(userApp, websocketApp)
 
-	boardsInfo := board.NewBoardInfo(boardApp, logger)
+	boardInfo := board.NewBoardInfo(boardApp, logger)
 	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)
-	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, s3App, notificationApp, logger)
-	pinsInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
+	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, followApp, s3App, notificationApp, logger)
+	followInfo := follow.NewFollowInfo(userApp, followApp, notificationApp, logger)
+	pinInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
 	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
@@ -122,7 +125,7 @@ func runServer(addr string) {
 	// TODO divide file
 
 	fmt.Println("Successfully connected to database")
-	r := routing.CreateRouter(authApp, boardsInfo, authInfo, profileInfo, pinsInfo, commentsInfo,
+	r := routing.CreateRouter(authApp, boardInfo, authInfo, profileInfo, followInfo, pinInfo, commentsInfo,
 		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins

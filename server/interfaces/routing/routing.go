@@ -8,6 +8,7 @@ import (
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
 	"pinterest/interfaces/comment"
+	"pinterest/interfaces/follow"
 	mid "pinterest/interfaces/middleware"
 	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
@@ -18,9 +19,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateRouter(authApp *application.AuthApp, boardsInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
-	pinsInfo *pin.PinInfo, commentsInfo *comment.CommentInfo, websocketInfo *websocket.WebsocketInfo,
-	notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
+func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, authInfo *auth.AuthInfo, profileInfo *profile.ProfileInfo,
+	followInfo *follow.FollowInfo, pinInfo *pin.PinInfo, commentsInfo *comment.CommentInfo,
+	websocketInfo *websocket.WebsocketInfo, notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(mid.PanicMid)
 
@@ -48,24 +49,27 @@ func CreateRouter(authApp *application.AuthApp, boardsInfo *board.BoardInfo, aut
 	r.HandleFunc("/profile/avatar", mid.AuthMid(profileInfo.HandlePostAvatar, authApp)).Methods("PUT")
 	r.HandleFunc("/profiles/search/{searchKey}", profileInfo.HandleGetProfilesByKeyWords).Methods("GET")
 
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleFollowProfile, authApp)).Methods("POST") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleFollowProfile, authApp)).Methods("POST")
-	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(profileInfo.HandleUnfollowProfile, authApp)).Methods("DELETE") // Is preferred over next one
-	r.HandleFunc("/follow/{username}", mid.AuthMid(profileInfo.HandleUnfollowProfile, authApp)).Methods("DELETE")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(followInfo.HandleFollowProfile, authApp)).Methods("POST") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(followInfo.HandleFollowProfile, authApp)).Methods("POST")
+	r.HandleFunc("/follow/{id:[0-9]+}", mid.AuthMid(followInfo.HandleUnfollowProfile, authApp)).Methods("DELETE") // Is preferred over next one
+	r.HandleFunc("/follow/{username}", mid.AuthMid(followInfo.HandleUnfollowProfile, authApp)).Methods("DELETE")
+	r.HandleFunc("/followers/{id:[0-9]+}", followInfo.HandleGetFollowers).Methods("GET")
+	r.HandleFunc("/following/{id:[0-9]+}", followInfo.HandleGetFollowed).Methods("GET")
+	r.HandleFunc("/pins/followed", mid.AuthMid(followInfo.HandleGetFollowedPinsList, authApp)).Methods("GET")
 
-	r.HandleFunc("/pin", mid.AuthMid(pinsInfo.HandleAddPin, authApp)).Methods("POST")
-	r.HandleFunc("/pin/{id:[0-9]+}", pinsInfo.HandleGetPinByID).Methods("GET")
-	r.HandleFunc("/pins/{id:[0-9]+}", pinsInfo.HandleGetPinsByBoardID).Methods("GET")
-	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinsInfo.HandleSavePin, authApp)).Methods("POST")
-	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinsInfo.HandlePinsFeed).Methods("GET")
-	r.HandleFunc("/pins/search/{searchKey}", pinsInfo.HandleSearchPins).Methods("GET")
+	r.HandleFunc("/pin", mid.AuthMid(pinInfo.HandleAddPin, authApp)).Methods("POST")
+	r.HandleFunc("/pin/{id:[0-9]+}", pinInfo.HandleGetPinByID).Methods("GET")
+	r.HandleFunc("/pins/{id:[0-9]+}", pinInfo.HandleGetPinsByBoardID).Methods("GET")
+	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinInfo.HandleSavePin, authApp)).Methods("POST")
+	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinInfo.HandlePinsFeed).Methods("GET")
+	r.HandleFunc("/pins/search/{searchKey}", pinInfo.HandleSearchPins).Methods("GET")
 
-	r.HandleFunc("/board", mid.AuthMid(boardsInfo.HandleCreateBoard, authApp)).Methods("POST")
-	r.HandleFunc("/board/{id:[0-9]+}", boardsInfo.HandleGetBoardByID).Methods("GET")
-	r.HandleFunc("/boards/{id:[0-9]+}", boardsInfo.HandleGetBoardsByUserID).Methods("GET")
-	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardsInfo.HandleDelBoardByID, authApp)).Methods("DELETE")
-	r.HandleFunc("/board/{id:[0-9]+}/add/{pinID:[0-9]+}", mid.AuthMid(pinsInfo.HandleAddPinToBoard, authApp)).Methods("POST")
-	r.HandleFunc("/board/{id:[0-9]+}/{pinID:[0-9]+}", mid.AuthMid(pinsInfo.HandleDelPinByID, authApp)).Methods("DELETE")
+	r.HandleFunc("/board", mid.AuthMid(boardInfo.HandleCreateBoard, authApp)).Methods("POST")
+	r.HandleFunc("/board/{id:[0-9]+}", boardInfo.HandleGetBoardByID).Methods("GET")
+	r.HandleFunc("/boards/{id:[0-9]+}", boardInfo.HandleGetBoardsByUserID).Methods("GET")
+	r.HandleFunc("/board/{id:[0-9]+}", mid.AuthMid(boardInfo.HandleDelBoardByID, authApp)).Methods("DELETE")
+	r.HandleFunc("/board/{id:[0-9]+}/add/{pinID:[0-9]+}", mid.AuthMid(pinInfo.HandleAddPinToBoard, authApp)).Methods("POST")
+	r.HandleFunc("/board/{id:[0-9]+}/{pinID:[0-9]+}", mid.AuthMid(pinInfo.HandleDelPinByID, authApp)).Methods("DELETE")
 
 	r.HandleFunc("/comment/{id:[0-9]+}", mid.AuthMid(commentsInfo.HandleAddComment, authApp)).Methods("POST")
 	r.HandleFunc("/comments/{id:[0-9]+}", commentsInfo.HandleGetComments).Methods("GET")

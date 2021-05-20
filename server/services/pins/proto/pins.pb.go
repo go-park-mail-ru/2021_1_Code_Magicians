@@ -261,6 +261,53 @@ func (x *UserID) GetUid() int64 {
 	return 0
 }
 
+type UserIDList struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ids []int64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+}
+
+func (x *UserIDList) Reset() {
+	*x = UserIDList{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pins_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UserIDList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserIDList) ProtoMessage() {}
+
+func (x *UserIDList) ProtoReflect() protoreflect.Message {
+	mi := &file_pins_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserIDList.ProtoReflect.Descriptor instead.
+func (*UserIDList) Descriptor() ([]byte, []int) {
+	return file_pins_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UserIDList) GetIds() []int64 {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
 type BoardID struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -272,7 +319,7 @@ type BoardID struct {
 func (x *BoardID) Reset() {
 	*x = BoardID{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[3]
+		mi := &file_pins_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -285,7 +332,7 @@ func (x *BoardID) String() string {
 func (*BoardID) ProtoMessage() {}
 
 func (x *BoardID) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[3]
+	mi := &file_pins_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -298,7 +345,7 @@ func (x *BoardID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardID.ProtoReflect.Descriptor instead.
 func (*BoardID) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{3}
+	return file_pins_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BoardID) GetBoardID() int64 {
@@ -319,7 +366,7 @@ type BoardsList struct {
 func (x *BoardsList) Reset() {
 	*x = BoardsList{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[4]
+		mi := &file_pins_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -332,7 +379,7 @@ func (x *BoardsList) String() string {
 func (*BoardsList) ProtoMessage() {}
 
 func (x *BoardsList) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[4]
+	mi := &file_pins_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -345,7 +392,7 @@ func (x *BoardsList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardsList.ProtoReflect.Descriptor instead.
 func (*BoardsList) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{4}
+	return file_pins_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BoardsList) GetBoards() []*Board {
@@ -366,7 +413,7 @@ type PinsList struct {
 func (x *PinsList) Reset() {
 	*x = PinsList{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[5]
+		mi := &file_pins_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -379,7 +426,7 @@ func (x *PinsList) String() string {
 func (*PinsList) ProtoMessage() {}
 
 func (x *PinsList) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[5]
+	mi := &file_pins_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -392,7 +439,7 @@ func (x *PinsList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinsList.ProtoReflect.Descriptor instead.
 func (*PinsList) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{5}
+	return file_pins_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PinsList) GetPins() []*Pin {
@@ -413,7 +460,7 @@ type PinID struct {
 func (x *PinID) Reset() {
 	*x = PinID{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[6]
+		mi := &file_pins_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -426,7 +473,7 @@ func (x *PinID) String() string {
 func (*PinID) ProtoMessage() {}
 
 func (x *PinID) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[6]
+	mi := &file_pins_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -439,7 +486,7 @@ func (x *PinID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinID.ProtoReflect.Descriptor instead.
 func (*PinID) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{6}
+	return file_pins_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PinID) GetPinID() int64 {
@@ -461,7 +508,7 @@ type Save struct {
 func (x *Save) Reset() {
 	*x = Save{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[7]
+		mi := &file_pins_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -474,7 +521,7 @@ func (x *Save) String() string {
 func (*Save) ProtoMessage() {}
 
 func (x *Save) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[7]
+	mi := &file_pins_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -487,7 +534,7 @@ func (x *Save) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Save.ProtoReflect.Descriptor instead.
 func (*Save) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{7}
+	return file_pins_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Save) GetUserID() int64 {
@@ -516,7 +563,7 @@ type BoardOwner struct {
 func (x *BoardOwner) Reset() {
 	*x = BoardOwner{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[8]
+		mi := &file_pins_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -529,7 +576,7 @@ func (x *BoardOwner) String() string {
 func (*BoardOwner) ProtoMessage() {}
 
 func (x *BoardOwner) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[8]
+	mi := &file_pins_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -542,7 +589,7 @@ func (x *BoardOwner) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BoardOwner.ProtoReflect.Descriptor instead.
 func (*BoardOwner) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{8}
+	return file_pins_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *BoardOwner) GetUserID() int64 {
@@ -571,7 +618,7 @@ type PinInBoard struct {
 func (x *PinInBoard) Reset() {
 	*x = PinInBoard{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[9]
+		mi := &file_pins_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -584,7 +631,7 @@ func (x *PinInBoard) String() string {
 func (*PinInBoard) ProtoMessage() {}
 
 func (x *PinInBoard) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[9]
+	mi := &file_pins_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -597,7 +644,7 @@ func (x *PinInBoard) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PinInBoard.ProtoReflect.Descriptor instead.
 func (*PinInBoard) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{9}
+	return file_pins_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PinInBoard) GetBoardID() int64 {
@@ -628,7 +675,7 @@ type UploadImage struct {
 func (x *UploadImage) Reset() {
 	*x = UploadImage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[10]
+		mi := &file_pins_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -641,7 +688,7 @@ func (x *UploadImage) String() string {
 func (*UploadImage) ProtoMessage() {}
 
 func (x *UploadImage) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[10]
+	mi := &file_pins_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -654,7 +701,7 @@ func (x *UploadImage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImage.ProtoReflect.Descriptor instead.
 func (*UploadImage) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{10}
+	return file_pins_proto_rawDescGZIP(), []int{11}
 }
 
 func (m *UploadImage) GetData() isUploadImage_Data {
@@ -706,7 +753,7 @@ type UploadImageResponse struct {
 func (x *UploadImageResponse) Reset() {
 	*x = UploadImageResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[11]
+		mi := &file_pins_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -719,7 +766,7 @@ func (x *UploadImageResponse) String() string {
 func (*UploadImageResponse) ProtoMessage() {}
 
 func (x *UploadImageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[11]
+	mi := &file_pins_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -732,7 +779,7 @@ func (x *UploadImageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageResponse.ProtoReflect.Descriptor instead.
 func (*UploadImageResponse) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{11}
+	return file_pins_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UploadImageResponse) GetPath() string {
@@ -761,7 +808,7 @@ type FileInfo struct {
 func (x *FileInfo) Reset() {
 	*x = FileInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[12]
+		mi := &file_pins_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -774,7 +821,7 @@ func (x *FileInfo) String() string {
 func (*FileInfo) ProtoMessage() {}
 
 func (x *FileInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[12]
+	mi := &file_pins_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +834,7 @@ func (x *FileInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileInfo.ProtoReflect.Descriptor instead.
 func (*FileInfo) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{12}
+	return file_pins_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FileInfo) GetImagePath() string {
@@ -815,7 +862,7 @@ type SearchInput struct {
 func (x *SearchInput) Reset() {
 	*x = SearchInput{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[13]
+		mi := &file_pins_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -828,7 +875,7 @@ func (x *SearchInput) String() string {
 func (*SearchInput) ProtoMessage() {}
 
 func (x *SearchInput) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[13]
+	mi := &file_pins_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -841,7 +888,7 @@ func (x *SearchInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchInput.ProtoReflect.Descriptor instead.
 func (*SearchInput) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{13}
+	return file_pins_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SearchInput) GetKeyWords() string {
@@ -862,7 +909,7 @@ type Number struct {
 func (x *Number) Reset() {
 	*x = Number{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[14]
+		mi := &file_pins_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -875,7 +922,7 @@ func (x *Number) String() string {
 func (*Number) ProtoMessage() {}
 
 func (x *Number) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[14]
+	mi := &file_pins_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +935,7 @@ func (x *Number) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Number.ProtoReflect.Descriptor instead.
 func (*Number) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{14}
+	return file_pins_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Number) GetNumber() int64 {
@@ -909,7 +956,7 @@ type FilePath struct {
 func (x *FilePath) Reset() {
 	*x = FilePath{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[15]
+		mi := &file_pins_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -922,7 +969,7 @@ func (x *FilePath) String() string {
 func (*FilePath) ProtoMessage() {}
 
 func (x *FilePath) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[15]
+	mi := &file_pins_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +982,7 @@ func (x *FilePath) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FilePath.ProtoReflect.Descriptor instead.
 func (*FilePath) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{15}
+	return file_pins_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *FilePath) GetImagePath() string {
@@ -954,7 +1001,7 @@ type Error struct {
 func (x *Error) Reset() {
 	*x = Error{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pins_proto_msgTypes[16]
+		mi := &file_pins_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -967,7 +1014,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_pins_proto_msgTypes[16]
+	mi := &file_pins_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,7 +1027,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_pins_proto_rawDescGZIP(), []int{16}
+	return file_pins_proto_rawDescGZIP(), []int{17}
 }
 
 var File_pins_proto protoreflect.FileDescriptor
@@ -1014,7 +1061,9 @@ var file_pins_proto_rawDesc = []byte{
 	0x49, 0x6d, 0x61, 0x67, 0x65, 0x41, 0x76, 0x67, 0x43, 0x6f, 0x6c, 0x6f, 0x72, 0x18, 0x09, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0d, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x41, 0x76, 0x67, 0x43, 0x6f, 0x6c,
 	0x6f, 0x72, 0x22, 0x1a, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x12, 0x10, 0x0a, 0x03,
-	0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x75, 0x69, 0x64, 0x22, 0x23,
+	0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x03, 0x75, 0x69, 0x64, 0x22, 0x1e,
+	0x0a, 0x0a, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03,
+	0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x03, 0x52, 0x03, 0x69, 0x64, 0x73, 0x22, 0x23,
 	0x0a, 0x07, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x49, 0x44, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x6f, 0x61,
 	0x72, 0x64, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x6f, 0x61, 0x72,
 	0x64, 0x49, 0x44, 0x22, 0x31, 0x0a, 0x0a, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x73, 0x4c, 0x69, 0x73,
@@ -1058,7 +1107,7 @@ var file_pins_proto_rawDesc = []byte{
 	0x46, 0x69, 0x6c, 0x65, 0x50, 0x61, 0x74, 0x68, 0x12, 0x1c, 0x0a, 0x09, 0x69, 0x6d, 0x61, 0x67,
 	0x65, 0x50, 0x61, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x69, 0x6d, 0x61,
 	0x67, 0x65, 0x50, 0x61, 0x74, 0x68, 0x22, 0x07, 0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x32,
-	0xef, 0x06, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x73, 0x12, 0x28, 0x0a, 0x08, 0x41, 0x64, 0x64, 0x42,
+	0xa1, 0x07, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x73, 0x12, 0x28, 0x0a, 0x08, 0x41, 0x64, 0x64, 0x42,
 	0x6f, 0x61, 0x72, 0x64, 0x12, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x42, 0x6f, 0x61, 0x72,
 	0x64, 0x1a, 0x0d, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x49, 0x44,
 	0x22, 0x00, 0x12, 0x28, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x12, 0x0d,
@@ -1086,34 +1135,38 @@ var file_pins_proto_rawDesc = []byte{
 	0x50, 0x69, 0x6e, 0x22, 0x00, 0x12, 0x2a, 0x0a, 0x07, 0x47, 0x65, 0x74, 0x50, 0x69, 0x6e, 0x73,
 	0x12, 0x0d, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x49, 0x44, 0x1a,
 	0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x22,
-	0x00, 0x12, 0x2f, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x73, 0x74, 0x55, 0x73, 0x65, 0x72,
-	0x50, 0x69, 0x6e, 0x49, 0x44, 0x12, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x73, 0x65,
-	0x72, 0x49, 0x44, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x49, 0x44,
-	0x22, 0x00, 0x12, 0x27, 0x0a, 0x0b, 0x53, 0x61, 0x76, 0x65, 0x50, 0x69, 0x63, 0x74, 0x75, 0x72,
-	0x65, 0x12, 0x09, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x1a, 0x0b, 0x2e, 0x70,
-	0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x2c, 0x0a, 0x09, 0x52,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x50, 0x69, 0x6e, 0x12, 0x10, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e,
-	0x50, 0x69, 0x6e, 0x49, 0x6e, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e,
-	0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x27, 0x0a, 0x09, 0x44, 0x65, 0x6c,
-	0x65, 0x74, 0x65, 0x50, 0x69, 0x6e, 0x12, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69,
-	0x6e, 0x49, 0x44, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72,
-	0x22, 0x00, 0x12, 0x41, 0x0a, 0x0d, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x50, 0x69, 0x63, 0x74,
-	0x75, 0x72, 0x65, 0x12, 0x11, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61,
-	0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x1a, 0x19, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x70,
-	0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x28, 0x01, 0x12, 0x2e, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x6d, 0x4f,
-	0x66, 0x50, 0x69, 0x6e, 0x73, 0x12, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x4e, 0x75, 0x6d,
-	0x62, 0x65, 0x72, 0x1a, 0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x73, 0x4c,
-	0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x31, 0x0a, 0x0a, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x50,
-	0x69, 0x6e, 0x73, 0x12, 0x11, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63,
-	0x68, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x1a, 0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69,
-	0x6e, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x00, 0x12, 0x2a, 0x0a, 0x0b, 0x50, 0x69, 0x6e, 0x52,
-	0x65, 0x66, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50,
-	0x69, 0x6e, 0x49, 0x44, 0x1a, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x4e, 0x75, 0x6d, 0x62,
-	0x65, 0x72, 0x22, 0x00, 0x12, 0x2b, 0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x46, 0x69,
-	0x6c, 0x65, 0x12, 0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x50, 0x61,
-	0x74, 0x68, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22,
-	0x00, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x00, 0x12, 0x2b, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x73, 0x74, 0x50, 0x69, 0x6e, 0x49,
+	0x44, 0x12, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x1a,
+	0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x49, 0x44, 0x22, 0x00, 0x12, 0x27,
+	0x0a, 0x0b, 0x53, 0x61, 0x76, 0x65, 0x50, 0x69, 0x63, 0x74, 0x75, 0x72, 0x65, 0x12, 0x09, 0x2e,
+	0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e,
+	0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x2c, 0x0a, 0x09, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x65, 0x50, 0x69, 0x6e, 0x12, 0x10, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x49,
+	0x6e, 0x42, 0x6f, 0x61, 0x72, 0x64, 0x1a, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72,
+	0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x27, 0x0a, 0x09, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x50,
+	0x69, 0x6e, 0x12, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x49, 0x44, 0x1a,
+	0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x41,
+	0x0a, 0x0d, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x50, 0x69, 0x63, 0x74, 0x75, 0x72, 0x65, 0x12,
+	0x11, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61,
+	0x67, 0x65, 0x1a, 0x19, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64,
+	0x49, 0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28,
+	0x01, 0x12, 0x2e, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x4e, 0x75, 0x6d, 0x4f, 0x66, 0x50, 0x69, 0x6e,
+	0x73, 0x12, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x1a,
+	0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x22,
+	0x00, 0x12, 0x31, 0x0a, 0x0a, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x50, 0x69, 0x6e, 0x73, 0x12,
+	0x11, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x49, 0x6e, 0x70,
+	0x75, 0x74, 0x1a, 0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x73, 0x4c, 0x69,
+	0x73, 0x74, 0x22, 0x00, 0x12, 0x2a, 0x0a, 0x0b, 0x50, 0x69, 0x6e, 0x52, 0x65, 0x66, 0x43, 0x6f,
+	0x75, 0x6e, 0x74, 0x12, 0x0b, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x49, 0x44,
+	0x1a, 0x0c, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x22, 0x00,
+	0x12, 0x2b, 0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x0e,
+	0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x50, 0x61, 0x74, 0x68, 0x1a, 0x0b,
+	0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x00, 0x12, 0x34, 0x0a,
+	0x0e, 0x47, 0x65, 0x74, 0x50, 0x69, 0x6e, 0x73, 0x4f, 0x66, 0x55, 0x73, 0x65, 0x72, 0x73, 0x12,
+	0x10, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x49, 0x44, 0x4c, 0x69, 0x73,
+	0x74, 0x1a, 0x0e, 0x2e, 0x70, 0x69, 0x6e, 0x73, 0x2e, 0x50, 0x69, 0x6e, 0x73, 0x4c, 0x69, 0x73,
+	0x74, 0x22, 0x00, 0x42, 0x04, 0x5a, 0x02, 0x2e, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -1128,69 +1181,72 @@ func file_pins_proto_rawDescGZIP() []byte {
 	return file_pins_proto_rawDescData
 }
 
-var file_pins_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_pins_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_pins_proto_goTypes = []interface{}{
 	(*Board)(nil),               // 0: pins.Board
 	(*Pin)(nil),                 // 1: pins.Pin
 	(*UserID)(nil),              // 2: pins.UserID
-	(*BoardID)(nil),             // 3: pins.BoardID
-	(*BoardsList)(nil),          // 4: pins.BoardsList
-	(*PinsList)(nil),            // 5: pins.PinsList
-	(*PinID)(nil),               // 6: pins.PinID
-	(*Save)(nil),                // 7: pins.Save
-	(*BoardOwner)(nil),          // 8: pins.BoardOwner
-	(*PinInBoard)(nil),          // 9: pins.PinInBoard
-	(*UploadImage)(nil),         // 10: pins.UploadImage
-	(*UploadImageResponse)(nil), // 11: pins.UploadImageResponse
-	(*FileInfo)(nil),            // 12: pins.FileInfo
-	(*SearchInput)(nil),         // 13: pins.SearchInput
-	(*Number)(nil),              // 14: pins.Number
-	(*FilePath)(nil),            // 15: pins.FilePath
-	(*Error)(nil),               // 16: pins.Error
+	(*UserIDList)(nil),          // 3: pins.UserIDList
+	(*BoardID)(nil),             // 4: pins.BoardID
+	(*BoardsList)(nil),          // 5: pins.BoardsList
+	(*PinsList)(nil),            // 6: pins.PinsList
+	(*PinID)(nil),               // 7: pins.PinID
+	(*Save)(nil),                // 8: pins.Save
+	(*BoardOwner)(nil),          // 9: pins.BoardOwner
+	(*PinInBoard)(nil),          // 10: pins.PinInBoard
+	(*UploadImage)(nil),         // 11: pins.UploadImage
+	(*UploadImageResponse)(nil), // 12: pins.UploadImageResponse
+	(*FileInfo)(nil),            // 13: pins.FileInfo
+	(*SearchInput)(nil),         // 14: pins.SearchInput
+	(*Number)(nil),              // 15: pins.Number
+	(*FilePath)(nil),            // 16: pins.FilePath
+	(*Error)(nil),               // 17: pins.Error
 }
 var file_pins_proto_depIdxs = []int32{
 	0,  // 0: pins.BoardsList.boards:type_name -> pins.Board
 	1,  // 1: pins.PinsList.pins:type_name -> pins.Pin
 	0,  // 2: pins.Pins.AddBoard:input_type -> pins.Board
-	3,  // 3: pins.Pins.GetBoard:input_type -> pins.BoardID
+	4,  // 3: pins.Pins.GetBoard:input_type -> pins.BoardID
 	2,  // 4: pins.Pins.GetBoards:input_type -> pins.UserID
 	2,  // 5: pins.Pins.GetInitUserBoard:input_type -> pins.UserID
-	3,  // 6: pins.Pins.DeleteBoard:input_type -> pins.BoardID
-	12, // 7: pins.Pins.UploadBoardAvatar:input_type -> pins.FileInfo
+	4,  // 6: pins.Pins.DeleteBoard:input_type -> pins.BoardID
+	13, // 7: pins.Pins.UploadBoardAvatar:input_type -> pins.FileInfo
 	1,  // 8: pins.Pins.CreatePin:input_type -> pins.Pin
-	9,  // 9: pins.Pins.AddPin:input_type -> pins.PinInBoard
-	6,  // 10: pins.Pins.GetPin:input_type -> pins.PinID
-	3,  // 11: pins.Pins.GetPins:input_type -> pins.BoardID
+	10, // 9: pins.Pins.AddPin:input_type -> pins.PinInBoard
+	7,  // 10: pins.Pins.GetPin:input_type -> pins.PinID
+	4,  // 11: pins.Pins.GetPins:input_type -> pins.BoardID
 	2,  // 12: pins.Pins.GetLastPinID:input_type -> pins.UserID
 	1,  // 13: pins.Pins.SavePicture:input_type -> pins.Pin
-	9,  // 14: pins.Pins.RemovePin:input_type -> pins.PinInBoard
-	6,  // 15: pins.Pins.DeletePin:input_type -> pins.PinID
-	10, // 16: pins.Pins.UploadPicture:input_type -> pins.UploadImage
-	14, // 17: pins.Pins.GetNumOfPins:input_type -> pins.Number
-	13, // 18: pins.Pins.SearchPins:input_type -> pins.SearchInput
-	6,  // 19: pins.Pins.PinRefCount:input_type -> pins.PinID
-	15, // 20: pins.Pins.DeleteFile:input_type -> pins.FilePath
-	3,  // 21: pins.Pins.AddBoard:output_type -> pins.BoardID
-	0,  // 22: pins.Pins.GetBoard:output_type -> pins.Board
-	4,  // 23: pins.Pins.GetBoards:output_type -> pins.BoardsList
-	3,  // 24: pins.Pins.GetInitUserBoard:output_type -> pins.BoardID
-	16, // 25: pins.Pins.DeleteBoard:output_type -> pins.Error
-	16, // 26: pins.Pins.UploadBoardAvatar:output_type -> pins.Error
-	6,  // 27: pins.Pins.CreatePin:output_type -> pins.PinID
-	16, // 28: pins.Pins.AddPin:output_type -> pins.Error
-	1,  // 29: pins.Pins.GetPin:output_type -> pins.Pin
-	5,  // 30: pins.Pins.GetPins:output_type -> pins.PinsList
-	6,  // 31: pins.Pins.GetLastPinID:output_type -> pins.PinID
-	16, // 32: pins.Pins.SavePicture:output_type -> pins.Error
-	16, // 33: pins.Pins.RemovePin:output_type -> pins.Error
-	16, // 34: pins.Pins.DeletePin:output_type -> pins.Error
-	11, // 35: pins.Pins.UploadPicture:output_type -> pins.UploadImageResponse
-	5,  // 36: pins.Pins.GetNumOfPins:output_type -> pins.PinsList
-	5,  // 37: pins.Pins.SearchPins:output_type -> pins.PinsList
-	14, // 38: pins.Pins.PinRefCount:output_type -> pins.Number
-	16, // 39: pins.Pins.DeleteFile:output_type -> pins.Error
-	21, // [21:40] is the sub-list for method output_type
-	2,  // [2:21] is the sub-list for method input_type
+	10, // 14: pins.Pins.RemovePin:input_type -> pins.PinInBoard
+	7,  // 15: pins.Pins.DeletePin:input_type -> pins.PinID
+	11, // 16: pins.Pins.UploadPicture:input_type -> pins.UploadImage
+	15, // 17: pins.Pins.GetNumOfPins:input_type -> pins.Number
+	14, // 18: pins.Pins.SearchPins:input_type -> pins.SearchInput
+	7,  // 19: pins.Pins.PinRefCount:input_type -> pins.PinID
+	16, // 20: pins.Pins.DeleteFile:input_type -> pins.FilePath
+	3,  // 21: pins.Pins.GetPinsOfUsers:input_type -> pins.UserIDList
+	4,  // 22: pins.Pins.AddBoard:output_type -> pins.BoardID
+	0,  // 23: pins.Pins.GetBoard:output_type -> pins.Board
+	5,  // 24: pins.Pins.GetBoards:output_type -> pins.BoardsList
+	4,  // 25: pins.Pins.GetInitUserBoard:output_type -> pins.BoardID
+	17, // 26: pins.Pins.DeleteBoard:output_type -> pins.Error
+	17, // 27: pins.Pins.UploadBoardAvatar:output_type -> pins.Error
+	7,  // 28: pins.Pins.CreatePin:output_type -> pins.PinID
+	17, // 29: pins.Pins.AddPin:output_type -> pins.Error
+	1,  // 30: pins.Pins.GetPin:output_type -> pins.Pin
+	6,  // 31: pins.Pins.GetPins:output_type -> pins.PinsList
+	7,  // 32: pins.Pins.GetLastPinID:output_type -> pins.PinID
+	17, // 33: pins.Pins.SavePicture:output_type -> pins.Error
+	17, // 34: pins.Pins.RemovePin:output_type -> pins.Error
+	17, // 35: pins.Pins.DeletePin:output_type -> pins.Error
+	12, // 36: pins.Pins.UploadPicture:output_type -> pins.UploadImageResponse
+	6,  // 37: pins.Pins.GetNumOfPins:output_type -> pins.PinsList
+	6,  // 38: pins.Pins.SearchPins:output_type -> pins.PinsList
+	15, // 39: pins.Pins.PinRefCount:output_type -> pins.Number
+	17, // 40: pins.Pins.DeleteFile:output_type -> pins.Error
+	6,  // 41: pins.Pins.GetPinsOfUsers:output_type -> pins.PinsList
+	22, // [22:42] is the sub-list for method output_type
+	2,  // [2:22] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
 	2,  // [2:2] is the sub-list for extension extendee
 	0,  // [0:2] is the sub-list for field type_name
@@ -1239,7 +1295,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BoardID); i {
+			switch v := v.(*UserIDList); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1251,7 +1307,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BoardsList); i {
+			switch v := v.(*BoardID); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1263,7 +1319,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PinsList); i {
+			switch v := v.(*BoardsList); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1275,7 +1331,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PinID); i {
+			switch v := v.(*PinsList); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1287,7 +1343,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Save); i {
+			switch v := v.(*PinID); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1299,7 +1355,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BoardOwner); i {
+			switch v := v.(*Save); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1311,7 +1367,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PinInBoard); i {
+			switch v := v.(*BoardOwner); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1323,7 +1379,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImage); i {
+			switch v := v.(*PinInBoard); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1335,7 +1391,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImageResponse); i {
+			switch v := v.(*UploadImage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1347,7 +1403,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FileInfo); i {
+			switch v := v.(*UploadImageResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1359,7 +1415,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SearchInput); i {
+			switch v := v.(*FileInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1371,7 +1427,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Number); i {
+			switch v := v.(*SearchInput); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1383,7 +1439,7 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FilePath); i {
+			switch v := v.(*Number); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1395,6 +1451,18 @@ func file_pins_proto_init() {
 			}
 		}
 		file_pins_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FilePath); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pins_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Error); i {
 			case 0:
 				return &v.state
@@ -1407,7 +1475,7 @@ func file_pins_proto_init() {
 			}
 		}
 	}
-	file_pins_proto_msgTypes[10].OneofWrappers = []interface{}{
+	file_pins_proto_msgTypes[11].OneofWrappers = []interface{}{
 		(*UploadImage_Extension)(nil),
 		(*UploadImage_ChunkData)(nil),
 	}
@@ -1417,7 +1485,7 @@ func file_pins_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pins_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1462,6 +1530,7 @@ type PinsClient interface {
 	SearchPins(ctx context.Context, in *SearchInput, opts ...grpc.CallOption) (*PinsList, error)
 	PinRefCount(ctx context.Context, in *PinID, opts ...grpc.CallOption) (*Number, error)
 	DeleteFile(ctx context.Context, in *FilePath, opts ...grpc.CallOption) (*Error, error)
+	GetPinsOfUsers(ctx context.Context, in *UserIDList, opts ...grpc.CallOption) (*PinsList, error)
 }
 
 type pinsClient struct {
@@ -1668,6 +1737,15 @@ func (c *pinsClient) DeleteFile(ctx context.Context, in *FilePath, opts ...grpc.
 	return out, nil
 }
 
+func (c *pinsClient) GetPinsOfUsers(ctx context.Context, in *UserIDList, opts ...grpc.CallOption) (*PinsList, error) {
+	out := new(PinsList)
+	err := c.cc.Invoke(ctx, "/pins.Pins/GetPinsOfUsers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PinsServer is the server API for Pins service.
 type PinsServer interface {
 	AddBoard(context.Context, *Board) (*BoardID, error)
@@ -1689,6 +1767,7 @@ type PinsServer interface {
 	SearchPins(context.Context, *SearchInput) (*PinsList, error)
 	PinRefCount(context.Context, *PinID) (*Number, error)
 	DeleteFile(context.Context, *FilePath) (*Error, error)
+	GetPinsOfUsers(context.Context, *UserIDList) (*PinsList, error)
 }
 
 // UnimplementedPinsServer can be embedded to have forward compatible implementations.
@@ -1751,6 +1830,9 @@ func (*UnimplementedPinsServer) PinRefCount(context.Context, *PinID) (*Number, e
 }
 func (*UnimplementedPinsServer) DeleteFile(context.Context, *FilePath) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
+}
+func (*UnimplementedPinsServer) GetPinsOfUsers(context.Context, *UserIDList) (*PinsList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPinsOfUsers not implemented")
 }
 
 func RegisterPinsServer(s *grpc.Server, srv PinsServer) {
@@ -2107,6 +2189,24 @@ func _Pins_DeleteFile_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Pins_GetPinsOfUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIDList)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PinsServer).GetPinsOfUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pins.Pins/GetPinsOfUsers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PinsServer).GetPinsOfUsers(ctx, req.(*UserIDList))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Pins_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pins.Pins",
 	HandlerType: (*PinsServer)(nil),
@@ -2182,6 +2282,10 @@ var _Pins_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteFile",
 			Handler:    _Pins_DeleteFile_Handler,
+		},
+		{
+			MethodName: "GetPinsOfUsers",
+			Handler:    _Pins_GetPinsOfUsers_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -548,7 +548,8 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 	return &PinsList{Pins: pins}, nil
 }
 
-const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.imageLink, pins.description FROM Pins\n" +
+const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
 
 // SearchPins returns pins by keywords
@@ -571,9 +572,54 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 
 	for rows.Next() {
 		pin := Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.ImageLink, &pin.Description)
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
 		if err != nil {
 			return &PinsList{}, entity.SearchingError
+		}
+		pins = append(pins, &pin)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return &PinsList{}, entity.TransactionCommitError
+	}
+	return &PinsList{Pins: pins}, nil
+}
+
+const GetPinsByUsersIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM Pins\n" +
+	"WHERE pins.UserID = ANY($1)" +
+	"ORDER BY pins.PinID DESC;" // So that newest pins will come up first
+
+// GetPinsOfUsers outputs all pins of passed users
+// It returns slice of pins, nil on success, nil, error on failure
+func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*PinsList, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return nil, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	pins := make([]*Pin, 0)
+
+	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return &PinsList{}, entity.NoResultSearch
+		}
+		return &PinsList{}, err
+	}
+
+	for rows.Next() {
+		pin := Pin{}
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+			&pin.Description)
+		if err != nil {
+			return &PinsList{}, entity.GetPinsByUserIdError
 		}
 		pins = append(pins, &pin)
 	}

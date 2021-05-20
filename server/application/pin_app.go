@@ -44,6 +44,7 @@ type PinAppInterface interface {
 	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
 	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
 	SearchPins(keywords string) ([]entity.Pin, error)
+	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
 }
 
 // CreatePin creates passed pin and adds it to native user's board
@@ -352,6 +353,29 @@ func (pinApp *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
 			return nil, entity.NoResultSearch
 		case strings.Contains(err.Error(), entity.SearchingError.Error()):
 			return nil, entity.SearchingError
+		default:
+			return nil, err
+		}
+	}
+
+	return ConvertGrpcPins(grpcPinsList), nil
+}
+
+// GetPinsOfUsers outputs all pins of passed users
+// It returns slice of pins, nil on success, nil, error on failure
+func (pinApp *PinApp) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
+	userIdsForGrpc := make([]int64, 0, len(userIDs))
+	for _, userID := range userIDs {
+		userIdsForGrpc = append(userIdsForGrpc, int64(userID))
+	}
+
+	grpcPinsList, err := pinApp.grpcClient.GetPinsOfUsers(context.Background(), &grpcPins.UserIDList{Ids: userIdsForGrpc})
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
+			return nil, entity.NoResultSearch
+		case strings.Contains(err.Error(), entity.GetPinsByUserIdError.Error()):
+			return nil, entity.GetPinsByUserIdError
 		default:
 			return nil, err
 		}

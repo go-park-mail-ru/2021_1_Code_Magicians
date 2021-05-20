@@ -29,9 +29,6 @@ type UserAppInterface interface {
 	GetUsers() ([]entity.User, error)                                // Get all users
 	GetUserByUsername(username string) (*entity.User, error)         // Get user by his username
 	UpdateAvatar(userID int, file io.Reader, extension string) error // Replace user's avatar with one passed as second parameter
-	Follow(followerID int, followedID int) error                     // Make first user follow second
-	Unfollow(followerID int, followedID int) error                   // Make first user unfollow second
-	CheckIfFollowed(followerID int, followedID int) (bool, error)    // Check if first user follows second. Err != nil if those users are the same
 	SearchUsers(keywords string) ([]entity.User, error)              // Get all users by passed keywords
 }
 
@@ -238,61 +235,14 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 	return nil
 }
 
-func (userApp *UserApp) Follow(followerID int, followedID int) error {
-	if followerID == followedID {
-		return entity.SelfFollowError
-	}
-
-	_, err := userApp.grpcClient.Follow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
-	if err != nil {
-		switch {
-		case strings.Contains(err.Error(), entity.FollowAlreadyExistsError.Error()):
-			return entity.FollowAlreadyExistsError
-		case strings.Contains(err.Error(), entity.UserNotFoundError.Error()):
-			return entity.UserNotFoundError
-		case strings.Contains(err.Error(), entity.FollowCountUpdateError.Error()):
-			return entity.FollowCountUpdateError
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (userApp *UserApp) Unfollow(followerID int, followedID int) error {
-	if followerID == followedID {
-		return entity.SelfFollowError
-	}
-	_, err := userApp.grpcClient.Unfollow(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
-	if err != nil {
-		switch {
-		case strings.Contains(err.Error(), entity.FollowNotFoundError.Error()):
-			return entity.FollowNotFoundError
-		case strings.Contains(err.Error(), entity.FollowCountUpdateError.Error()):
-			return entity.FollowCountUpdateError
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (userApp *UserApp) CheckIfFollowed(followerID int, followedID int) (bool, error) {
-	if followerID == followedID {
-		return false, entity.SelfFollowError
-	}
-	isFollowed, err := userApp.grpcClient.CheckIfFollowed(context.Background(), &grpcUser.Follows{FollowedID: int64(followedID), FollowerID: int64(followerID)})
-	return isFollowed.IsFollowed, err
-}
-
 // SearchUsers fetches all users from database suitable with passed keywords
 // It returns slice of users and nil on success, nil and error on failure
 func (userApp *UserApp) SearchUsers(keyWords string) ([]entity.User, error) {
 	usersList, err := userApp.grpcClient.SearchUsers(context.Background(), &grpcUser.SearchInput{KeyWords: keyWords})
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
-			return nil, entity.NoResultSearch
+		case strings.Contains(err.Error(), entity.UsersNotFoundError.Error()):
+			return nil, entity.UsersNotFoundError
 		case strings.Contains(err.Error(), entity.SearchingError.Error()):
 			return nil, entity.SearchingError
 		}

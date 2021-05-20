@@ -49,21 +49,6 @@ func (mr *MockUserAppInterfaceMockRecorder) ChangePassword(user interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockUserAppInterface)(nil).ChangePassword), user)
 }
 
-// CheckIfFollowed mocks base method.
-func (m *MockUserAppInterface) CheckIfFollowed(followerID, followedID int) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckIfFollowed", followerID, followedID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckIfFollowed indicates an expected call of CheckIfFollowed.
-func (mr *MockUserAppInterfaceMockRecorder) CheckIfFollowed(followerID, followedID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfFollowed", reflect.TypeOf((*MockUserAppInterface)(nil).CheckIfFollowed), followerID, followedID)
-}
-
 // CreateUser mocks base method.
 func (m *MockUserAppInterface) CreateUser(user *entity.User) (int, error) {
 	m.ctrl.T.Helper()
@@ -91,20 +76,6 @@ func (m *MockUserAppInterface) DeleteUser(userID int) error {
 func (mr *MockUserAppInterfaceMockRecorder) DeleteUser(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUserAppInterface)(nil).DeleteUser), userID)
-}
-
-// Follow mocks base method.
-func (m *MockUserAppInterface) Follow(followerID, followedID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Follow", followerID, followedID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Follow indicates an expected call of Follow.
-func (mr *MockUserAppInterfaceMockRecorder) Follow(followerID, followedID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserAppInterface)(nil).Follow), followerID, followedID)
 }
 
 // GetUser mocks base method.
@@ -179,20 +150,6 @@ func (m *MockUserAppInterface) SearchUsers(keywords string) ([]entity.User, erro
 func (mr *MockUserAppInterfaceMockRecorder) SearchUsers(keywords interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUsers", reflect.TypeOf((*MockUserAppInterface)(nil).SearchUsers), keywords)
-}
-
-// Unfollow mocks base method.
-func (m *MockUserAppInterface) Unfollow(followerID, followedID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unfollow", followerID, followedID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Unfollow indicates an expected call of Unfollow.
-func (mr *MockUserAppInterfaceMockRecorder) Unfollow(followerID, followedID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockUserAppInterface)(nil).Unfollow), followerID, followedID)
 }
 
 // UpdateAvatar mocks base method.
