@@ -53,4 +53,17 @@ services:
     build: postgres
     ports:
       - 5432:5432
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+  
+  tarantool:
+    image: tarantool/tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - tarantool-volume:/var/lib/tarantool
+      
+volumes:
+  tarantool-volume:
+  postgres-volume:
     

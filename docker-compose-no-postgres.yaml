@@ -42,4 +42,13 @@ services:
       - user-service
       - pins-service
     command: ["go", "run", "./cmd/comments/"]
-    
+  
+  tarantool:
+    image: tarantool/tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - tarantool-volume:/var/lib/tarantool
+  
+volumes:
+  tarantool-volume:
