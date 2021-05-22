@@ -203,6 +203,7 @@ func (followInfo *FollowInfo) HandleGetFollowers(w http.ResponseWriter, r *http.
 	for _, user := range followers {
 		var userOutput entity.UserOutput
 		userOutput.FillFromUser(&user)
+		userOutput.Email = "" // Emails are private and should not be passed to unrelated users
 		usersOutput.Users = append(usersOutput.Users, userOutput)
 	}
 
@@ -240,6 +241,7 @@ func (followInfo *FollowInfo) HandleGetFollowed(w http.ResponseWriter, r *http.R
 	for _, user := range followedUsers {
 		var userOutput entity.UserOutput
 		userOutput.FillFromUser(&user)
+		userOutput.Email = "" // Emails are private and should not be passed to unrelated users
 		usersOutput.Users = append(usersOutput.Users, userOutput)
 	}
 
