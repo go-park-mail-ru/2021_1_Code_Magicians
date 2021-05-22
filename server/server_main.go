@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,9 +25,9 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
+	"github.com/tarantool/go-tarantool"
 )
 
 func runServer(addr string) {
@@ -46,51 +45,50 @@ func runServer(addr string) {
 	if err != nil {
 		sugarLogger.Fatal("Could not load s3.env file", zap.String("error", err.Error()))
 	}
-	// TODO: check if all needed variables are present
 
-	dbPrefix := os.Getenv("DB_PREFIX")
-	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {
-		sugarLogger.Fatalf("Wrong prefix: %s , should be AMAZON or LOCAL", dbPrefix)
-	}
-
-	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv(dbPrefix+"_DB_USER"), os.Getenv(dbPrefix+"_DB_PASSWORD"), os.Getenv(dbPrefix+"_DB_HOST"),
-		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
-	conn, err := pgxpool.Connect(context.Background(), connectionString)
+	err = godotenv.Load("docker_vars.env")
 	if err != nil {
-		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
-		return
+		sugarLogger.Fatal("Could not load docker_vars.env file", zap.String("error", err.Error()))
 	}
-	defer conn.Close()
+
+	dockerStatus := os.Getenv("CONTAINER_PREFIX")
+	if dockerStatus != "DOCKER" && dockerStatus != "LOCALHOST" {
+		sugarLogger.Fatalf("Wrong prefix: %s , should be DOCKER or LOCALHOST", dockerStatus)
+	}
+
+	tarantoolConn, err := tarantool.Connect(os.Getenv(dockerStatus+"_TARANTOOL_PREFIX")+":3301", tarantool.Opts{
+		User: os.Getenv("TARANTOOL_USER"),
+		Pass: os.Getenv("TARANTOOL_PASSWORD"),
+	})
+	if err != nil {
+		sugarLogger.Fatalf("Tarantool connection refused, error:", err)
+	}
+
+	fmt.Println("Successfully connected to tarantool database")
+	defer tarantoolConn.Close()
+
 	sess := entity.ConnectAws()
 	// TODO divide file
 
-	//
-	//var kacp = keepalive.ClientParameters{
-	//	Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
-	//	Timeout:             time.Second,      // wait 1 second for ping back
-	//	PermitWithoutStream: true,             // send pings even without active streams
-	//}
-
-	sessionUser, err := grpc.Dial("user-service:8082", grpc.WithInsecure())
+	sessionUser, err := grpc.Dial(os.Getenv(dockerStatus+"_USER_PREFIX")+":8082", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for User service")
 	}
 	defer sessionUser.Close()
 
-	sessionAuth, err := grpc.Dial("auth-service:8083", grpc.WithInsecure())
+	sessionAuth, err := grpc.Dial(os.Getenv(dockerStatus+"_AUTH_PREFIX")+":8083", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Auth service")
 	}
 	defer sessionAuth.Close()
 
-	sessionPins, err := grpc.Dial("pins-service:8084", grpc.WithInsecure())
+	sessionPins, err := grpc.Dial(os.Getenv(dockerStatus+"_PINS_PREFIX")+":8084", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Pins service")
 	}
 	defer sessionPins.Close()
 
-	sessionComments, err := grpc.Dial("comments-service:8085", grpc.WithInsecure())
+	sessionComments, err := grpc.Dial(os.Getenv(dockerStatus+"_COMMENTS_PREFIX")+":8085", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for Comments service")
 	}
@@ -124,7 +122,6 @@ func runServer(addr string) {
 	chatInfo := chat.NewChatnfo(chatApp, userApp, logger)
 	// TODO divide file
 
-	fmt.Println("Successfully connected to database")
 	r := routing.CreateRouter(authApp, boardInfo, authInfo, profileInfo, followInfo, pinInfo, commentsInfo,
 		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true")
 
