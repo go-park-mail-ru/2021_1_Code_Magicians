@@ -50,19 +50,19 @@ func (mr *MockAuthAppInterfaceMockRecorder) CheckCookie(cookie interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCookie", reflect.TypeOf((*MockAuthAppInterface)(nil).CheckCookie), cookie)
 }
 
-// LoginUser mocks base method.
-func (m *MockAuthAppInterface) LoginUser(username, password string) (*entity.CookieInfo, error) {
+// CheckUserCredentials mocks base method.
+func (m *MockAuthAppInterface) CheckUserCredentials(username, password string) (*entity.CookieInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoginUser", username, password)
+	ret := m.ctrl.Call(m, "CheckUserCredentials", username, password)
 	ret0, _ := ret[0].(*entity.CookieInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LoginUser indicates an expected call of LoginUser.
-func (mr *MockAuthAppInterfaceMockRecorder) LoginUser(username, password interface{}) *gomock.Call {
+// CheckUserCredentials indicates an expected call of CheckUserCredentials.
+func (mr *MockAuthAppInterfaceMockRecorder) CheckUserCredentials(username, password interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginUser", reflect.TypeOf((*MockAuthAppInterface)(nil).LoginUser), username, password)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserCredentials", reflect.TypeOf((*MockAuthAppInterface)(nil).CheckUserCredentials), username, password)
 }
 
 // LogoutUser mocks base method.

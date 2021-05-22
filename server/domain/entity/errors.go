@@ -22,6 +22,8 @@ const FollowCountUpdateError customError = "Failed to update follow(er/ing) coun
 const SelfFollowError customError = "Users can't follow themselves"
 
 const CookieGenerationError customError = "Could not generate cookie"
+const CookieNotFoundError customError = "Could not find cookie"
+const CookieFoundError customError = "Cookie with such value already exists"
 const GetCookieFromContextError customError = "Could not get cookie from context"
 
 const FilenameGenerationError customError = "Could not generate filename"

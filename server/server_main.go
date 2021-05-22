@@ -27,7 +27,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
-	"github.com/tarantool/go-tarantool"
 )
 
 func runServer(addr string) {
@@ -55,17 +54,6 @@ func runServer(addr string) {
 	if dockerStatus != "DOCKER" && dockerStatus != "LOCALHOST" {
 		sugarLogger.Fatalf("Wrong prefix: %s , should be DOCKER or LOCALHOST", dockerStatus)
 	}
-
-	tarantoolConn, err := tarantool.Connect(os.Getenv(dockerStatus+"_TARANTOOL_PREFIX")+":3301", tarantool.Opts{
-		User: os.Getenv("TARANTOOL_USER"),
-		Pass: os.Getenv("TARANTOOL_PASSWORD"),
-	})
-	if err != nil {
-		sugarLogger.Fatalf("Tarantool connection refused, error:", err)
-	}
-
-	fmt.Println("Successfully connected to tarantool database")
-	defer tarantoolConn.Close()
 
 	sess := entity.ConnectAws()
 	// TODO divide file

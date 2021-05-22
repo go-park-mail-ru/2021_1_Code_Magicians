@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	commentsService "pinterest/services/comments"
 	commentsProto "pinterest/services/comments/proto"
+
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -30,7 +31,6 @@ func runService(addr string) {
 	if err != nil {
 		sugarLogger.Fatal("Could not load s3.env file", zap.String("error", err.Error()))
 	}
-	// TODO: check if all needed variables are present
 
 	dbPrefix := os.Getenv("DB_PREFIX")
 	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {

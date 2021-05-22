@@ -44,7 +44,7 @@ services:
     command: ["go", "run", "./cmd/comments/"]
   
   tarantool:
-    image: tarantool/tarantool
+    build: tarantool
     ports:
       - "3301:3301"
     volumes:
