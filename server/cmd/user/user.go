@@ -43,15 +43,15 @@ func runService(addr string) {
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	conn, err := pgxpool.Connect(context.Background(), connectionString)
 	if err != nil {
-		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
+		sugarLogger.Fatal("Could not connect to postgres database", zap.String("error", err.Error()))
 		return
 	}
 
+	fmt.Println("Successfully connected to postgres database")
 	defer conn.Close()
 
 	sess := entity.ConnectAws()
 
-	fmt.Println("Successfully connected to database")
 	server := grpc.NewServer()
 
 	service := userService.NewService(conn, sess)

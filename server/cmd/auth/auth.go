@@ -47,7 +47,7 @@ func runService(addr string) {
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	postgresConn, err := pgxpool.Connect(context.Background(), postgresConnectionString)
 	if err != nil {
-		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
+		sugarLogger.Fatal("Could not connect to postgres database", zap.String("error", err.Error()))
 		return
 	}
 
@@ -64,7 +64,7 @@ func runService(addr string) {
 		Pass: os.Getenv("TARANTOOL_PASSWORD"),
 	})
 	if err != nil {
-		sugarLogger.Fatalf("Tarantool connection refused, error:", err)
+		sugarLogger.Fatal("Could not connect to tarantool database", zap.String("error", err.Error()))
 	}
 
 	fmt.Println("Successfully connected to tarantool database")

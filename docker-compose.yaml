@@ -28,6 +28,7 @@ services:
     depends_on:
       - user-service
       - postgres
+      - tarantool
     command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/auth/"]
 
   pins-service:
