@@ -65,13 +65,6 @@ func runServer(addr string) {
 	sess := entity.ConnectAws()
 	// TODO divide file
 
-	//
-	//var kacp = keepalive.ClientParameters{
-	//	Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
-	//	Timeout:             time.Second,      // wait 1 second for ping back
-	//	PermitWithoutStream: true,             // send pings even without active streams
-	//}
-
 	sessionUser, err := grpc.Dial("user-service:8082", grpc.WithInsecure())
 	if err != nil {
 		sugarLogger.Fatal("Can not create session for User service")
