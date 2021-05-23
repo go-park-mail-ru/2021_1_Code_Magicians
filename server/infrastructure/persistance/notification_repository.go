@@ -27,7 +27,7 @@ func (notificationRepo *NotificationRepo) AddNotification(notification *entity.N
 		return -1, fmt.Errorf("Could not add notification")
 	}
 
-	newNotificationID := int(resp.Tuples()[0][0].(uint))
+	newNotificationID := int(resp.Tuples()[0][0].(uint64))
 	return newNotificationID, nil
 }
 
@@ -54,6 +54,10 @@ func (notificationRepo *NotificationRepo) GetNotification(notificationID int) (*
 	resp, err := notificationRepo.tarantoolDB.Select("notifications", "primary", 0, 1, tarantool.IterEq, []interface{}{uint(notificationID)})
 
 	if err != nil {
+		if resp == nil {
+			return nil, err
+		}
+
 		switch resp.Code {
 		case tarantool.ErrTupleNotFound:
 			return nil, entity.NotificationNotFoundError
@@ -72,9 +76,14 @@ func (notificationRepo *NotificationRepo) GetNotification(notificationID int) (*
 }
 
 func (notificationRepo *NotificationRepo) GetAllNotifications(userID int) ([]*entity.Notification, error) {
-	resp, err := notificationRepo.tarantoolDB.Select("notifications", "secondary", 0, 1, tarantool.IterEq, []interface{}{uint(userID)})
+	const MaxUint32 = ^uint32(0) // So that upper limit for select is practically "infinity"
+	resp, err := notificationRepo.tarantoolDB.Select("notifications", "secondary", 0, MaxUint32, tarantool.IterEq, []interface{}{uint(userID)})
 
 	if err != nil {
+		if resp == nil {
+			return nil, err
+		}
+
 		switch resp.Code {
 		case tarantool.ErrTupleNotFound:
 			return nil, entity.NotificationNotFoundError
@@ -84,10 +93,10 @@ func (notificationRepo *NotificationRepo) GetAllNotifications(userID int) ([]*en
 	}
 
 	if len(resp.Tuples()) == 0 {
-		return nil, entity.NotificationNotFoundError
+		return nil, entity.NotificationsNotFoundError
 	}
 
-	notifications := make([]*entity.Notification, 0, 1)
+	notifications := make([]*entity.Notification, 0, len(resp.Tuples()))
 
 	for _, tuple := range resp.Tuples() {
 		notifications = append(notifications, interfacesToNotification(tuple))
@@ -109,8 +118,8 @@ func notificationToInterfaces(notification *entity.Notification) []interface{} {
 
 func interfacesToNotification(interfaces []interface{}) *entity.Notification {
 	notification := new(entity.Notification)
-	notification.NotificationID = int(interfaces[0].(uint))
-	notification.UserID = int(interfaces[1].(uint))
+	notification.NotificationID = int(interfaces[0].(uint64))
+	notification.UserID = int(interfaces[1].(uint64))
 	notification.Category = interfaces[2].(string)
 	notification.Title = interfaces[3].(string)
 	notification.Text = interfaces[4].(string)

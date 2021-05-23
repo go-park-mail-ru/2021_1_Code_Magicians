@@ -164,7 +164,7 @@ func (followInfo *FollowInfo) HandleUnfollowProfile(w http.ResponseWriter, r *ht
 			UserID:   followedID,
 			Title:    "Follower lost!",
 			Category: "followers",
-			Text:     "You have  lost a follower: " + followerUser.Username,
+			Text:     "You have lost a follower: " + followerUser.Username,
 			IsRead:   false,
 		})
 		if err == nil {

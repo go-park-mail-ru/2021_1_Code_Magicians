@@ -32,9 +32,10 @@ const FileDeletionError customError = "File deletion failed"
 
 const ClientNotSetError customError = "Websocket client not set"
 
-const NoNotificationsError customError = "No notifications found"
+const NotificationsNotFoundError customError = "Notifications not found"
 const NotificationNotFoundError customError = "Notification not found"
 const NotificationAlreadyReadError customError = "Notification was already read"
+const ForeignNotificationError customError = "Notification belongs to another user"
 
 const ChatNotFoundError customError = "Chat not found"
 const MessageNotFoundError customError = "Message not found"

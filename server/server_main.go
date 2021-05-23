@@ -6,6 +6,7 @@ import (
 	"os"
 	"pinterest/application"
 	"pinterest/domain/entity"
+	"pinterest/infrastructure/persistance"
 	"pinterest/interfaces/auth"
 	"pinterest/interfaces/board"
 	"pinterest/interfaces/chat"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
+	"github.com/tarantool/go-tarantool"
 )
 
 func runServer(addr string) {
@@ -54,6 +56,17 @@ func runServer(addr string) {
 	if dockerStatus != "DOCKER" && dockerStatus != "LOCALHOST" {
 		sugarLogger.Fatalf("Wrong prefix: %s , should be DOCKER or LOCALHOST", dockerStatus)
 	}
+
+	tarantoolConn, err := tarantool.Connect(os.Getenv(dockerStatus+"_TARANTOOL_PREFIX")+":3301", tarantool.Opts{
+		User: os.Getenv("TARANTOOL_USER"),
+		Pass: os.Getenv("TARANTOOL_PASSWORD"),
+	})
+	if err != nil {
+		sugarLogger.Fatal("Could not connect to tarantool database", zap.String("error", err.Error()))
+	}
+
+	fmt.Println("Successfully connected to tarantool database")
+	defer tarantoolConn.Close()
 
 	sess := entity.ConnectAws()
 	// TODO divide file
@@ -86,6 +99,7 @@ func runServer(addr string) {
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)
 	repoPins := protoPins.NewPinsClient(sessionPins)
 	repoComments := protoComments.NewCommentsClient(sessionComments)
+	repoNotification := persistance.NewNotificationRepository(tarantoolConn)
 
 	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
 	boardApp := application.NewBoardApp(repoPins)
@@ -96,7 +110,7 @@ func runServer(addr string) {
 	followApp := application.NewFollowApp(repoUser, pinApp)
 	commentApp := application.NewCommentApp(repoComments)
 	websocketApp := application.NewWebsocketApp(userApp)
-	notificationApp := application.NewNotificationApp(userApp, websocketApp)
+	notificationApp := application.NewNotificationApp(repoNotification, userApp, websocketApp)
 	chatApp := application.NewChatApp(userApp, websocketApp)
 
 	boardInfo := board.NewBoardInfo(boardApp, logger)
