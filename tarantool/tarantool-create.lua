@@ -31,9 +31,12 @@ function restore_notifications_schema()
              {name = 'text', type = 'string'},
              {name = 'is_read', type = 'boolean'},
              })
+
+    box.schema.sequence.create('notification_id_sequence')
     s:create_index('primary', {
              type = 'hash',
-             parts = {'notification_id'}
+             parts = {'notification_id'},
+             sequence = 'notification_id_sequence'
              })
     s:create_index('secondary', {
              type = 'hash',
