@@ -1,11 +1,12 @@
 package metrics
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"net/http"
-	"strconv"
 )
 
 type responseWriter struct {
@@ -26,14 +27,14 @@ var HttpHits = promauto.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "httpHits",
 		Help: "Number of the requests with the same response code and path",
-	},[]string{"status", "path"},
-	)
+	}, []string{"status", "path"},
+)
 
 var HttpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "http_response_time_seconds",
+	Name:    "http_response_time_seconds",
 	Buckets: []float64{0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20},
-	Help: "Duration of HTTP requests.",
-}, []string{"status", "path"},
+	Help:    "Duration of HTTP requests.",
+}, []string{"path"},
 )
 
 func PrometheusMiddleware(next http.Handler) http.Handler {
@@ -41,13 +42,14 @@ func PrometheusMiddleware(next http.Handler) http.Handler {
 		route := mux.CurrentRoute(r)
 		path, _ := route.GetPathTemplate()
 
-
 		rw := NewResponseWriter(w)
+
+		timer := prometheus.NewTimer(HttpDuration.WithLabelValues(path))
+
 		next.ServeHTTP(rw, r)
 
 		statusCode := rw.statusCode
 
-		timer := prometheus.NewTimer(HttpDuration.WithLabelValues(strconv.Itoa(statusCode), path))
 		HttpHits.WithLabelValues(strconv.Itoa(statusCode), path).Inc()
 
 		defer timer.ObserveDuration()

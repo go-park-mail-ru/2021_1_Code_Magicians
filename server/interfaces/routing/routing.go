@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
 	"pinterest/application"
@@ -38,7 +37,7 @@ func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, auth
 		r.Use(mid.CSRFSettingMid)
 	}
 
-	r.Handle("/metrics", promhttp.Handler())
+	//r.Handle("/metrics", promhttp.Handler())
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, authApp)).Methods("POST")
