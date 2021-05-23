@@ -11,6 +11,7 @@ services:
       - auth-service
       - pins-service
       - comments-service
+      - tarantool
     command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "server_main.go"]
   
   user-service:

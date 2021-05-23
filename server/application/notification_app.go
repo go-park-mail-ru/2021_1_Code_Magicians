@@ -7,12 +7,13 @@ import (
 )
 
 type NotificationApp struct {
-	notificationRepo repository.NotificationRepository
+	notificationRepo repository.NotificationRepositoryInterface
 	userApp          UserAppInterface
 	websocketApp     WebsocketAppInterface
 }
 
-func NewNotificationApp(notificationRepo repository.NotificationRepository, userApp UserAppInterface, websocketApp WebsocketAppInterface) *NotificationApp {
+func NewNotificationApp(notificationRepo repository.NotificationRepositoryInterface,
+	userApp UserAppInterface, websocketApp WebsocketAppInterface) *NotificationApp {
 	return &NotificationApp{
 		notificationRepo: notificationRepo,
 		userApp:          userApp,

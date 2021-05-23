@@ -100,6 +100,7 @@ func runServer(addr string) {
 	repoPins := protoPins.NewPinsClient(sessionPins)
 	repoComments := protoComments.NewCommentsClient(sessionComments)
 	repoNotification := persistance.NewNotificationRepository(tarantoolConn)
+	repoChat := persistance.NewChatRepository(tarantoolConn)
 
 	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
 	boardApp := application.NewBoardApp(repoPins)
@@ -111,7 +112,7 @@ func runServer(addr string) {
 	commentApp := application.NewCommentApp(repoComments)
 	websocketApp := application.NewWebsocketApp(userApp)
 	notificationApp := application.NewNotificationApp(repoNotification, userApp, websocketApp)
-	chatApp := application.NewChatApp(userApp, websocketApp)
+	chatApp := application.NewChatApp(repoChat, userApp, websocketApp)
 
 	boardInfo := board.NewBoardInfo(boardApp, logger)
 	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)

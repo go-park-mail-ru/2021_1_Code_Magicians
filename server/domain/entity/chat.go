@@ -1,17 +1,6 @@
 package entity
 
 type Message struct {
-	MessageID      int
-	AuthorID       int
-	Text           string
-	TimeOfCreation string
-}
-
-type MessageInput struct {
-	MessageText string `json:"messageText"`
-}
-
-type MessageOutput struct {
 	MessageID      int    `json:"ID"`
 	ChatID         int    `json:"chatID"`
 	AuthorID       int    `json:"authorID"`
@@ -19,13 +8,8 @@ type MessageOutput struct {
 	TimeOfCreation string `json:"addingTime"`
 }
 
-// Fill from message fills MessageOutput using message and it's chatID
-func (output *MessageOutput) FillFromMessage(message *Message, chatID int) {
-	output.MessageID = message.MessageID
-	output.ChatID = chatID
-	output.AuthorID = message.AuthorID
-	output.Text = message.Text
-	output.TimeOfCreation = message.TimeOfCreation
+type MessageInput struct {
+	MessageText string `json:"messageText"`
 }
 
 type Chat struct {
@@ -34,24 +18,21 @@ type Chat struct {
 	SecondUserID   int
 	FirstUserRead  bool
 	SecondUserRead bool
-	Messages       map[int]Message
 }
 
 type ChatOutput struct {
-	ChatID        int             `json:"ID"`
-	TargetProfile UserOutput      `json:"targetProfile"`
-	Messages      []MessageOutput `json:"messages"`
-	IsRead        bool            `json:"isRead"`
+	ChatID        int        `json:"ID"`
+	TargetProfile UserOutput `json:"targetProfile"`
+	Messages      []Message  `json:"messages"`
+	IsRead        bool       `json:"isRead"`
 }
 
 // FillFromChat fills ChatOutput from Chat
-func (output *ChatOutput) FillFromChat(chat *Chat, target *User) {
+func (output *ChatOutput) FillFromChat(chat *Chat, target *User, messages []*Message) {
 	output.ChatID = chat.ChatID
-	output.Messages = make([]MessageOutput, 0)
-	for _, message := range chat.Messages {
-		var messageOutput MessageOutput
-		messageOutput.FillFromMessage(&message, chat.ChatID)
-		output.Messages = append(output.Messages, messageOutput)
+	output.Messages = make([]Message, 0, len(messages))
+	for _, message := range messages {
+		output.Messages = append(output.Messages, *message)
 	}
 
 	var targetProfileOutput UserOutput
@@ -78,6 +59,6 @@ type OneChatOutput struct {
 }
 
 type OneMessageOutput struct {
-	Type    key           `json:"type"`
-	Message MessageOutput `json:"message"`
+	Type    key     `json:"type"`
+	Message Message `json:"message"`
 }

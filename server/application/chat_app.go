@@ -3,21 +3,19 @@ package application
 import (
 	"encoding/json"
 	"pinterest/domain/entity"
-	"sync"
+	"pinterest/domain/repository"
 )
 
 type ChatApp struct {
-	chats         map[int]entity.Chat
-	lastChatID    int
-	lastMessageID int
-	mu            sync.Mutex
-	userApp       UserAppInterface
-	websocketApp  WebsocketAppInterface
+	chatRepo     repository.ChatRepositoryInterface
+	userApp      UserAppInterface
+	websocketApp WebsocketAppInterface
 }
 
-func NewChatApp(userApp UserAppInterface, websocketApp WebsocketAppInterface) *ChatApp {
+func NewChatApp(chatRepo repository.ChatRepositoryInterface,
+	userApp UserAppInterface, websocketApp WebsocketAppInterface) *ChatApp {
 	return &ChatApp{
-		chats:        make(map[int]entity.Chat),
+		chatRepo:     chatRepo,
 		userApp:      userApp,
 		websocketApp: websocketApp,
 	}
@@ -26,39 +24,11 @@ func NewChatApp(userApp UserAppInterface, websocketApp WebsocketAppInterface) *C
 type ChatAppInterface interface {
 	CreateChat(firstUserID int, secondUserID int) (int, error)       // Create chat between first and second user (errors if chat exists already)
 	GetChatIDByUsers(firstUserID int, secondUserID int) (int, error) // Find chat between specified users
-	AddMessage(chatId int, message *entity.Message) (int, error)     // Add message to specified chat (author has to be in said chat)
+	AddMessage(message *entity.Message) (int, error)                 // Add message (author has to be in message's chat)
 	SendMessage(chatID int, messageID int, userID int) error         // Send specified message from specified chat to user (who must be in said chat)
 	SendChat(userID int, chatId int) error                           // Send entire specified chat to specified user (who  must be in said chat)
 	SendAllChats(userID int) error                                   // Send all chats of specified user to them
 	ReadChat(chatID int, userID int) error                           // Mark specified chat as "Read" for specified user
-}
-
-func (chatApp *ChatApp) getChatByUsers(firstUserID int, secondUserID int) (*entity.Chat, error) {
-	chatApp.mu.Lock()
-	defer chatApp.mu.Unlock()
-
-	for _, chat := range chatApp.chats {
-		if chat.FirstUserID == firstUserID && chat.SecondUserID == secondUserID {
-			return &chat, nil
-		}
-		if chat.FirstUserID == secondUserID && chat.SecondUserID == firstUserID { // User's actual order does not matter
-			return &chat, nil
-		}
-	}
-
-	return nil, entity.ChatNotFoundError
-}
-
-func (chatApp *ChatApp) getChatByID(chatID int) (*entity.Chat, error) {
-	chatApp.mu.Lock()
-	defer chatApp.mu.Unlock()
-
-	chat, found := chatApp.chats[chatID]
-	if !found {
-		return nil, entity.ChatNotFoundError
-	}
-
-	return &chat, nil
 }
 
 func (chatApp *ChatApp) CreateChat(firstUserID int, secondUserID int) (int, error) {
@@ -71,68 +41,41 @@ func (chatApp *ChatApp) CreateChat(firstUserID int, secondUserID int) (int, erro
 		return -1, entity.UserNotFoundError
 	}
 
-	_, err = chatApp.getChatByUsers(firstUserID, secondUserID)
-	if err == nil {
-		return -1, entity.ChatAlreadyExistsError
-	}
-
-	chatApp.mu.Lock()
-	chat := entity.Chat{
-		ChatID:         chatApp.lastChatID,
-		FirstUserID:    firstUserID,
-		SecondUserID:   secondUserID,
-		FirstUserRead:  false,
-		SecondUserRead: false,
-		Messages:       make(map[int]entity.Message),
-	}
-	chatApp.chats[chat.ChatID] = chat
-	chatApp.lastChatID++
-	chatApp.mu.Unlock()
-
-	return chat.ChatID, nil
+	return chatApp.chatRepo.CreateChat(firstUserID, secondUserID)
 }
 
 func (chatApp *ChatApp) GetChatIDByUsers(firstUserID int, secondUserID int) (int, error) {
-	chat, err := chatApp.getChatByUsers(firstUserID, secondUserID)
-	if err != nil {
-		return -1, err
-	}
-
-	return chat.ChatID, nil
+	return chatApp.chatRepo.GetChatIDByUsers(firstUserID, secondUserID)
 }
 
-func (chatApp *ChatApp) AddMessage(chatID int, message *entity.Message) (int, error) {
-	chat, err := chatApp.getChatByID(chatID)
+func (chatApp *ChatApp) AddMessage(message *entity.Message) (int, error) {
+	chat, err := chatApp.chatRepo.GetChat(message.ChatID)
 	if err != nil {
 		return -1, err
 	}
 
-	if chat.FirstUserID != message.AuthorID && chat.SecondUserID != message.AuthorID {
+	switch {
+	case chat.FirstUserID == message.AuthorID:
+		chat.FirstUserRead = true
+		chat.SecondUserRead = false
+	case chat.SecondUserID == message.AuthorID:
+		chat.SecondUserRead = true
+		chat.FirstUserRead = false
+	default:
 		return -1, entity.UserNotInChatError
 	}
 
-	switch chat.FirstUserID == message.AuthorID {
-	case true:
-		chat.FirstUserRead = true
-		chat.SecondUserRead = false
-	case false:
-		chat.FirstUserRead = false
-		chat.SecondUserRead = true
+	messageID, err := chatApp.chatRepo.AddMessage(message)
+	if err != nil {
+		return -1, err
 	}
 
-	chatApp.mu.Lock()
-	message.MessageID = chatApp.lastMessageID
-	chatApp.lastMessageID++
-
-	chat.Messages[message.MessageID] = *message
-	chatApp.chats[chatID] = *chat
-	chatApp.mu.Unlock()
-
-	return message.MessageID, nil
+	chatApp.chatRepo.SaveChat(chat)
+	return messageID, nil
 }
 
 func (chatApp *ChatApp) SendMessage(chatID int, messageID int, userID int) error {
-	chat, err := chatApp.getChatByID(chatID)
+	chat, err := chatApp.chatRepo.GetChat(chatID)
 	if err != nil {
 		return err
 	}
@@ -141,15 +84,12 @@ func (chatApp *ChatApp) SendMessage(chatID int, messageID int, userID int) error
 		return entity.UserNotInChatError
 	}
 
-	message, found := chat.Messages[messageID]
-	if !found {
-		return entity.MessageNotFoundError
+	message, err := chatApp.chatRepo.GetMessage(messageID)
+	if err != nil {
+		return err
 	}
 
-	var messageOutput entity.MessageOutput
-	messageOutput.FillFromMessage(&message, chatID)
-
-	messageOutputMsg := entity.OneMessageOutput{Type: entity.OneMessageTypeKey, Message: messageOutput} // TODO: fix naming
+	messageOutputMsg := entity.OneMessageOutput{Type: entity.OneMessageTypeKey, Message: *message} // TODO: fix naming
 
 	result, err := json.Marshal(messageOutputMsg)
 	if err != nil {
@@ -162,7 +102,7 @@ func (chatApp *ChatApp) SendMessage(chatID int, messageID int, userID int) error
 }
 
 func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
-	chat, err := chatApp.getChatByID(chatID)
+	chat, err := chatApp.chatRepo.GetChat(chatID)
 	if err != nil {
 		return err
 	}
@@ -187,8 +127,13 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 		return entity.UserNotInChatError
 	}
 
+	messages, err := chatApp.chatRepo.GetMessages(chatID)
+	if err != nil {
+		return err
+	}
+
 	var chatOutput entity.ChatOutput
-	chatOutput.FillFromChat(chat, target)
+	chatOutput.FillFromChat(chat, target, messages)
 
 	chatOutputMsg := entity.OneChatOutput{Type: entity.OneChatTypeKey, Chat: chatOutput}
 
@@ -203,35 +148,33 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 }
 
 func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be log(n) when i'll add actual database
-	_, err := chatApp.userApp.GetUser(userID)
+	target, err := chatApp.userApp.GetUser(userID)
 	if err != nil {
 		return err
 	}
 
-	chatOutputs := make([]entity.ChatOutput, 0)
-
-	chatApp.mu.Lock()
-	for _, chat := range chatApp.chats {
-		if chat.FirstUserID == userID || chat.SecondUserID == userID {
-			var target *entity.User
-			switch {
-			case chat.FirstUserID == userID:
-				target, err = chatApp.userApp.GetUser(chat.SecondUserID)
-				if err != nil {
-					return entity.UserNotFoundError
-				}
-			case chat.SecondUserID == userID:
-				target, err = chatApp.userApp.GetUser(chat.FirstUserID)
-				if err != nil {
-					return entity.UserNotFoundError
-				}
-			}
-			var chatOutput entity.ChatOutput
-			chatOutput.FillFromChat(&chat, target) // TODO: also set isRead states
-			chatOutputs = append(chatOutputs, chatOutput)
+	chats, err := chatApp.chatRepo.GetAllChats(userID)
+	if err != nil {
+		if err != entity.ChatsNotFoundError {
+			return err
 		}
+		chats = make([]*entity.Chat, 0)
 	}
-	chatApp.mu.Unlock()
+
+	chatOutputs := make([]entity.ChatOutput, 0, len(chats))
+	for _, chat := range chats {
+		messages, err := chatApp.chatRepo.GetMessages(chat.ChatID)
+		if err != nil {
+			if err != entity.MessagesNotFoundError {
+				return err
+			}
+			messages = make([]*entity.Message, 0)
+		}
+
+		var chatOutput entity.ChatOutput
+		chatOutput.FillFromChat(chat, target, messages)
+		chatOutputs = append(chatOutputs, chatOutput)
+	}
 
 	chatsOutputMsg := entity.AllChatsOutput{Type: entity.AllChatsTypeKey, Chats: chatOutputs}
 
@@ -246,31 +189,19 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 }
 
 func (chatApp *ChatApp) ReadChat(chatID int, userID int) error {
-	chat, err := chatApp.getChatByID(chatID)
+	chat, err := chatApp.chatRepo.GetChat(chatID)
 	if err != nil {
 		return err
 	}
 
-	if chat.FirstUserID != userID && chat.SecondUserID != userID {
+	switch {
+	case chat.FirstUserID == userID:
+		chat.FirstUserRead = true
+	case chat.SecondUserID == userID:
+		chat.SecondUserRead = true
+	default:
 		return entity.UserNotInChatError
 	}
 
-	switch chat.FirstUserID == userID {
-	case true:
-		if chat.FirstUserRead {
-			return entity.ChatAlreadyReadError
-		}
-		chat.FirstUserRead = true
-	case false:
-		if chat.SecondUserRead {
-			return entity.ChatAlreadyReadError
-		}
-		chat.SecondUserRead = true
-	}
-
-	chatApp.mu.Lock()
-	chatApp.chats[chatID] = *chat
-	chatApp.mu.Unlock()
-
-	return nil
+	return chatApp.chatRepo.SaveChat(chat)
 }

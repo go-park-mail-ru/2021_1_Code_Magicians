@@ -48,3 +48,67 @@ function restore_notifications_schema()
 end
 
 pcall(restore_notifications_schema)
+
+function restore_chats_schema()
+    chats = box.schema.space.create('chats')
+    chats:format({
+             {name = 'chat_id', type = 'unsigned'},
+             {name = 'first_user_id', type = 'unsigned'},
+             {name = 'second_user_id', type = 'unsigned'},
+             {name = 'first_user_read', type = 'boolean'},
+             {name = 'second_user_read', type = 'boolean'},
+             })
+
+    box.schema.sequence.create('chat_id_sequence')
+    chats:create_index('primary', {
+             type = 'tree',
+             parts = {'chat_id'},
+             sequence = 'chat_id_sequence',
+             unique = true
+             })
+
+    chats:create_index('secondary', {
+             type = 'tree',
+             parts = {'first_user_id', 'second_user_id'},
+             unique = true
+             })
+
+    chats:create_index('by_first_user', {
+             type = 'tree',
+             parts = {'first_user_id'},
+             unique = false
+             })
+    chats:create_index('by_second_user', {
+             type = 'tree',
+             parts = {'second_user_id'},
+             unique = false
+             })
+end
+
+pcall(restore_chats_schema)
+
+function restore_messages_schema()
+    messages = box.schema.space.create('messages')
+    messages:format({
+             {name = 'message_id', type = 'unsigned'},
+             {name = 'chat_id', type = 'unsigned'},
+             {name = 'author_id', type = 'unsigned'},
+             {name = 'text', type = 'string'},
+             {name = 'creation_time', type = 'string'},
+             })
+
+    box.schema.sequence.create('message_id_sequence')
+    messages:create_index('primary', {
+             type = 'tree',
+             parts = {'message_id'},
+             sequence = 'message_id_sequence',
+             unique = true
+             })
+    messages:create_index('secondary', {
+             type = 'tree',
+             parts = {'chat_id'},
+             unique = false
+             })
+end
+
+pcall(restore_messages_schema)

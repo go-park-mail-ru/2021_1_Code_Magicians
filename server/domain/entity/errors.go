@@ -38,10 +38,14 @@ const NotificationAlreadyReadError customError = "Notification was already read"
 const ForeignNotificationError customError = "Notification belongs to another user"
 
 const ChatNotFoundError customError = "Chat not found"
-const MessageNotFoundError customError = "Message not found"
+const ChatsNotFoundError customError = "Chats not found"
 const ChatAlreadyExistsError customError = "Chat already exists"
 const UserNotInChatError customError = "User is not in chat"
 const ChatAlreadyReadError customError = "Chat is already read"
+
+const MessageAddingError customError = "Could not add message"
+const MessageNotFoundError customError = "Message not found"
+const MessagesNotFoundError customError = "Messages not found"
 
 const JsonMarshallError customError = "Could not parse struct into JSON"
 

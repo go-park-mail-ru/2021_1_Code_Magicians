@@ -2,7 +2,7 @@ package repository
 
 import "pinterest/domain/entity"
 
-type NotificationRepository interface {
+type NotificationRepositoryInterface interface {
 	AddNotification(notification *entity.Notification) (int, error)   // Add notification to database
 	RemoveNotification(notificationID int) error                      // Remove notification from database
 	EditNotification(notification *entity.Notification) error         // Change fields of notification with same notification ID

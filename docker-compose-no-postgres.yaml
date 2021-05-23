@@ -10,6 +10,7 @@ services:
       - auth-service
       - pins-service
       - comments-service
+      - tarantool
     command: ["go", "run", "server_main.go"]
   
   user-service:
