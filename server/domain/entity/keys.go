@@ -18,3 +18,8 @@ const OneNotificationTypeKey key = "notification"
 const AllChatsTypeKey key = "all-chats"
 const OneChatTypeKey key = "new-chat"
 const OneMessageTypeKey key = "new-message"
+
+const PinInfoLabelKey key = "pinInfo"
+const PinImageLabelKey key = "pinImage"
+const PinIDLabelKey key = "pinID"
+const PinAmountLabelKey key = "num"

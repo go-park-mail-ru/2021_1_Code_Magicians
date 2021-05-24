@@ -55,7 +55,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseMultipartForm(bodySize)
-	jsonData := r.FormValue("pinInfo") // TODO: replace string constants with keys
+	jsonData := r.FormValue(string(entity.PinInfoLabelKey)) // TODO: replace string constants with keys
 	currPin := entity.Pin{}
 	err := json.Unmarshal([]byte(jsonData), &currPin)
 	if err != nil {
@@ -66,7 +66,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 	currPin.UserID = userID
 
-	file, header, err := r.FormFile("pinImage")
+	file, header, err := r.FormFile(string(entity.PinImageLabelKey))
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
@@ -130,7 +130,7 @@ func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	pinID, err := strconv.Atoi(vars["pinID"])
+	pinID, err := strconv.Atoi(vars[string(entity.PinIDLabelKey)])
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
@@ -198,7 +198,7 @@ func (pinInfo *PinInfo) HandleDelPinByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	pinID, err := strconv.Atoi(vars["pinID"])
+	pinID, err := strconv.Atoi(vars[string(entity.PinIDLabelKey)])
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
@@ -300,7 +300,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 
 func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	numOfPins, err := strconv.Atoi(vars["num"])
+	numOfPins, err := strconv.Atoi(vars[string(entity.PinAmountLabelKey)])
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
