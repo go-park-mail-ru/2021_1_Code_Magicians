@@ -1,7 +1,6 @@
 package application
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -320,7 +319,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	fileAsBytes := make([]byte, 0)
 	imageStruct := new(imageInfo)
 	switch extension {
-	case ".png", ".jpg", ".gif":
+	case ".png", ".jpg", ".gif", ".jpeg":
 		fileAsBytes, _ = io.ReadAll(file) // TODO: this may be too slow, rework somehow? Maybe restore file after reading height/width?
 		err = imageStruct.fillFromImage(bytes.NewReader(fileAsBytes))
 		if err != nil {
@@ -351,7 +350,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	if err != nil {
 		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
 	}
-	reader := bufio.NewReader(file)
+	reader := bytes.NewReader(fileAsBytes)
 	buffer := make([]byte, 8*1024*1024)
 
 	for {

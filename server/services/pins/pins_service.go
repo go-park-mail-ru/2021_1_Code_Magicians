@@ -156,7 +156,8 @@ func (s *service) GetInitUserBoard(ctx context.Context, userID *UserID) (*BoardI
 
 	board := Board{UserID: userID.Uid}
 	row := tx.QueryRow(context.Background(), getInitUserBoardQuery, userID.Uid)
-	err = row.Scan(&board.BoardID, &board.Title, &board.Description)
+	err = row.Scan(&board.BoardID, &board.Title, &board.Description,
+		&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &BoardID{}, entity.NotFoundInitUserBoard
@@ -521,7 +522,6 @@ func (s *service) RemovePin(ctx context.Context, pinInBoard *PinInBoard) (*Error
 		return &Error{}, err
 	}
 	if commandTag.RowsAffected() != 1 {
-		fmt.Println(pinInBoard.PinID)
 		return &Error{}, entity.RemovePinError
 	}
 
@@ -581,7 +581,7 @@ func (s *service) UploadPicture(stream Pins_UploadPictureServer) error {
 	for {
 		req, err = stream.Recv()
 		if err == io.EOF {
-			log.Print("no more data")
+			log.Print("file recieving is over")
 			break
 		}
 		if err != nil {

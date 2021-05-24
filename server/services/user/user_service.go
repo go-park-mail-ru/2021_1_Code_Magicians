@@ -128,7 +128,7 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 	for {
 		req, err = stream.Recv()
 		if err == io.EOF {
-			log.Print("no more data")
+			log.Print("file receiving is over")
 			break
 		}
 		if err != nil {
@@ -387,7 +387,6 @@ func (s *service) Follow(ctx context.Context, follows *Follows) (*Error, error) 
 
 	_, err = tx.Exec(context.Background(), updateFollowingQuery, follows.FollowerID)
 	if err != nil {
-		log.Println(err)
 		return &Error{}, entity.FollowCountUpdateError
 	}
 
