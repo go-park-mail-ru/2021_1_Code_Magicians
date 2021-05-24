@@ -41,7 +41,8 @@ message UserOutput {
   string   Avatar = 6;
   int64    Following = 7 ;
   int64    FollowedBy = 8;
-  bool     Followed = 9 ;
+  int64    BoardsCount = 9;
+  int64    PinsCount = 10;
 }
 
 message UsersListOutput {

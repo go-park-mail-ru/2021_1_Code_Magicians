@@ -281,6 +281,8 @@ func FillOutForm(user *entity.User, userOut *grpcUser.UserOutput) {
 	user.Avatar = userOut.Avatar
 	user.Following = int(userOut.Following)
 	user.FollowedBy = int(userOut.FollowedBy)
+	user.BoardsCount = int(userOut.BoardsCount)
+	user.PinsCount = int(userOut.PinsCount)
 }
 
 func ReturnUsersList(userOutList []*grpcUser.UserOutput) []entity.User {

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.6 (Debian 12.6-1.pgdg100+1)
--- Dumped by pg_dump version 12.6 (Debian 12.6-1.pgdg100+1)
+-- Dumped from database version 12.7 (Debian 12.7-1.pgdg100+1)
+-- Dumped by pg_dump version 12.7 (Debian 12.7-1.pgdg100+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -16,6 +16,35 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE ONLY public.pairs DROP CONSTRAINT pairs_fk;
+ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_users_follower;
+ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_users_followed;
+ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_user_fk;
+ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_pin_fk;
+ALTER TABLE ONLY public.boards DROP CONSTRAINT boards_fk;
+DROP INDEX public.users_un_avatar;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_un_username;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_un_email;
+ALTER TABLE ONLY public.boards DROP CONSTRAINT users_un_boards;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_pk_id;
+ALTER TABLE ONLY public.pins DROP CONSTRAINT pins_pk_pinid;
+ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_pk;
+ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_pk_id;
+ALTER TABLE ONLY public.boards DROP CONSTRAINT boards_pk_oardid;
+ALTER TABLE public.users ALTER COLUMN userid DROP DEFAULT;
+ALTER TABLE public.pins ALTER COLUMN pinid DROP DEFAULT;
+ALTER TABLE public.comments ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.boards ALTER COLUMN boardid DROP DEFAULT;
+DROP SEQUENCE public.users_userid_seq;
+DROP TABLE public.users;
+DROP SEQUENCE public.pins_pinid_seq;
+DROP TABLE public.pins;
+DROP TABLE public.pairs;
+DROP TABLE public.followers;
+DROP SEQUENCE public.comments_id_seq;
+DROP TABLE public.comments;
+DROP SEQUENCE public.boards_boardid_seq;
+DROP TABLE public.boards;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -205,7 +234,9 @@ CREATE TABLE public.users (
     avatar character varying(70) DEFAULT 'assets/img/default-avatar.jpg'::character varying NOT NULL,
     userid integer NOT NULL,
     following integer DEFAULT 0 NOT NULL,
-    followed_by integer DEFAULT 0 NOT NULL
+    followed_by integer DEFAULT 0 NOT NULL,
+    pins_count integer DEFAULT 0 NOT NULL,
+    boards_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -312,7 +343,7 @@ COPY public.pins (pinid, title, imagelink, description, userid, imageheight, ima
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by) FROM stdin;
+COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by, pins_count, boards_count) FROM stdin;
 \.
 
 

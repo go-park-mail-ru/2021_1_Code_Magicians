@@ -45,29 +45,33 @@ func init() {
 
 // User is, well, a struct depicting a user
 type User struct {
-	UserID     int    `json:"ID"`
-	Username   string `json:"username,omitempty"`
-	Password   string `json:"-"` // TODO: hashing
-	FirstName  string `json:"firstName,omitempty"`
-	LastName   string `json:"lastName,omitempty"`
-	Email      string `json:"email,omitempty"`
-	Avatar     string `json:"avatarLink,omitempty"` // path to avatar
-	Salt       string `json:"-"`
-	Following  int    `json:"following"`
-	FollowedBy int    `json:"followed"`
+	UserID      int    `json:"ID"`
+	Username    string `json:"username,omitempty"`
+	Password    string `json:"-"` // TODO: hashing
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Avatar      string `json:"avatarLink,omitempty"` // path to avatar
+	Salt        string `json:"-"`
+	Following   int    `json:"following"`
+	FollowedBy  int    `json:"followed"`
+	BoardsCount int    `json:"boardsCount"`
+	PinsCount   int    `json:"pinsCount"`
 }
 
 // UserOutput is used to marshal JSON with users' data
 type UserOutput struct {
-	UserID     int    `json:"ID"`
-	Username   string `json:"username,omitempty"`
-	Email      string `json:"email,omitempty"`
-	FirstName  string `json:"firstName,omitempty"`
-	LastName   string `json:"lastName,omitempty"`
-	Avatar     string `json:"avatarLink,omitempty"`
-	Following  int    `json:"following"`
-	FollowedBy int    `json:"followers"`
-	Followed   *bool  `json:"followed,omitempty"` // pointer because we need to not send this sometimes
+	UserID      int    `json:"ID"`
+	Username    string `json:"username,omitempty"`
+	Email       string `json:"email,omitempty"`
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	Avatar      string `json:"avatarLink,omitempty"`
+	Following   int    `json:"following"`
+	FollowedBy  int    `json:"followers"`
+	BoardsCount int    `json:"boardsCount"`
+	PinsCount   int    `json:"pinsCount"`
+	Followed    *bool  `json:"followed,omitempty"` // pointer because we need to not send this sometimes
 }
 
 type UserID struct {
@@ -182,4 +186,6 @@ func (userOutput *UserOutput) FillFromUser(user *User) {
 	userOutput.Avatar = user.Avatar
 	userOutput.Following = user.Following
 	userOutput.FollowedBy = user.FollowedBy
+	userOutput.BoardsCount = user.BoardsCount
+	userOutput.PinsCount = user.PinsCount
 }

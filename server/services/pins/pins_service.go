@@ -33,6 +33,7 @@ func NewService(db *pgxpool.Pool, s3 *session.Session) *service {
 const createBoardQuery string = "INSERT INTO Boards (userID, title, description)\n" +
 	"values ($1, $2, $3)\n" +
 	"RETURNING boardID"
+const increaseBoardCountQuery string = "UPDATE Users SET boards_count = boards_count + 1 WHERE userID=$1"
 
 // AddBoard add new board to database with passed fields
 // It returns board's assigned ID and nil on success, any number and error on failure
@@ -47,6 +48,12 @@ func (s *service) AddBoard(ctx context.Context, board *Board) (*BoardID, error) 
 	newBoardID := 0
 	err = row.Scan(&newBoardID)
 	if err != nil {
+		return &BoardID{}, entity.CreateBoardError
+	}
+
+	_, err = tx.Exec(context.Background(), increaseBoardCountQuery, board.UserID)
+	if err != nil {
+		fmt.Println(err)
 		return &BoardID{}, entity.CreateBoardError
 	}
 
@@ -154,7 +161,8 @@ func (s *service) GetInitUserBoard(ctx context.Context, userID *UserID) (*BoardI
 	return &BoardID{BoardID: board.BoardID}, nil
 }
 
-const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1"
+const deleteBoardQuery string = "DELETE FROM Boards WHERE boardID=$1 RETURNING userID"
+const decreaseBoardCountQuery string = "UPDATE Users SET boards_count = boards_count - 1 WHERE userID=$1"
 
 // DeleteBoard deletes board with passed id belonging to passed user.
 // It returns error if board is not found or if there were problems with database
@@ -165,11 +173,15 @@ func (s *service) DeleteBoard(ctx context.Context, boardID *BoardID) (*Error, er
 	}
 	defer tx.Rollback(context.Background())
 
-	commandTag, err := tx.Exec(context.Background(), deleteBoardQuery, boardID.BoardID)
+	var boardOwnerID int
+	row := tx.QueryRow(context.Background(), deleteBoardQuery, boardID.BoardID)
+	err = row.Scan(&boardOwnerID)
 	if err != nil {
-		return &Error{}, err
+		return &Error{}, entity.DeleteBoardError
 	}
-	if commandTag.RowsAffected() != 1 {
+
+	_, err = tx.Exec(context.Background(), decreaseBoardCountQuery, boardOwnerID)
+	if err != nil {
 		return &Error{}, entity.DeleteBoardError
 	}
 
@@ -209,6 +221,7 @@ func (s *service) UploadBoardAvatar(ctx context.Context, imageInfo *FileInfo) (*
 const createPinQuery string = "INSERT INTO Pins (title, imageLink, imageHeight, imageWidth, ImageAvgColor, description, userID)\n" +
 	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
 	"RETURNING pinID;\n"
+const increasePinCountQuery string = "UPDATE Users SET pins_count = pins_count + 1 WHERE userID=$1"
 
 // CreatePin creates new pin with passed fields
 // It returns pin's assigned ID and nil on success, any number and error on failure
@@ -224,6 +237,11 @@ func (s *service) CreatePin(ctx context.Context, pin *Pin) (*PinID, error) {
 		pin.Description, pin.UserID)
 	newPinID := 0
 	err = row.Scan(&newPinID)
+	if err != nil {
+		return &PinID{}, entity.CreatePinError
+	}
+
+	_, err = tx.Exec(context.Background(), increasePinCountQuery, pin.UserID)
 	if err != nil {
 		return &PinID{}, entity.CreatePinError
 	}
@@ -423,7 +441,8 @@ func (s *service) RemovePin(ctx context.Context, pinInBoard *PinInBoard) (*Error
 	return &Error{}, nil
 }
 
-const deletePinQuery string = "DELETE CASCADE FROM pins WHERE pinID=$1"
+const deletePinQuery string = "DELETE CASCADE FROM pins WHERE pinID=$1 RETURNING userID"
+const decreasePinCountQuery string = "UPDATE Users SET pins_count = pins_count - 1 WHERE userID=$1"
 
 // DeletePin deletes pin with passed ID
 // It returns nil on success and error on failure
@@ -434,11 +453,15 @@ func (s *service) DeletePin(ctx context.Context, pinID *PinID) (*Error, error) {
 	}
 	defer tx.Rollback(context.Background())
 
-	commandTag, err := tx.Exec(context.Background(), deletePinQuery, pinID.PinID)
+	var pinOwnerID int
+	row := tx.QueryRow(context.Background(), deletePinQuery, pinID.PinID)
+	err = row.Scan(&pinOwnerID)
 	if err != nil {
-		return &Error{}, err
+		return &Error{}, entity.DeletePinError
 	}
-	if commandTag.RowsAffected() != 1 {
+
+	_, err = tx.Exec(context.Background(), decreasePinCountQuery, pinOwnerID)
+	if err != nil {
 		return &Error{}, entity.DeletePinError
 	}
 
