@@ -9,6 +9,7 @@ import (
 	"os"
 	"pinterest/domain/entity"
 	. "pinterest/services/pins/proto"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -19,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type service struct {
@@ -53,7 +55,6 @@ func (s *service) AddBoard(ctx context.Context, board *Board) (*BoardID, error) 
 
 	_, err = tx.Exec(context.Background(), increaseBoardCountQuery, board.UserID)
 	if err != nil {
-		fmt.Println(err)
 		return &BoardID{}, entity.CreateBoardError
 	}
 
@@ -218,8 +219,8 @@ func (s *service) UploadBoardAvatar(ctx context.Context, imageInfo *FileInfo) (*
 	return &Error{}, nil
 }
 
-const createPinQuery string = "INSERT INTO Pins (title, imageLink, imageHeight, imageWidth, ImageAvgColor, description, userID)\n" +
-	"values ($1, $2, $3, $4, $5, $6, $7)\n" +
+const createPinQuery string = "INSERT INTO Pins (userID, title, description, imageLink, imageHeight, imageWidth, imageAvgColor, creationDate)\n" +
+	"values ($1, $2, $3, $4, $5, $6, $7, $8)\n" +
 	"RETURNING pinID;\n"
 const increasePinCountQuery string = "UPDATE Users SET pins_count = pins_count + 1 WHERE userID=$1"
 
@@ -232,9 +233,9 @@ func (s *service) CreatePin(ctx context.Context, pin *Pin) (*PinID, error) {
 	}
 	defer tx.Rollback(context.Background())
 
-	row := tx.QueryRow(context.Background(), createPinQuery, pin.Title,
+	row := tx.QueryRow(context.Background(), createPinQuery, pin.UserID, pin.Title, pin.Description,
 		pin.ImageLink, pin.ImageHeight, pin.ImageWidth, pin.ImageAvgColor,
-		pin.Description, pin.UserID)
+		pin.CreationDate.AsTime())
 	newPinID := 0
 	err = row.Scan(&newPinID)
 	if err != nil {
@@ -280,8 +281,8 @@ func (s *service) AddPin(ctx context.Context, pinInBoard *PinInBoard) (*Error, e
 	return &Error{}, nil
 }
 
-const getPinQuery string = "SELECT userID, title," +
-	"imageLink, imageHeight, imageWidth, ImageAvgColor, description\n" +
+const getPinQuery string = "SELECT userID, title, description," +
+	"imageLink, imageHeight, imageWidth, ImageAvgColor, creationDate\n" +
 	"FROM Pins WHERE pinID=$1"
 
 // GetPin fetches user with passed ID from database
@@ -293,17 +294,20 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 	}
 	defer tx.Rollback(context.Background())
 
-	pin := Pin{PinID: pinID.PinID}
 	row := tx.QueryRow(context.Background(), getPinQuery, pinID.PinID)
-	err = row.Scan(&pin.UserID, &pin.Title,
+
+	pin := Pin{PinID: pinID.PinID}
+	var pinCreationDate time.Time
+	err = row.Scan(&pin.UserID, &pin.Title, &pin.Description,
 		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-		&pin.Description)
+		&pinCreationDate)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &Pin{}, entity.PinNotFoundError
 		}
 		return &Pin{}, err
 	}
+	pin.CreationDate = timestamppb.New(pinCreationDate)
 
 	err = tx.Commit(context.Background())
 	if err != nil {
@@ -312,8 +316,8 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 	return &pin, nil
 }
 
-const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
 	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
@@ -326,7 +330,6 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 	}
 	defer tx.Rollback(context.Background())
 
-	pins := make([]*Pin, 0)
 	rows, err := tx.Query(context.Background(), getPinsByBoardQuery, boardID.BoardID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -335,14 +338,17 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 		return &PinsList{}, entity.GetPinsByBoardIdError
 	}
 
+	pins := make([]*Pin, 0)
+	var pinCreationDate time.Time
 	for rows.Next() {
 		pin := Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pin.Description)
+			&pinCreationDate)
 		if err != nil {
 			return &PinsList{}, err // TODO: error handling
 		}
+		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
 	}
 
@@ -517,6 +523,10 @@ func (s *service) UploadPicture(stream Pins_UploadPictureServer) error {
 		Body:   bytes.NewReader(imageData.Bytes()),
 	})
 
+	if err != nil {
+		return handleS3Error(err)
+	}
+
 	res := &UploadImageResponse{
 		Path: newPinPath,
 		Size: uint32(imageSize),
@@ -530,8 +540,8 @@ func (s *service) UploadPicture(stream Pins_UploadPictureServer) error {
 	return handleS3Error(err)
 }
 
-const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title,  pins.description, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
 	"FROM Pins\n" +
 	"LIMIT $1;"
 
@@ -544,7 +554,6 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 	}
 	defer tx.Rollback(context.Background())
 
-	pins := make([]*Pin, 0)
 	rows, err := tx.Query(context.Background(), getNumOfPinsQuery, numOfPins.Number)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -553,14 +562,17 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 		return &PinsList{}, err
 	}
 
+	pins := make([]*Pin, 0)
+	var pinCreationDate time.Time
 	for rows.Next() {
 		pin := Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pin.Description)
+			&pinCreationDate)
 		if err != nil {
 			return &PinsList{}, entity.FeedLoadingError
 		}
+		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
 	}
 
@@ -571,8 +583,8 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 	return &PinsList{Pins: pins}, nil
 }
 
-const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.descriptio, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
 	"FROM pins\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
 
@@ -585,7 +597,6 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 	}
 	defer tx.Rollback(context.Background())
 
-	pins := make([]*Pin, 0)
 	rows, err := tx.Query(context.Background(), SearchPinsQuery, "%"+searchInput.KeyWords+"%")
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -594,14 +605,17 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 		return &PinsList{}, err
 	}
 
+	pins := make([]*Pin, 0)
+	var pinCreationDate time.Time
 	for rows.Next() {
 		pin := Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pin.Description)
+			&pinCreationDate)
 		if err != nil {
 			return &PinsList{}, entity.SearchingError
 		}
+		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
 	}
 
@@ -612,8 +626,8 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 	return &PinsList{Pins: pins}, nil
 }
 
-const GetPinsByUsersIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+const GetPinsByUsersIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
 	"FROM Pins\n" +
 	"WHERE pins.UserID = ANY($1)" +
 	"ORDER BY pins.PinID DESC;" // So that newest pins will come up first
@@ -627,8 +641,6 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 	}
 	defer tx.Rollback(context.Background())
 
-	pins := make([]*Pin, 0)
-
 	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -637,14 +649,17 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 		return &PinsList{}, err
 	}
 
+	pins := make([]*Pin, 0)
+	var pinCreationDate time.Time
 	for rows.Next() {
 		pin := Pin{}
-		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title,
+		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pin.Description)
+			&pinCreationDate)
 		if err != nil {
 			return &PinsList{}, entity.GetPinsByUserIdError
 		}
+		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
 	}
 

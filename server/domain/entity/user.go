@@ -74,10 +74,6 @@ type UserOutput struct {
 	Followed    *bool  `json:"followed,omitempty"` // pointer because we need to not send this sometimes
 }
 
-type UserID struct {
-	_UserID int
-}
-
 // UserRegInput is used when parsing JSON in auth/signup handler
 type UserRegInput struct {
 	Username  string `json:"username" valid:"username"`

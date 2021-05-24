@@ -185,7 +185,8 @@ CREATE TABLE public.pins (
     userid integer,
     imageheight integer DEFAULT 0 NOT NULL,
     imagewidth integer DEFAULT 0 NOT NULL,
-    imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL
+    imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL,
+    creationdate date DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -335,7 +336,7 @@ COPY public.pairs (boardid, pinid) FROM stdin;
 -- Data for Name: pins; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pins (pinid, title, imagelink, description, userid, imageheight, imagewidth, imageavgcolor) FROM stdin;
+COPY public.pins (pinid, title, imagelink, description, userid, imageheight, imagewidth, imageavgcolor, creationdate) FROM stdin;
 \.
 
 

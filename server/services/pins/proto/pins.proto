@@ -4,6 +4,7 @@ syntax = "proto3";
 // PATH="${PATH}:${HOME}/go/bin" protoc --go_out=plugins=grpc:. *.proto
 
 option go_package = "./";
+import "google/protobuf/timestamp.proto";
 
 package pins;
 
@@ -25,6 +26,7 @@ message Pin {
   int32     ImageHeight = 7;
   int32     ImageWidth = 8;
   string    ImageAvgColor = 9;
+  google.protobuf.Timestamp CreationDate = 10;
 }
 
 message UserID {

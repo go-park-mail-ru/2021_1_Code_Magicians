@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/EdlinOrg/prominentcolor"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type PinApp struct {
@@ -57,6 +58,9 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 	if err != nil {
 		return -1, err
 	}
+
+	pin.CreationDate = time.Now()
+
 	grpcPin := grpcPins.Pin{}
 	ConvertToGrpcPin(&grpcPin, pin)
 	pinID, err := pinApp.grpcClient.CreatePin(context.Background(), &grpcPin)
@@ -414,6 +418,7 @@ func ConvertToGrpcPin(grpcPin *grpcPins.Pin, pin *entity.Pin) {
 	grpcPin.ImageWidth = int32(pin.ImageWidth)
 	grpcPin.ImageHeight = int32(pin.ImageHeight)
 	grpcPin.ImageLink = pin.ImageLink
+	grpcPin.CreationDate = timestamppb.New(pin.CreationDate)
 }
 
 func ConvertFromGrpcPin(pin *entity.Pin, grpcPin *grpcPins.Pin) {
@@ -426,6 +431,7 @@ func ConvertFromGrpcPin(pin *entity.Pin, grpcPin *grpcPins.Pin) {
 	pin.ImageWidth = int(grpcPin.ImageWidth)
 	pin.ImageHeight = int(grpcPin.ImageHeight)
 	pin.ImageLink = grpcPin.ImageLink
+	pin.CreationDate = grpcPin.CreationDate.AsTime()
 }
 
 func ConvertGrpcPins(grpcPins *grpcPins.PinsList) []entity.Pin {
