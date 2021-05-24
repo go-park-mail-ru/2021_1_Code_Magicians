@@ -550,6 +550,7 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 
 const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, " +
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.description\n" +
+	"FROM pins\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
 
 // SearchPins returns pins by keywords

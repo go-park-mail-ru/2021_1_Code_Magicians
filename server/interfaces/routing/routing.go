@@ -9,6 +9,7 @@ import (
 	"pinterest/interfaces/chat"
 	"pinterest/interfaces/comment"
 	"pinterest/interfaces/follow"
+	"pinterest/interfaces/metrics"
 	mid "pinterest/interfaces/middleware"
 	"pinterest/interfaces/notification"
 	"pinterest/interfaces/pin"
@@ -23,7 +24,8 @@ func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, auth
 	followInfo *follow.FollowInfo, pinInfo *pin.PinInfo, commentsInfo *comment.CommentInfo,
 	websocketInfo *websocket.WebsocketInfo, notificationInfo *notification.NotificationInfo, chatInfo *chat.ChatInfo, csrfOn bool) *mux.Router {
 	r := mux.NewRouter()
-	r.Use(mid.PanicMid)
+
+	r.Use(mid.PanicMid, metrics.PrometheusMiddleware)
 
 	if csrfOn {
 		csrfMid := csrf.Protect(
@@ -35,6 +37,7 @@ func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, auth
 		r.Use(mid.CSRFSettingMid)
 	}
 
+	//r.Handle("/metrics", promhttp.Handler())
 	r.HandleFunc("/auth/signup", mid.NoAuthMid(authInfo.HandleCreateUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authApp)).Methods("POST")
 	r.HandleFunc("/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, authApp)).Methods("POST")
