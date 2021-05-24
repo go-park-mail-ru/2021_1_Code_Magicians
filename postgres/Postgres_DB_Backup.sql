@@ -186,7 +186,7 @@ CREATE TABLE public.pins (
     imageheight integer DEFAULT 0 NOT NULL,
     imagewidth integer DEFAULT 0 NOT NULL,
     imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL,
-    creationdate date DEFAULT CURRENT_TIMESTAMP NOT NULL
+    creationdate timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
