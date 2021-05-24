@@ -67,6 +67,12 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 		return -1, err
 	}
 
+	err = pinApp.UploadPicture(int(pinID.PinID), file, extension)
+	if err != nil {
+		pinApp.grpcClient.DeletePin(context.Background(), pinID)
+		return -1, err
+	}
+
 	_, err = pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
 		BoardID: int64(initBoardID), PinID: pinID.PinID})
 	if err != nil {
@@ -83,12 +89,6 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 			pinApp.grpcClient.DeletePin(context.Background(), pinID)
 			return -1, err
 		}
-	}
-
-	err = pinApp.UploadPicture(int(pinID.PinID), file, extension)
-	if err != nil {
-		pinApp.grpcClient.DeletePin(context.Background(), pinID)
-		return -1, err
 	}
 
 	return int(pinID.PinID), nil
@@ -128,13 +128,12 @@ func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
 		return err
 	}
 
-	avatarInfo := &grpcPins.FileInfo{
-		BoardID:       int64(boardID),
-		ImageLink:     pin.ImageLink,
-		ImageHeight:   int64(pin.ImageHeight),
-		ImageWidth:    int64(pin.ImageWidth),
-		ImageAvgColor: pin.ImageAvgColor,
-	}
+	avatarInfo := new(grpcPins.FileInfo)
+	avatarInfo.BoardID = int64(boardID)
+	avatarInfo.ImageLink = pin.ImageLink
+	avatarInfo.ImageHeight = int64(pin.ImageHeight)
+	avatarInfo.ImageWidth = int64(pin.ImageWidth)
+	avatarInfo.ImageAvgColor = pin.ImageAvgColor
 	_, err = pinApp.grpcClient.UploadBoardAvatar(context.Background(), avatarInfo)
 	if err != nil {
 		if strings.Contains(err.Error(), entity.BoardAvatarUploadError.Error()) {
