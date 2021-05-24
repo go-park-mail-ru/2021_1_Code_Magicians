@@ -98,7 +98,7 @@ func (s *service) GetBoard(ctx context.Context, boardID *BoardID) (*Board, error
 	return &board, nil
 }
 
-const getBoardsByUserQuery string = "SELECT title, description, " +
+const getBoardsByUserQuery string = "SELECT boardID, title, description, " +
 	"imageLink, imageHeight, imageWidth, imageAvgColor\n" +
 	"FROM Boards\n" +
 	"WHERE userID=$1"
@@ -123,7 +123,7 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 	boards := make([]*Board, 0)
 	for rows.Next() {
 		board := Board{UserID: userID.Uid}
-		err = rows.Scan(&board.Title, &board.Description,
+		err = rows.Scan(&board.BoardID, &board.Title, &board.Description,
 			&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 		if err != nil {
 			return &BoardsList{}, err // TODO: error handling
