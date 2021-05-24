@@ -89,9 +89,9 @@ func (chatApp *ChatApp) SendMessage(chatID int, messageID int, userID int) error
 		return err
 	}
 
-	messageOutputMsg := entity.OneMessageOutput{Type: entity.OneMessageTypeKey, Message: *message} // TODO: fix naming
+	messageOutput := entity.OneMessageOutput{Type: entity.OneMessageTypeKey, Message: *message}
 
-	result, err := json.Marshal(messageOutputMsg)
+	result, err := json.Marshal(messageOutput)
 	if err != nil {
 		return entity.JsonMarshallError
 	}

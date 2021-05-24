@@ -98,7 +98,7 @@ func (userApp *UserApp) DeleteUser(userID int) error {
 		return err
 	}
 
-	if user.Avatar != string(entity.AvatarDefaultPath) {
+	if user.Avatar != string(entity.UserAvatarDefaultPath) {
 		_, err = userApp.grpcClient.DeleteFile(context.Background(), &grpcUser.FilePath{ImagePath: user.Avatar})
 		if err != nil {
 			return entity.FileDeletionError
@@ -225,7 +225,7 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 		return err
 	}
 
-	if oldAvatarPath != string(entity.AvatarDefaultPath) {
+	if oldAvatarPath != string(entity.UserAvatarDefaultPath) {
 		_, err = userApp.grpcClient.DeleteFile(ctx, &grpcUser.FilePath{ImagePath: oldAvatarPath})
 		if err != nil {
 			return entity.FileDeletionError

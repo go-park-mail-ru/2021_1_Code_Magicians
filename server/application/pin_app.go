@@ -243,7 +243,7 @@ func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
 		boardAvatar.ImageWidth = int64(lastPin.ImageWidth)
 		boardAvatar.ImageAvgColor = lastPin.ImageAvgColor
 	case strings.Contains(err.Error(), entity.PinNotFoundError.Error()): // If there are no pins left, we take default image
-		boardAvatar.ImageLink = "assets/img/default-board-avatar.jpg"
+		boardAvatar.ImageLink = string(entity.BoardAvatarDefaultPath)
 		boardAvatar.ImageHeight = 480
 		boardAvatar.ImageWidth = 1200
 		boardAvatar.ImageAvgColor = "5a5a5a"

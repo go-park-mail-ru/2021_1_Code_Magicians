@@ -177,7 +177,7 @@ func TestAuthSuccess(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    string(entity.AvatarDefaultPath),
+		Avatar:    string(entity.UserAvatarDefaultPath),
 		Salt:      "",
 	}
 	expectedCookie := http.Cookie{
@@ -432,7 +432,7 @@ func TestAuthFailure(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    string(entity.AvatarDefaultPath),
+		Avatar:    string(entity.UserAvatarDefaultPath),
 		Salt:      "",
 	}
 	expectedCookie := http.Cookie{

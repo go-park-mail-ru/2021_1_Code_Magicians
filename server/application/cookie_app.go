@@ -101,7 +101,7 @@ func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 func (cookieApp *CookieApp) RemoveCookie(cookieInfo *authProto.CookieInfo) error {
 	_, err := cookieApp.grpcClient.RemoveCookie(context.Background(), cookieInfo)
 
-	return err // TODO: add errors
+	return err
 }
 
 func FillGRPCCookie(grpcCookie *authProto.Cookie, cookie *http.Cookie) {

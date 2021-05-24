@@ -431,7 +431,6 @@ func TestPins(t *testing.T) {
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	mockBoardApp := mock_application.NewMockBoardAppInterface(mockCtrl)
 
-	// TODO: maybe replace this with JSON parsing?
 	expectedUser := &entity.User{
 		UserID:    0,
 		Username:  "TestUsername",

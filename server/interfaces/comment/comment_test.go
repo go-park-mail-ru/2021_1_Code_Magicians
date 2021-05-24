@@ -216,7 +216,6 @@ func TestComments(t *testing.T) {
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
-	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
 		UserID:    0,
 		Username:  "TestUsername",

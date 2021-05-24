@@ -319,7 +319,6 @@ func TestProfileSuccess(t *testing.T) {
 	mockWebsocketApp := mock_application.NewMockWebsocketAppInterface(mockCtrl)
 	testLogger := zaptest.NewLogger(t)
 
-	// TODO: maybe replace this with JSON parsing?
 	expectedUser := entity.User{
 		UserID:    0,
 		Username:  "TestUsername",
@@ -680,7 +679,7 @@ func TestProfileFailure(t *testing.T) {
 		FirstName: "TestFirstName",
 		LastName:  "TestLastName",
 		Email:     "test@example.com",
-		Avatar:    string(entity.AvatarDefaultPath),
+		Avatar:    string(entity.UserAvatarDefaultPath),
 		Salt:      "",
 	}
 
