@@ -164,7 +164,7 @@ func (followInfo *FollowInfo) HandleUnfollowProfile(w http.ResponseWriter, r *ht
 			UserID:   followedID,
 			Title:    "Follower lost!",
 			Category: "followers",
-			Text:     "You have  lost a follower: " + followerUser.Username,
+			Text:     "You have lost a follower: " + followerUser.Username,
 			IsRead:   false,
 		})
 		if err == nil {
@@ -183,7 +183,7 @@ func (followInfo *FollowInfo) HandleUnfollowProfile(w http.ResponseWriter, r *ht
 
 func (followInfo *FollowInfo) HandleGetFollowers(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	idStr, _ := vars[string(entity.IDKey)]
+	idStr := vars[string(entity.IDKey)]
 	id, _ := strconv.Atoi(idStr)
 
 	followers, err := followInfo.followApp.GetAllFollowers(id)
@@ -221,7 +221,7 @@ func (followInfo *FollowInfo) HandleGetFollowers(w http.ResponseWriter, r *http.
 
 func (followInfo *FollowInfo) HandleGetFollowed(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	idStr, _ := vars[string(entity.IDKey)]
+	idStr := vars[string(entity.IDKey)]
 	id, _ := strconv.Atoi(idStr)
 
 	followedUsers, err := followInfo.followApp.GetAllFollowed(id)

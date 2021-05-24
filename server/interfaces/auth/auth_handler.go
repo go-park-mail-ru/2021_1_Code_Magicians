@@ -113,7 +113,7 @@ func (info *AuthInfo) HandleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookieInfo, err := info.authApp.LoginUser(userInput.Username, userInput.Password)
+	cookieInfo, err := info.authApp.CheckUserCredentials(userInput.Username, userInput.Password)
 
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -166,9 +166,6 @@ func (info *AuthInfo) HandleLogoutUser(w http.ResponseWriter, r *http.Request) {
 func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
 	_, found := middleware.CheckCookies(r, info.authApp)
 	if !found {
-		info.logger.Info(entity.UnauthorizedError.Error(),
-			zap.String("url", r.RequestURI),
-			zap.String("method", r.Method))
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

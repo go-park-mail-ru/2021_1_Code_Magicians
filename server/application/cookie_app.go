@@ -62,15 +62,21 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 }
 
 func (cookieApp *CookieApp) SearchByUserID(userID int) (*authProto.CookieInfo, bool) {
-	resCookieInfo, _ := cookieApp.grpcClient.SearchByUserID(context.Background(), &grpcAuth.UserID{Uid: int64(userID)})
+	resCookieInfo, err := cookieApp.grpcClient.SearchByUserID(context.Background(), &grpcAuth.UserID{Uid: int64(userID)})
+	if err != nil {
+		return nil, false
+	}
 
-	return resCookieInfo.CookieInfo, resCookieInfo.IsCookie
+	return resCookieInfo, true
 }
 
 func (cookieApp *CookieApp) SearchByValue(cookieValue string) (*authProto.CookieInfo, bool) {
-	resCookieInfo, _ := cookieApp.grpcClient.SearchByValue(context.Background(), &grpcAuth.CookieValue{CookieValue: cookieValue})
+	resCookieInfo, err := cookieApp.grpcClient.SearchByValue(context.Background(), &grpcAuth.CookieValue{CookieValue: cookieValue})
+	if err != nil {
+		return nil, false
+	}
 
-	return resCookieInfo.CookieInfo, resCookieInfo.IsCookie
+	return resCookieInfo, true
 }
 
 func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
@@ -89,7 +95,7 @@ func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 	grpcCookieInfo := authProto.CookieInfo{UserID: int64(cookieInfo.UserID), Cookie: &grpcCookie}
 	_, err := cookieApp.grpcClient.AddCookieInfo(context.Background(), &grpcCookieInfo)
 
-	return err // Will actually always be nil
+	return err // Will actually almost always be nil
 }
 
 func (cookieApp *CookieApp) RemoveCookie(cookieInfo *authProto.CookieInfo) error {

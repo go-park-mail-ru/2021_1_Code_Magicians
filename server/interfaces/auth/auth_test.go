@@ -201,7 +201,7 @@ func TestAuthSuccess(t *testing.T) {
 	mockAuthApp.EXPECT().LogoutUser(expectedUser.UserID).Return(nil).Times(1)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(nil, false).Times(1)
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
+	mockAuthApp.EXPECT().CheckUserCredentials(expectedUser.Username, expectedUser.Password).Return(&expectedCookieInfo, nil).Times(1)
 	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Changing notification token during login
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).Times(1)
@@ -443,9 +443,9 @@ func TestAuthFailure(t *testing.T) {
 		HttpOnly: true,
 	}
 
-	mockAuthApp.EXPECT().LoginUser(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
+	mockAuthApp.EXPECT().CheckUserCredentials(expectedUser.Username, gomock.Any()).Return(nil, entity.IncorrectPasswordError).Times(1) // Checking incorrect username/password pair
 
-	mockAuthApp.EXPECT().LoginUser(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1) // Checking incorrect username/password pair
+	mockAuthApp.EXPECT().CheckUserCredentials(gomock.Any(), expectedUser.Password).Return(nil, entity.UserNotFoundError).Times(1) // Checking incorrect username/password pair
 
 	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
 	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(-1, entity.UsernameEmailDuplicateError).Times(1) // User creation with username conflict

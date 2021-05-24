@@ -10,6 +10,7 @@ services:
       - auth-service
       - pins-service
       - comments-service
+      - tarantool
     command: ["go", "run", "server_main.go"]
   
   user-service:
@@ -24,6 +25,7 @@ services:
       - 8083:8083
     depends_on:
       - user-service
+      - tarantool
     command: ["go", "run", "./cmd/auth/"]
 
   pins-service:
@@ -44,7 +46,7 @@ services:
     command: ["go", "run", "./cmd/comments/"]
   
   tarantool:
-    image: tarantool/tarantool
+    build: tarantool
     ports:
       - "3301:3301"
     volumes:

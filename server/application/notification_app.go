@@ -3,22 +3,21 @@ package application
 import (
 	"encoding/json"
 	"pinterest/domain/entity"
-	"sync"
+	"pinterest/domain/repository"
 )
 
 type NotificationApp struct {
-	notifications      map[int]map[int]entity.Notification
-	lastNotificationID int
-	mu                 sync.Mutex
-	userApp            UserAppInterface
-	websocketApp       WebsocketAppInterface
+	notificationRepo repository.NotificationRepositoryInterface
+	userApp          UserAppInterface
+	websocketApp     WebsocketAppInterface
 }
 
-func NewNotificationApp(userApp UserAppInterface, websocketApp WebsocketAppInterface) *NotificationApp {
+func NewNotificationApp(notificationRepo repository.NotificationRepositoryInterface,
+	userApp UserAppInterface, websocketApp WebsocketAppInterface) *NotificationApp {
 	return &NotificationApp{
-		notifications: make(map[int]map[int]entity.Notification),
-		userApp:       userApp,
-		websocketApp:  websocketApp,
+		notificationRepo: notificationRepo,
+		userApp:          userApp,
+		websocketApp:     websocketApp,
 	}
 }
 
@@ -33,109 +32,68 @@ type NotificationAppInterface interface {
 }
 
 func (notificationApp *NotificationApp) AddNotification(notification *entity.Notification) (int, error) {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[notification.UserID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(notification.UserID)
-		if err != nil {
-			return 0, entity.UserNotFoundError
-		}
-		notificationsMap = make(map[int]entity.Notification)
-	}
-
-	notification.NotificationID = notificationApp.lastNotificationID
-	notificationApp.lastNotificationID++
-
-	notificationsMap[notification.NotificationID] = *notification
-	notificationApp.notifications[notification.UserID] = notificationsMap
-	return notification.NotificationID, nil
+	return notificationApp.notificationRepo.AddNotification(notification)
 }
 
 func (notificationApp *NotificationApp) RemoveNotification(userID int, notificationID int) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[userID]
-	if !found {
-		return entity.UserNotFoundError
-	}
-	if notificationsMap == nil {
-		return entity.NoNotificationsError
+	notification, err := notificationApp.notificationRepo.GetNotification(notificationID)
+	if err != nil {
+		return err
 	}
 
-	_, found = notificationsMap[notificationID]
-	if !found {
-		return entity.NotificationNotFoundError
+	if notification.UserID != userID {
+		return entity.ForeignNotificationError
 	}
 
-	delete(notificationsMap, notificationID)
-	notificationApp.notifications[userID] = notificationsMap
-	return nil
+	return notificationApp.notificationRepo.RemoveNotification(notificationID)
 }
 
 func (notificationApp *NotificationApp) EditNotification(notification *entity.Notification) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[notification.UserID]
-	if !found {
-		return entity.UserNotFoundError
-	}
-	if notificationsMap == nil {
-		return entity.NoNotificationsError
+	oldNotification, err := notificationApp.notificationRepo.GetNotification(notification.NotificationID)
+	if err != nil {
+		return err
 	}
 
-	_, found = notificationsMap[notification.NotificationID]
-	if !found {
-		return entity.NotificationNotFoundError
+	if oldNotification.UserID != notification.UserID {
+		return entity.ForeignNotificationError
 	}
 
-	notificationApp.notifications[notification.UserID][notification.NotificationID] = *notification
-	return nil
+	return notificationApp.notificationRepo.EditNotification(notification)
 }
 
 func (notificationApp *NotificationApp) GetNotification(userID int, notificationID int) (*entity.Notification, error) {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[userID]
-	if !found {
-		return nil, entity.UserNotFoundError
-	}
-	if notificationsMap == nil {
-		return nil, entity.NoNotificationsError
+	notification, err := notificationApp.notificationRepo.GetNotification(notificationID)
+	if err != nil {
+		return nil, err
 	}
 
-	notification, found := notificationsMap[notificationID]
-	if !found {
-		return nil, entity.NotificationNotFoundError
+	if notification.UserID != userID {
+		return nil, entity.ForeignNotificationError
 	}
-	return &notification, nil
+	return notification, nil
 }
 
 func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[userID]
-	if !found {
-		_, err := notificationApp.userApp.GetUser(userID)
-		if err != nil {
-			return entity.UserNotFoundError
+	notifications, err := notificationApp.notificationRepo.GetAllNotifications(userID)
+	if err != nil {
+		switch err {
+		case entity.NotificationsNotFoundError:
+			notifications = make([]*entity.Notification, 0)
+		default:
+			return err
 		}
-
-		notificationsMap = make(map[int]entity.Notification)
 	}
 
-	allNotifications := entity.AllNotificationsOutput{Type: entity.AllNotificationsTypeKey, Notifications: make([]entity.Notification, 0)}
-
-	for _, notification := range notificationsMap {
-		allNotifications.Notifications = append(allNotifications.Notifications, notification)
+	notificationsOutput := entity.AllNotificationsOutput{
+		Type:          entity.AllNotificationsTypeKey,
+		Notifications: make([]entity.Notification, 0, len(notifications)),
 	}
 
-	message, err := json.Marshal(allNotifications)
+	for _, notification := range notifications {
+		notificationsOutput.Notifications = append(notificationsOutput.Notifications, *notification)
+	}
+
+	message, err := json.Marshal(notificationsOutput)
 	if err != nil {
 		return entity.JsonMarshallError
 	}
@@ -146,22 +104,14 @@ func (notificationApp *NotificationApp) SendAllNotifications(userID int) error {
 }
 
 func (notificationApp *NotificationApp) SendNotification(userID int, notificationID int) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[userID]
-	if !found {
-		return entity.UserNotFoundError
+	notification, err := notificationApp.GetNotification(userID, notificationID)
+	if err != nil {
+		return err
 	}
 
-	notification, found := notificationsMap[notificationID]
-	if !found {
-		return entity.NotificationNotFoundError
-	}
+	notificationOutput := entity.OneNotificationOutput{Type: entity.OneNotificationTypeKey, Notification: *notification}
 
-	notificationMsg := entity.OneNotificationOutput{Type: entity.OneNotificationTypeKey, Notification: notification}
-
-	message, err := json.Marshal(notificationMsg)
+	message, err := json.Marshal(notificationOutput)
 	if err != nil {
 		return entity.JsonMarshallError
 	}
@@ -172,17 +122,9 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 }
 
 func (notificationApp *NotificationApp) ReadNotification(userID int, notificationID int) error {
-	notificationApp.mu.Lock()
-	defer notificationApp.mu.Unlock()
-
-	notificationsMap, found := notificationApp.notifications[userID]
-	if !found {
-		return entity.UserNotFoundError
-	}
-
-	notification, found := notificationsMap[notificationID]
-	if !found {
-		return entity.NotificationNotFoundError
+	notification, err := notificationApp.GetNotification(userID, notificationID)
+	if err != nil {
+		return err
 	}
 
 	if notification.IsRead {
@@ -190,7 +132,5 @@ func (notificationApp *NotificationApp) ReadNotification(userID int, notificatio
 	}
 
 	notification.IsRead = true
-	notificationsMap[notificationID] = notification
-	notificationApp.notifications[userID] = notificationsMap
-	return nil
+	return notificationApp.notificationRepo.EditNotification(notification)
 }

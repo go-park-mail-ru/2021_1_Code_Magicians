@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"pinterest/domain/entity"
 	"strconv"
+	"time"
 
 	"pinterest/application"
 
@@ -108,12 +109,13 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 
 	message := entity.Message{
 		MessageID:      0,
+		ChatID:         chatID,
 		AuthorID:       userID,
 		Text:           messageInput.MessageText,
-		TimeOfCreation: "", // TODO: add datetime here
+		TimeOfCreation: time.Now().String(),
 	}
 
-	messageID, err := chatInfo.chatApp.AddMessage(chatID, &message)
+	messageID, err := chatInfo.chatApp.AddMessage(&message)
 	if err != nil {
 		chatInfo.logger.Info(err.Error(),
 			zap.String("url", r.RequestURI),
@@ -175,7 +177,7 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 
 func (chatInfo *ChatInfo) HandleReadChat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	chatIDStr, _ := vars[string(entity.IDKey)]
+	chatIDStr := vars[string(entity.IDKey)]
 	chatID, _ := strconv.Atoi(chatIDStr)
 
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID

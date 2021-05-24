@@ -22,6 +22,8 @@ const FollowCountUpdateError customError = "Failed to update follow(er/ing) coun
 const SelfFollowError customError = "Users can't follow themselves"
 
 const CookieGenerationError customError = "Could not generate cookie"
+const CookieNotFoundError customError = "Could not find cookie"
+const CookieFoundError customError = "Cookie with such value already exists"
 const GetCookieFromContextError customError = "Could not get cookie from context"
 
 const FilenameGenerationError customError = "Could not generate filename"
@@ -30,15 +32,20 @@ const FileDeletionError customError = "File deletion failed"
 
 const ClientNotSetError customError = "Websocket client not set"
 
-const NoNotificationsError customError = "No notifications found"
+const NotificationsNotFoundError customError = "Notifications not found"
 const NotificationNotFoundError customError = "Notification not found"
 const NotificationAlreadyReadError customError = "Notification was already read"
+const ForeignNotificationError customError = "Notification belongs to another user"
 
 const ChatNotFoundError customError = "Chat not found"
-const MessageNotFoundError customError = "Message not found"
+const ChatsNotFoundError customError = "Chats not found"
 const ChatAlreadyExistsError customError = "Chat already exists"
 const UserNotInChatError customError = "User is not in chat"
 const ChatAlreadyReadError customError = "Chat is already read"
+
+const MessageAddingError customError = "Could not add message"
+const MessageNotFoundError customError = "Message not found"
+const MessagesNotFoundError customError = "Messages not found"
 
 const JsonMarshallError customError = "Could not parse struct into JSON"
 

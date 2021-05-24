@@ -24,18 +24,18 @@ func NewAuthApp(grpcClient grpcAuth.AuthClient, us UserAppInterface, cookieApp C
 }
 
 type AuthAppInterface interface {
-	LoginUser(username string, password string) (*entity.CookieInfo, error)
+	CheckUserCredentials(username string, password string) (*entity.CookieInfo, error)
 	LogoutUser(userID int) error
 	CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) // Check if passed cookie value is present in any active session
 }
 
-func (authApp *AuthApp) LoginUser(username string, password string) (*entity.CookieInfo, error) {
+func (authApp *AuthApp) CheckUserCredentials(username string, password string) (*entity.CookieInfo, error) {
 	user, err := authApp.us.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = authApp.grpcClient.LoginUser(context.Background(),
+	_, err = authApp.grpcClient.CheckUserCredentials(context.Background(),
 		&grpcAuth.UserAuth{Username: username, Password: password})
 
 	if err != nil { // TODO: hashing

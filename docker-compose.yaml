@@ -11,6 +11,7 @@ services:
       - auth-service
       - pins-service
       - comments-service
+      - tarantool
       - prometheus
     command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "server_main.go"]
   
@@ -29,6 +30,7 @@ services:
     depends_on:
       - user-service
       - postgres
+      - tarantool
     command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/auth/"]
 
   pins-service:
@@ -56,9 +58,9 @@ services:
       - 5432:5432
     volumes:
       - postgres-volume:/var/lib/postgresql/data
-  
+
   tarantool:
-    image: tarantool/tarantool
+    build: tarantool
     ports:
       - "3301:3301"
     volumes:

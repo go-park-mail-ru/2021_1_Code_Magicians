@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	commentsService "pinterest/services/comments"
 	commentsProto "pinterest/services/comments/proto"
+
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
@@ -30,7 +31,6 @@ func runService(addr string) {
 	if err != nil {
 		sugarLogger.Fatal("Could not load s3.env file", zap.String("error", err.Error()))
 	}
-	// TODO: check if all needed variables are present
 
 	dbPrefix := os.Getenv("DB_PREFIX")
 	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {
@@ -42,13 +42,13 @@ func runService(addr string) {
 		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
 	conn, err := pgxpool.Connect(context.Background(), connectionString)
 	if err != nil {
-		sugarLogger.Fatal("Could not connect to database", zap.String("error", err.Error()))
+		sugarLogger.Fatal("Could not connect to postgres database", zap.String("error", err.Error()))
 		return
 	}
 
+	fmt.Println("Successfully connected to postgres database")
 	defer conn.Close()
 
-	fmt.Println("Successfully connected to database")
 	server := grpc.NewServer()
 
 	service := commentsService.NewService(conn)

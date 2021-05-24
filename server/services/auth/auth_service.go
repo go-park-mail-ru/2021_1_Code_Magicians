@@ -2,35 +2,33 @@ package auth
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
-	_ "google.golang.org/grpc"
 	"pinterest/domain/entity"
 	. "pinterest/services/auth/proto"
-	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/tarantool/go-tarantool"
+	_ "google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type service struct {
-	db               *pgxpool.Pool
-	sessionsByValue  map[string]*CookieInfo
-	sessionsByUserID map[int64]*CookieInfo // Each value from sessionsByUserID is also sessionsByValue and vice versa
-	mu               sync.Mutex
+	postgresDB  *pgxpool.Pool
+	tarantoolDB *tarantool.Connection
 }
 
-func NewService(db *pgxpool.Pool) *service {
+func NewService(postgresDB *pgxpool.Pool, tarantoolDB *tarantool.Connection) *service {
 	return &service{
-		db:               db,
-		sessionsByValue:  make(map[string]*CookieInfo),
-		sessionsByUserID: make(map[int64]*CookieInfo),
-		mu:               sync.Mutex{},
+		postgresDB:  postgresDB,
+		tarantoolDB: tarantoolDB,
 	}
 }
 
 const GetUserPasswordQuery = "SELECT passwordhash FROM Users WHERE username=$1;"
 
-func (s *service) LoginUser(ctx context.Context, userCredentials *UserAuth) (*Error, error) {
-	tx, err := s.db.Begin(context.Background())
+func (s *service) CheckUserCredentials(ctx context.Context, userCredentials *UserAuth) (*Error, error) {
+	tx, err := s.postgresDB.Begin(context.Background())
 	if err != nil {
 		return &Error{}, entity.TransactionBeginError
 	}
@@ -59,51 +57,98 @@ func (s *service) LoginUser(ctx context.Context, userCredentials *UserAuth) (*Er
 }
 
 func (s *service) AddCookieInfo(ctx context.Context, cookieInfo *CookieInfo) (*Error, error) {
-	s.mu.Lock()
-	s.sessionsByValue[cookieInfo.Cookie.Value] = &(*cookieInfo) // Copying by value
-	s.sessionsByUserID[cookieInfo.UserID] = s.sessionsByValue[cookieInfo.Cookie.Value]
-	s.mu.Unlock()
+	cookieAsInterface := cookieInfoToInterfaces(cookieInfo)
+	resp, err := s.tarantoolDB.Replace("sessions", cookieAsInterface) // If session already exists, we update it
+	if err != nil {
+		switch resp.Code {
+		case tarantool.ErrTupleFound:
+			return &Error{}, entity.CookieFoundError
+		}
+	}
 
 	return &Error{}, nil
 }
 
-func (s *service) SearchByValue(ctx context.Context, cookieVal *CookieValue) (*CheckCookieResponse, error) {
-	s.mu.Lock()
-	cookieInfo, found := s.sessionsByValue[cookieVal.CookieValue]
-	s.mu.Unlock()
+func (s *service) SearchByValue(ctx context.Context, cookieVal *CookieValue) (*CookieInfo, error) {
+	resp, err := s.tarantoolDB.Select("sessions", "secondary", 0, 1, tarantool.IterEq, []interface{}{cookieVal.CookieValue})
 
-	if !found {
-		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	if err != nil {
+		switch resp.Code {
+		case tarantool.ErrTupleNotFound:
+			return nil, entity.CookieNotFoundError
+		default:
+			return nil, err
+		}
 	}
+
+	if len(resp.Tuples()) != 1 {
+		return nil, entity.CookieNotFoundError
+	}
+
+	cookieInfo := interfacesToCookieInfo(resp.Tuples()[0])
 
 	if cookieInfo.Cookie.Expires.AsTime().Before(time.Now()) { // We check if cookie is not past it's expiration date
 		s.RemoveCookie(ctx, cookieInfo)
-		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+		return nil, entity.CookieNotFoundError
 	}
 
-	return &CheckCookieResponse{CookieInfo: cookieInfo, IsCookie: found}, nil
+	return cookieInfo, nil
 }
 
-func (s *service) SearchByUserID(ctx context.Context, userID *UserID) (*CheckCookieResponse, error) {
-	s.mu.Lock()
-	cookieInfo, found := s.sessionsByUserID[userID.Uid]
-	s.mu.Unlock()
+func (s *service) SearchByUserID(ctx context.Context, userID *UserID) (*CookieInfo, error) {
+	resp, err := s.tarantoolDB.Select("sessions", "primary", 0, 1, tarantool.IterEq, []interface{}{userID.Uid})
 
-	if !found {
-		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+	if err != nil {
+		switch resp.Code {
+		case tarantool.ErrTupleNotFound:
+			return nil, entity.CookieNotFoundError
+		default:
+			return nil, err
+		}
 	}
+
+	if len(resp.Tuples()) != 1 {
+		return nil, entity.CookieNotFoundError
+	}
+
+	cookieInfo := interfacesToCookieInfo(resp.Tuples()[0])
 
 	if cookieInfo.Cookie.Expires.AsTime().Before(time.Now()) { // We check if cookie is not past it's expiration date
 		s.RemoveCookie(ctx, cookieInfo)
-		return &CheckCookieResponse{CookieInfo: nil, IsCookie: false}, nil
+		return nil, entity.CookieNotFoundError
 	}
-	return &CheckCookieResponse{CookieInfo: cookieInfo, IsCookie: found}, nil
+
+	return cookieInfo, nil
 }
 
 func (s *service) RemoveCookie(ctx context.Context, cookieInfo *CookieInfo) (*Error, error) {
-	s.mu.Lock()
-	delete(s.sessionsByValue, cookieInfo.Cookie.Value)
-	delete(s.sessionsByUserID, cookieInfo.UserID)
-	s.mu.Unlock()
-	return &Error{}, nil
+	_, err := s.tarantoolDB.Delete("sessions", "primary", []interface{}{cookieInfo.UserID})
+	return &Error{}, err
+}
+
+func cookieInfoToInterfaces(cookieInfo *CookieInfo) []interface{} {
+	cookieAsInterfaces := make([]interface{}, 3)
+	cookieAsInterfaces[0] = uint(cookieInfo.UserID)
+	cookieAsInterfaces[1] = cookieInfo.Cookie.Value
+	cookieAsInterfaces[2] = uint(timeToUnixTimestamp(cookieInfo.Cookie.Expires.AsTime()))
+	return cookieAsInterfaces
+}
+
+func interfacesToCookieInfo(interfaces []interface{}) *CookieInfo {
+	cookie := new(Cookie)
+	cookie.Value = interfaces[1].(string)
+	cookie.Expires = timestamppb.New(unixTimestampToTime(int64(interfaces[2].(uint64))))
+
+	cookieInfo := new(CookieInfo)
+	cookieInfo.UserID = int64(interfaces[0].(uint64))
+	cookieInfo.Cookie = cookie
+	return cookieInfo
+}
+
+func unixTimestampToTime(timestamp int64) time.Time {
+	return time.Unix(timestamp, 0)
+}
+
+func timeToUnixTimestamp(timeInput time.Time) int64 {
+	return timeInput.Unix()
 }
