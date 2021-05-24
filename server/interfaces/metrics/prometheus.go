@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -9,18 +11,30 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode int
+type responseWriterProxy struct {
+	responseWriter http.ResponseWriter
+	statusCode     int
 }
 
-func NewResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{w, http.StatusOK}
+func NewResponseWriter(w http.ResponseWriter) *responseWriterProxy {
+	return &responseWriterProxy{w, http.StatusOK}
 }
 
-func (rw *responseWriter) WriteHeader(code int) {
+func (rw *responseWriterProxy) WriteHeader(code int) {
 	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+	rw.responseWriter.WriteHeader(code)
+}
+
+func (rw *responseWriterProxy) Header() http.Header {
+	return rw.responseWriter.Header()
+}
+
+func (rw *responseWriterProxy) Write(bytes []byte) (int, error) {
+	return rw.responseWriter.Write(bytes)
+}
+
+func (rw *responseWriterProxy) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return rw.responseWriter.(http.Hijacker).Hijack()
 }
 
 var HttpHits = promauto.NewCounterVec(
