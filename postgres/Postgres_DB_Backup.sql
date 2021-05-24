@@ -59,9 +59,9 @@ CREATE TABLE public.boards (
     title character varying(100) NOT NULL,
     description text,
     imagelink character varying(70) DEFAULT 'assets/img/default-board-avatar.jpg'::character varying NOT NULL,
-    imageheight integer DEFAULT 0 NOT NULL,
-    imagewidth integer DEFAULT 0 NOT NULL,
-    imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL
+    imageheight integer DEFAULT 480 NOT NULL,
+    imagewidth integer DEFAULT 1200 NOT NULL,
+    imageavgcolor character(6) DEFAULT '5a5a5a'::bpchar NOT NULL
 );
 
 

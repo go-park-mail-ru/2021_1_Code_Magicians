@@ -77,6 +77,7 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 		BoardID: int64(initBoardID), PinID: pinID.PinID})
 	if err != nil {
 		pinApp.grpcClient.DeletePin(context.Background(), pinID)
+		pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
 		if strings.Contains(err.Error(), entity.AddPinToBoardError.Error()) {
 			return -1, entity.AddPinToBoardError
 		}
@@ -87,6 +88,7 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 		err = pinApp.AddPin(int(grpcPin.BoardID), int(pinID.PinID))
 		if err != nil {
 			pinApp.grpcClient.DeletePin(context.Background(), pinID)
+			pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
 			return -1, err
 		}
 	}
@@ -242,9 +244,9 @@ func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
 		boardAvatar.ImageAvgColor = lastPin.ImageAvgColor
 	case strings.Contains(err.Error(), entity.PinNotFoundError.Error()): // If there are no pins left, we take default image
 		boardAvatar.ImageLink = "assets/img/default-board-avatar.jpg"
-		boardAvatar.ImageHeight = 50 // TODO: replace with actual default avatar stats
-		boardAvatar.ImageWidth = 50
-		boardAvatar.ImageAvgColor = "FFFFFF"
+		boardAvatar.ImageHeight = 480
+		boardAvatar.ImageWidth = 1200
+		boardAvatar.ImageAvgColor = "5a5a5a"
 	default:
 		return err
 	}

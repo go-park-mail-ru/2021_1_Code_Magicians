@@ -31,9 +31,9 @@ func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 	grpcBoard := grpcPins.Board{}
 	ConvertToGrpcBoard(&grpcBoard, board)
 	if board.ImageLink == "assets/img/default-board-avatar.jpg" { // TODO: replace with key
-		grpcBoard.ImageHeight = 50
-		grpcBoard.ImageWidth = 50
-		grpcBoard.ImageAvgColor = "FFFFFF"
+		grpcBoard.ImageHeight = 480
+		grpcBoard.ImageWidth = 1200
+		grpcBoard.ImageAvgColor = "5a5a5a"
 	}
 
 	grpcBoardID, err := boardApp.grpcClient.AddBoard(context.Background(), &grpcBoard)
