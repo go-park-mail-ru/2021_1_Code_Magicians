@@ -1,20 +1,14 @@
 package entity
 
 type Board struct {
-	BoardID     int    `json:"ID"`
-	UserID      int    `json:"userID"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ImageLInk   string `json:"avatarLink"`
-}
-
-type BoardInfo struct {
-	BoardID     int    `json:"ID"`
-	UserID      int    `json:"userID"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ImageLink   string `json:"avatarLink,omitempty"`
-	//Pins        []Pin  `json:"pins"`
+	BoardID       int    `json:"ID"`
+	UserID        int    `json:"userID"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	ImageLink     string `json:"avatarLink"`
+	ImageHeight   int    `json:"avatarHeight"`
+	ImageWidth    int    `json:"avatarWidth"`
+	ImageAvgColor string `json:"avatarAvgColor"`
 }
 
 type BoardsOutput struct {

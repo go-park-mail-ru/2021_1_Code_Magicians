@@ -16,13 +16,13 @@ func NewBoardApp(grpcClient grpcPins.PinsClient) *BoardApp {
 }
 
 type BoardAppInterface interface {
-	AddBoard(board *entity.Board) (int, error)       // Creating user's board
-	GetBoard(boardID int) (*entity.BoardInfo, error) // Get description of the board
-	GetBoards(userID int) ([]entity.Board, error)    // Get boards by authorID
+	AddBoard(board *entity.Board) (int, error)    // Creating user's board
+	GetBoard(boardID int) (*entity.Board, error)  // Get description of the board
+	GetBoards(userID int) ([]entity.Board, error) // Get boards by authorID
 	GetInitUserBoard(userID int) (int, error)
 	DeleteBoard(userID int, boardID int) error // Removes user's board by ID
-	CheckBoard(userID int, boardID int) error
-	UploadBoardAvatar(boardID int, avatarLink string) error
+	CheckBoard(userID int, boardID int) error  // Check whether board belongs to user
+	UploadBoardAvatar(boardID int, imageLink string, imageHeight int, imageWidth int, imageAvgColor string) error
 }
 
 // AddBoard adds user's board to database
@@ -30,6 +30,12 @@ type BoardAppInterface interface {
 func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 	grpcBoard := grpcPins.Board{}
 	ConvertToGrpcBoard(&grpcBoard, board)
+	if board.ImageLink == "assets/img/default-board-avatar.jpg" { // TODO: replace with key
+		grpcBoard.ImageHeight = 50
+		grpcBoard.ImageWidth = 50
+		grpcBoard.ImageAvgColor = "FFFFFF"
+	}
+
 	grpcBoardID, err := boardApp.grpcClient.AddBoard(context.Background(), &grpcBoard)
 	if err != nil {
 		if strings.Contains(err.Error(), entity.CreateBoardError.Error()) {
@@ -42,7 +48,7 @@ func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 
 // GetBoard returns board with passed boardID
 // It returns that board and nil on success, nil and error on failure
-func (boardApp *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
+func (boardApp *BoardApp) GetBoard(boardID int) (*entity.Board, error) {
 	board, err := boardApp.grpcClient.GetBoard(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
 	if err != nil {
 		if strings.Contains(err.Error(), entity.BoardNotFoundError.Error()) {
@@ -50,12 +56,17 @@ func (boardApp *BoardApp) GetBoard(boardID int) (*entity.BoardInfo, error) {
 		}
 		return nil, err
 	}
-	boardInfo := &entity.BoardInfo{
-		BoardID:     int(board.BoardID),
-		UserID:      int(board.UserID),
-		Title:       board.Title,
-		Description: board.Description,
-		ImageLink:   board.ImageLInk}
+
+	boardInfo := &entity.Board{
+		BoardID:       int(board.BoardID),
+		UserID:        int(board.UserID),
+		Title:         board.Title,
+		Description:   board.Description,
+		ImageLink:     board.ImageLink,
+		ImageHeight:   int(board.ImageHeight),
+		ImageWidth:    int(board.ImageWidth),
+		ImageAvgColor: board.ImageAvgColor,
+	}
 	return boardInfo, nil
 }
 
@@ -117,9 +128,13 @@ func (boardApp *BoardApp) CheckBoard(userID int, boardID int) error {
 	return nil
 }
 
-func (boardApp *BoardApp) UploadBoardAvatar(boardID int, imageLink string) error {
+func (boardApp *BoardApp) UploadBoardAvatar(boardID int, imageLink string, imageHeight int, imageWidth int, imageAvgColor string) error {
 	_, err := boardApp.grpcClient.UploadBoardAvatar(context.Background(), &grpcPins.FileInfo{
-		BoardID: int64(boardID), ImagePath: imageLink,
+		BoardID:       int64(boardID),
+		ImageLink:     imageLink,
+		ImageHeight:   int64(imageHeight),
+		ImageWidth:    int64(imageWidth),
+		ImageAvgColor: imageAvgColor,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), entity.BoardAvatarUploadError.Error()) {
@@ -131,12 +146,15 @@ func (boardApp *BoardApp) UploadBoardAvatar(boardID int, imageLink string) error
 	return nil
 }
 
-func ConvertToGrpcBoard(grpcPin *grpcPins.Board, pin *entity.Board) {
-	grpcPin.UserID = int64(pin.UserID)
-	grpcPin.BoardID = int64(pin.BoardID)
-	grpcPin.Title = pin.Title
-	grpcPin.Description = pin.Description
-	grpcPin.ImageLInk = pin.ImageLInk
+func ConvertToGrpcBoard(grpcBoard *grpcPins.Board, board *entity.Board) {
+	grpcBoard.UserID = int64(board.UserID)
+	grpcBoard.BoardID = int64(board.BoardID)
+	grpcBoard.Title = board.Title
+	grpcBoard.Description = board.Description
+	grpcBoard.ImageLink = board.ImageLink
+	grpcBoard.ImageHeight = int64(board.ImageHeight)
+	grpcBoard.ImageWidth = int64(board.ImageWidth)
+	grpcBoard.ImageAvgColor = board.ImageAvgColor
 }
 
 func ConvertFromGrpcBoard(board *entity.Board, grpcBoard *grpcPins.Board) {
@@ -144,7 +162,10 @@ func ConvertFromGrpcBoard(board *entity.Board, grpcBoard *grpcPins.Board) {
 	board.BoardID = int(grpcBoard.BoardID)
 	board.Title = grpcBoard.Title
 	board.Description = grpcBoard.Description
-	board.ImageLInk = grpcBoard.ImageLInk
+	board.ImageLink = grpcBoard.ImageLink
+	board.ImageHeight = int(grpcBoard.ImageHeight)
+	board.ImageWidth = int(grpcBoard.ImageWidth)
+	board.ImageAvgColor = grpcBoard.ImageAvgColor
 }
 
 func ConvertGrpcBoards(grpcBoards *grpcPins.BoardsList) []entity.Board {

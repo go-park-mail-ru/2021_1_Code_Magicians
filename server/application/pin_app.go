@@ -114,7 +114,12 @@ func (pinApp *PinApp) SavePin(userID int, pinID int) error {
 // AddPin adds pin to chosen board
 // It returns nil on success, error on failure
 func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
-	_, err := pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
+	pin, err := pinApp.GetPin(pinID)
+	if err != nil {
+		return err
+	}
+
+	_, err = pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
 		BoardID: int64(boardID), PinID: int64(pinID),
 	})
 	if err != nil {
@@ -124,6 +129,20 @@ func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
 		return err
 	}
 
+	avatarInfo := &grpcPins.FileInfo{
+		BoardID:       int64(boardID),
+		ImageLink:     pin.ImageLink,
+		ImageHeight:   int64(pin.ImageHeight),
+		ImageWidth:    int64(pin.ImageWidth),
+		ImageAvgColor: pin.ImageAvgColor,
+	}
+	_, err = pinApp.grpcClient.UploadBoardAvatar(context.Background(), avatarInfo)
+	if err != nil {
+		if strings.Contains(err.Error(), entity.BoardAvatarUploadError.Error()) {
+			return entity.BoardAvatarUploadError
+		}
+		return err
+	}
 	return nil
 }
 
@@ -157,6 +176,18 @@ func (pinApp *PinApp) DeletePin(pinID int) error {
 		return err
 	}
 
+	boards, err := pinApp.grpcClient.GetBoardsWithPin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
+	switch {
+	case err == nil:
+		for _, board := range boards.Boards {
+			pinApp.RemovePin(int(board.BoardID), pin.PinID)
+		}
+	case strings.Contains(err.Error(), entity.BoardsNotFoundError.Error()):
+		break
+	default:
+		return err
+	}
+
 	_, err = pinApp.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
 		if strings.Contains(err.Error(), entity.DeletePinError.Error()) {
@@ -171,6 +202,13 @@ func (pinApp *PinApp) DeletePin(pinID int) error {
 	}
 
 	return nil
+}
+
+type boardAvatarInfo struct {
+	imageLink     string
+	imageHeght    int
+	imageWidth    int
+	ImageAvgColor string
 }
 
 // RemovePin deletes pin from user's passed board
@@ -193,6 +231,29 @@ func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
 		default:
 			return err
 		}
+	}
+
+	lastPin, err := pinApp.grpcClient.GetLastBoardPin(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
+	var boardAvatar = new(grpcPins.FileInfo)
+	boardAvatar.BoardID = int64(boardID)
+	switch {
+	case err == nil:
+		boardAvatar.ImageLink = lastPin.ImageLink
+		boardAvatar.ImageHeight = int64(lastPin.ImageHeight)
+		boardAvatar.ImageWidth = int64(lastPin.ImageWidth)
+		boardAvatar.ImageAvgColor = lastPin.ImageAvgColor
+	case strings.Contains(err.Error(), entity.PinNotFoundError.Error()): // If there are no pins left, we take default image
+		boardAvatar.ImageLink = "assets/img/default-board-avatar.jpg"
+		boardAvatar.ImageHeight = 50 // TODO: replace with actual default avatar stats
+		boardAvatar.ImageWidth = 50
+		boardAvatar.ImageAvgColor = "FFFFFF"
+	default:
+		return err
+	}
+
+	_, err = pinApp.grpcClient.UploadBoardAvatar(context.Background(), boardAvatar)
+	if err != nil {
+		return err
 	}
 
 	refCount, err := pinApp.grpcClient.PinRefCount(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})

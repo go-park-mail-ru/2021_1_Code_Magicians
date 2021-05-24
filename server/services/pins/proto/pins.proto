@@ -13,7 +13,10 @@ message Board {
   int64     UserID = 2;
   string    Title = 3;
   string    Description = 4;
-  string    ImageLInk = 5;
+  string    ImageLink = 5;
+  int64     ImageHeight = 6;
+  int64     ImageWidth = 7;
+  string    ImageAvgColor = 8;
 }
 
 message Pin {
@@ -81,8 +84,11 @@ message UploadImageResponse {
 }
 
 message FileInfo {
-  string imagePath = 1;
-  int64  boardID = 2;
+  int64  boardID = 1;
+  string imageLink = 2;
+  int64  imageHeight = 3;
+  int64  imageWidth = 4;
+  string imageAvgColor = 5;
 }
 
 message SearchInput {
@@ -111,6 +117,8 @@ service Pins {
   rpc  GetPin(PinID) returns (Pin) {}
   rpc  GetPins(BoardID) returns (PinsList) {}
   rpc  GetLastPinID(UserID) returns (PinID) {}
+  rpc  GetLastBoardPin(BoardID) returns (Pin) {}
+  rpc  GetBoardsWithPin(PinID) returns (BoardsList) {}
   rpc  SavePicture(Pin) returns (Error) {}
   rpc  RemovePin(PinInBoard) returns (Error) {}
   rpc  DeletePin(PinID) returns (Error) {}

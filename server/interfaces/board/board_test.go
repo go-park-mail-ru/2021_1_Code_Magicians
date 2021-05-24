@@ -307,7 +307,7 @@ func TestBoards(t *testing.T) {
 		Description: "exampleDescription2",
 	}
 
-	boardInfo1 := entity.BoardInfo{
+	boardInfo1 := entity.Board{
 		BoardID:     1,
 		UserID:      0,
 		Title:       "exampletitle2",

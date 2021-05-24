@@ -65,7 +65,10 @@ func (s *service) AddBoard(ctx context.Context, board *Board) (*BoardID, error) 
 	return &BoardID{BoardID: int64(newBoardID)}, nil
 }
 
-const getBoardQuery string = "SELECT userID, title, description FROM Boards WHERE boardID=$1"
+const getBoardQuery string = "SELECT userID, title, description, " +
+	"imageLink, imageHeight, imageWidth, imageAvgColor\n" +
+	"FROM Boards\n" +
+	"WHERE boardID=$1"
 
 // GetBoard fetches board with passed ID from database
 // It returns that board, nil on success and nil, error on failure
@@ -78,7 +81,8 @@ func (s *service) GetBoard(ctx context.Context, boardID *BoardID) (*Board, error
 
 	board := Board{BoardID: boardID.BoardID}
 	row := tx.QueryRow(context.Background(), getBoardQuery, boardID.BoardID)
-	err = row.Scan(&board.UserID, &board.Title, &board.Description)
+	err = row.Scan(&board.UserID, &board.Title, &board.Description,
+		&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &Board{}, entity.BoardNotFoundError
@@ -94,7 +98,10 @@ func (s *service) GetBoard(ctx context.Context, boardID *BoardID) (*Board, error
 	return &board, nil
 }
 
-const getBoardsByUserQuery string = "SELECT boardID, title, description FROM Boards WHERE userID=$1"
+const getBoardsByUserQuery string = "SELECT title, description, " +
+	"imageLink, imageHeight, imageWidth, imageAvgColor\n" +
+	"FROM Boards\n" +
+	"WHERE userID=$1"
 
 // GetBoards fetches all boards created by user with specified ID from database
 // It returns slice of these boards, nil on success and nil, error on failure
@@ -105,7 +112,6 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 	}
 	defer tx.Rollback(context.Background())
 
-	boards := make([]*Board, 0)
 	rows, err := tx.Query(context.Background(), getBoardsByUserQuery, userID.Uid)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -114,9 +120,11 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 		return &BoardsList{}, err
 	}
 
+	boards := make([]*Board, 0)
 	for rows.Next() {
 		board := Board{UserID: userID.Uid}
-		err = rows.Scan(&board.BoardID, &board.Title, &board.Description)
+		err = rows.Scan(&board.Title, &board.Description,
+			&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 		if err != nil {
 			return &BoardsList{}, err // TODO: error handling
 		}
@@ -130,7 +138,8 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 	return &BoardsList{Boards: boards}, nil
 }
 
-const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description\n" +
+const getInitUserBoardQuery string = "SELECT b1.boardID, b1.title, b1.description, " +
+	"b1.imageLink, b1.imageHeight, b1.imageWidth, b1.imageAvgColor\n" +
 	"FROM boards AS b1\n" +
 	"INNER JOIN boards AS b2 on b2.boardID = b1.boardID AND b2.userID = $1\n" +
 	"GROUP BY b1.boardID, b2.userID\n" +
@@ -194,8 +203,8 @@ func (s *service) DeleteBoard(ctx context.Context, boardID *BoardID) (*Error, er
 }
 
 const saveBoardPictureQuery string = "UPDATE boards\n" +
-	"SET imageLink=$1\n" +
-	"WHERE boardID=$2"
+	"SET imageLink=$2, imageHeight=$3, imageWidth=$4, imageAvgColor=$5\n" +
+	"WHERE boardID=$1"
 
 func (s *service) UploadBoardAvatar(ctx context.Context, imageInfo *FileInfo) (*Error, error) {
 	tx, err := s.db.Begin(context.Background())
@@ -204,7 +213,8 @@ func (s *service) UploadBoardAvatar(ctx context.Context, imageInfo *FileInfo) (*
 	}
 	defer tx.Rollback(context.Background())
 
-	commandTag, err := tx.Exec(context.Background(), saveBoardPictureQuery, imageInfo.ImagePath, imageInfo.BoardID)
+	commandTag, err := tx.Exec(context.Background(), saveBoardPictureQuery, imageInfo.BoardID,
+		imageInfo.ImageLink, imageInfo.ImageHeight, imageInfo.ImageWidth, imageInfo.ImageAvgColor)
 	if err != nil {
 		return &Error{}, err
 	}
@@ -283,7 +293,8 @@ func (s *service) AddPin(ctx context.Context, pinInBoard *PinInBoard) (*Error, e
 
 const getPinQuery string = "SELECT userID, title, description," +
 	"imageLink, imageHeight, imageWidth, ImageAvgColor, creationDate\n" +
-	"FROM Pins WHERE pinID=$1"
+	"FROM Pins\n" +
+	"WHERE pinID=$1"
 
 // GetPin fetches user with passed ID from database
 // It returns that user, nil on success and nil, error on failure
@@ -363,7 +374,6 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"FROM pins\n" +
 	"INNER JOIN pairs on pairs.pinID=pins.pinID\n" +
 	"INNER JOIN boards on boards.boardID=pairs.boardID AND boards.userID = $1\n" +
-	"GROUP BY boards.userID\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
 // GetLastPinID
@@ -390,6 +400,80 @@ func (s *service) GetLastPinID(ctx context.Context, userID *UserID) (*PinID, err
 		return &PinID{}, entity.TransactionCommitError
 	}
 	return &PinID{PinID: int64(lastPinID)}, nil
+}
+
+const getLastBoardPinQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"FROM pins\n" +
+	"INNER JOIN pairs on pairs.pinID=pins.pinID\n" +
+	"INNER JOIN boards on boards.boardID=pairs.boardID AND boards.boardID = $1\n" +
+	"ORDER BY pins.pinID DESC LIMIT 1\n"
+
+func (s *service) GetLastBoardPin(ctx context.Context, boardID *BoardID) (*Pin, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return &Pin{}, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	row := tx.QueryRow(context.Background(), getLastBoardPinQuery, boardID.BoardID)
+
+	pin := Pin{}
+	var pinCreationDate time.Time
+	err = row.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
+		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
+		&pinCreationDate)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return &Pin{}, entity.PinNotFoundError
+		}
+		return &Pin{}, err
+	}
+	pin.CreationDate = timestamppb.New(pinCreationDate)
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return &Pin{}, entity.TransactionCommitError
+	}
+	return &pin, nil
+}
+
+const getBoardsWithPinQuery string = "SELECT boardID, userID, title, description, " +
+	"imageLink, imageHeight, imageWidth, imageAvgColor\n" +
+	"FROM Boards as board\n" +
+	"INNER JOIN pairs on pairs.boardID = board.boardID AND pairs.pinID = $1"
+
+func (s *service) GetBoardsWithPin(ctx context.Context, pinID *PinID) (*BoardsList, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return &BoardsList{}, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), getBoardsWithPinQuery, pinID.PinID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return &BoardsList{}, entity.BoardsNotFoundError
+		}
+		return &BoardsList{}, err
+	}
+
+	boards := make([]*Board, 0)
+	for rows.Next() {
+		board := Board{}
+		err = rows.Scan(&board.BoardID, &board.UserID, &board.Title, &board.Description,
+			&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
+		if err != nil {
+			return &BoardsList{}, err // TODO: error handling
+		}
+		boards = append(boards, &board)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return &BoardsList{}, entity.TransactionCommitError
+	}
+	return &BoardsList{Boards: boards}, nil
 }
 
 const savePictureQuery string = "UPDATE pins\n" +
@@ -437,6 +521,7 @@ func (s *service) RemovePin(ctx context.Context, pinInBoard *PinInBoard) (*Error
 		return &Error{}, err
 	}
 	if commandTag.RowsAffected() != 1 {
+		fmt.Println(pinInBoard.PinID)
 		return &Error{}, entity.RemovePinError
 	}
 

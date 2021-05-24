@@ -57,7 +57,11 @@ CREATE TABLE public.boards (
     boardid integer NOT NULL,
     userid bigint NOT NULL,
     title character varying(100) NOT NULL,
-    description text
+    description text,
+    imagelink character varying(70) DEFAULT 'assets/img/default-board-avatar.jpg'::character varying NOT NULL,
+    imageheight integer DEFAULT 0 NOT NULL,
+    imagewidth integer DEFAULT 0 NOT NULL,
+    imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL
 );
 
 
@@ -304,7 +308,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.us
 -- Data for Name: boards; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.boards (boardid, userid, title, description) FROM stdin;
+COPY public.boards (boardid, userid, title, description, imagelink, imageheight, imagewidth, imageavgcolor) FROM stdin;
 \.
 
 
