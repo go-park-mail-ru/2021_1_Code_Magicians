@@ -331,7 +331,7 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 
 const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
-	"pins.creationDate, pin.reports_count\n" +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
