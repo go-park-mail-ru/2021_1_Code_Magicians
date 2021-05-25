@@ -560,6 +560,7 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 	if err != nil {
 		return nil, entity.TransactionCommitError
 	}
+
 	return &UsersListOutput{Users: followers}, nil
 }
 
@@ -580,7 +581,7 @@ func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersLis
 	defer tx.Rollback(context.Background())
 
 	followed := make([]*UserOutput, 0)
-	rows, err := tx.Query(context.Background(), getAllFollowersQuery, userID.Uid)
+	rows, err := tx.Query(context.Background(), getAllFollowedQuery, userID.Uid)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.UsersNotFoundError
@@ -610,6 +611,7 @@ func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersLis
 	if err != nil {
 		return nil, entity.TransactionCommitError
 	}
+
 	return &UsersListOutput{Users: followed}, nil
 }
 
