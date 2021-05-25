@@ -220,7 +220,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01T00:00:00Z"}`,
+				`"creationDate":"0001-01-01T00:00:00Z",` +
+				`"reportsCount":0}`,
 			),
 		},
 		"Testing get pin by id",
@@ -247,7 +248,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"},` +
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
@@ -256,7 +258,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"}]}`,
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0}]}`,
 			),
 		},
 		"Testing get pin by board id",
@@ -283,7 +286,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"},` +
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
@@ -292,7 +296,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"}]}`,
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0}]}`,
 			),
 		},
 		"Testing get pins by keyWords", // I don't know right now how to easily check if password changed
@@ -319,7 +324,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"},` +
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle",` +
@@ -328,7 +334,8 @@ var pinTest = []struct {
 				`"imageWidth":1,` +
 				`"imageAvgColor":"FFFFFF",` +
 				`"description":"exampleDescription",` +
-				`"creationDate":"0001-01-01 00:00:00 +0000 UTC"}]}`,
+				`"creationDate":"0001-01-01 00:00:00 +0000 UTC",` +
+				`"reportsCount":0}]}`,
 			),
 		},
 		"Testing get pins for feed", // I don't know right now how to easily check if password changed
