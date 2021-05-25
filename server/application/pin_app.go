@@ -456,12 +456,15 @@ func (pinApp *PinApp) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
 // CreateReport adds report with parameters of passed report struct to database
 // It returns added report's ID, nil on success, -1, error on failure
 func (pinApp *PinApp) CreateReport(report *entity.Report) (int, error) {
+	_, err := pinApp.GetPin(report.PinID)
+	if err != nil {
+		return -1, err
+	}
+
 	grpcReport := grpcPins.Report{}
 	grpcReport.PinID = int64(report.PinID)
 	grpcReport.SenderID = int64(report.SenderID)
 	grpcReport.Description = report.Description
-
-	// TODO: add pin check
 
 	grpcReportID, err := pinApp.grpcClient.CreateReport(context.Background(), &grpcReport)
 	if err != nil {
