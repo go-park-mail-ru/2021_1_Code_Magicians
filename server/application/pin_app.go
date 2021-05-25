@@ -46,7 +46,7 @@ type PinAppInterface interface {
 	DeletePin(pinID int) error                                       // Delete pin entirely
 	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
 	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
-	SearchPins(keywords string) ([]entity.Pin, error)
+	SearchPins(keywords string, date string) ([]entity.Pin, error)
 	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
 	CreateReport(report *entity.Report) (int, error)
 }
@@ -408,8 +408,9 @@ func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
-func (pinApp *PinApp) SearchPins(keyWords string) ([]entity.Pin, error) {
-	grpcPinsList, err := pinApp.grpcClient.SearchPins(context.Background(), &grpcPins.SearchInput{KeyWords: keyWords})
+func (pinApp *PinApp) SearchPins(keyWords string, date string) ([]entity.Pin, error) {
+	grpcPinsList, err := pinApp.grpcClient.SearchPins(context.Background(),
+		&grpcPins.SearchInput{KeyWords: keyWords, Date: date})
 	if err != nil {
 		switch {
 		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):

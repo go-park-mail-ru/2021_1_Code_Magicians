@@ -331,7 +331,7 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 
 const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
-	"pins.creationDate, pin.reports_count\n" +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
@@ -349,7 +349,7 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 		if err == pgx.ErrNoRows {
 			return &PinsList{}, nil
 		}
-		return &PinsList{}, entity.GetPinsByBoardIdError
+		return &PinsList{}, err
 	}
 
 	pins := make([]*Pin, 0)
@@ -672,11 +672,16 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 	return &PinsList{Pins: pins}, nil
 }
 
-const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
+const SearchAllPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
 	"pins.creationDate, pins.reports_count\n" +
 	"FROM pins\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
+const SearchPeriodPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pins.reports_count\n" +
+	"FROM pins\n" +
+	"WHERE LOWER(pins.title) LIKE $1 AND pins.creationdate > now() - interval "
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
@@ -687,10 +692,18 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 	}
 	defer tx.Rollback(context.Background())
 
-	rows, err := tx.Query(context.Background(), SearchPinsQuery, "%"+searchInput.KeyWords+"%")
+	var rows pgx.Rows
+
+	if searchInput.Date == "all time" {
+		rows, err = tx.Query(context.Background(), SearchAllPinsQuery, "%"+searchInput.KeyWords+"%")
+	} else if searchInput.Date == "hour" || searchInput.Date == "day" || searchInput.Date == "week" {
+		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery + "'1 " + searchInput.Date + "';", "%"+searchInput.KeyWords+"%")
+	} else {
+		return &PinsList{}, entity.SearchingError
+	}
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &PinsList{}, entity.NoResultSearch
+			return &PinsList{}, nil
 		}
 		return &PinsList{}, err
 	}

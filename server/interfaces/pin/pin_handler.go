@@ -341,12 +341,19 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request) {
-	keyString := mux.Vars(r)[string(entity.SearchKeyQuery)]
+	searchPinInput := new(entity.SearchPinInput)
+	err := json.NewDecoder(r.Body).Decode(searchPinInput)
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	keyString := searchPinInput.KeyWords
 
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)
 
-	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString))
-	if err != nil {
+	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString), searchPinInput.Date)
+	if err != nil && err != entity.NoResultSearch{
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
