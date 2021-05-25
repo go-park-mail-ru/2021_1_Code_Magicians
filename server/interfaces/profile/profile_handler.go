@@ -136,7 +136,6 @@ func (profileInfo *ProfileInfo) HandleEditProfile(w http.ResponseWriter, r *http
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

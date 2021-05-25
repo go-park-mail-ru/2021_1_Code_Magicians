@@ -68,7 +68,6 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return nil, entity.UsernameEmailDuplicateError
 		}
-		// Other errors
 		return nil, err
 	}
 
@@ -256,7 +255,6 @@ func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, err
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
 		}
-		// Other errors
 		return nil, err
 	}
 
@@ -290,7 +288,6 @@ func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutp
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
 		}
-
 		return nil, err
 	}
 
@@ -303,7 +300,10 @@ func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutp
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
 		if err != nil {
-			return nil, err // TODO: error handling
+			if err == pgx.ErrNoRows {
+				return nil, entity.UserNotFoundError
+			}
+			return nil, err
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)
@@ -344,7 +344,6 @@ func (s *service) GetUserByUsername(ctx context.Context, username *Username) (*U
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
 		}
-
 		return nil, err
 	}
 
@@ -454,7 +453,7 @@ func (s *service) CheckIfFollowed(ctx context.Context, follows *Follows) (*IfFol
 		if err == pgx.ErrNoRows {
 			return &IfFollowedResponse{IsFollowed: false}, nil
 		}
-		// Other errors
+
 		return &IfFollowedResponse{IsFollowed: false}, err
 	}
 
@@ -536,7 +535,6 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 		if err == pgx.ErrNoRows {
 			return nil, entity.UsersNotFoundError
 		}
-
 		return nil, err
 	}
 
@@ -587,7 +585,6 @@ func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersLis
 		if err == pgx.ErrNoRows {
 			return nil, entity.UsersNotFoundError
 		}
-
 		return nil, err
 	}
 

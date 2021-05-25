@@ -358,7 +358,7 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
 			&pinCreationDate)
 		if err != nil {
-			return &PinsList{}, err // TODO: error handling
+			return &PinsList{}, entity.GetPinsByBoardIdError
 		}
 		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)

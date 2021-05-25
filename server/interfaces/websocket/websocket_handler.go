@@ -45,7 +45,7 @@ func (websocketInfo *WebsocketInfo) HandleConnect(w http.ResponseWriter, r *http
 		return
 	}
 
-	_, initialMessageBytes, err := ws.ReadMessage() // TODO: add timeout
+	_, initialMessageBytes, err := ws.ReadMessage()
 	if err != nil {
 		websocketInfo.logger.Info(err.Error())
 		ws.Close()

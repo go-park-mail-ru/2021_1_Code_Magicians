@@ -55,7 +55,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseMultipartForm(bodySize)
-	jsonData := r.FormValue(string(entity.PinInfoLabelKey)) // TODO: replace string constants with keys
+	jsonData := r.FormValue(string(entity.PinInfoLabelKey))
 	currPin := entity.Pin{}
 	err := json.Unmarshal([]byte(jsonData), &currPin)
 	if err != nil {
