@@ -40,6 +40,19 @@ func (chatInfo *ChatInfo) HandleAddMessage(w http.ResponseWriter, r *http.Reques
 	case true:
 		{
 			otherUserID, _ = strconv.Atoi(otherIDStr)
+			_, err = chatInfo.userApp.GetUser(otherUserID)
+			if err != nil {
+				chatInfo.logger.Info(err.Error(),
+					zap.String("url", r.RequestURI),
+					zap.String("method", r.Method))
+				switch err {
+				case entity.UserNotFoundError:
+					w.WriteHeader(http.StatusNotFound)
+				default:
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+				return
+			}
 
 		}
 	case false: // ID was not passed
