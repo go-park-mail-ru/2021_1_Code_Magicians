@@ -266,11 +266,11 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/search/exp",
-			"/pins/search/{searchKey}",
+			"/pins/search",
+			"/pins/search",
 			"GET",
 			nil,
-			nil,
+			[]byte(`{"searchKey": "exp", "date": "week"}`),
 			testPinInfo.HandleSearchPins,
 			middleware.AuthMid,
 		},
@@ -520,7 +520,7 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().GetPins(gomock.Any()).Return(expectedPinsInBoard, nil).Times(1)
 
-	mockPinApp.EXPECT().SearchPins("exp").Return(expectedPinsInBoard, nil).Times(1)
+	mockPinApp.EXPECT().SearchPins("exp", "week").Return(expectedPinsInBoard, nil).Times(1)
 
 	mockPinApp.EXPECT().GetNumOfPins(10).Return(expectedPinsInBoard, nil).Times(1)
 
