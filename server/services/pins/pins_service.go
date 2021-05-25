@@ -633,6 +633,7 @@ const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title,  p
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
 	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
+	"ORDER BY pins.pinID DESC\n" +
 	"LIMIT $1;"
 
 // GetNumOfPins generates the main feed
