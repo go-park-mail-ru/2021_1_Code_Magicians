@@ -2,6 +2,7 @@ package pin
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"pinterest/domain/entity"
@@ -374,4 +375,43 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseBody)
+}
+
+func (pinInfo *PinInfo) HandleCreateReport(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	report := new(entity.Report)
+
+	err = json.Unmarshal(data, report)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
+
+	report.SenderID = userID
+	report.ReportID, err = pinInfo.pinApp.CreateReport(report)
+	if err != nil {
+		pinInfo.logger.Info(
+			err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", userID), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	reportIDOutput := entity.ReportID{report.ReportID}
+	body, err := json.Marshal(reportIDOutput)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(body)
 }

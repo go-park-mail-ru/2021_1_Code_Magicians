@@ -26,10 +26,18 @@ message Pin {
   string    Title = 4;
   string    Description = 5;
   string    ImageLink = 6;
-  int32     ImageHeight = 7;
-  int32     ImageWidth = 8;
+  int64     ImageHeight = 7;
+  int64     ImageWidth = 8;
   string    ImageAvgColor = 9;
   google.protobuf.Timestamp CreationDate = 10;
+  int64     ReportsCount = 11;
+}
+
+message Report {
+  int64     ReportID = 1;
+  int64     PinID = 2;
+  int64     SenderID = 3;
+  string    Description = 4;
 }
 
 message UserID {
@@ -54,6 +62,10 @@ message PinsList {
 
 message PinID {
   int64 pinID = 1;
+}
+
+message ReportID {
+  int64 reportID = 1;
 }
 
 message Save {
@@ -128,4 +140,5 @@ service Pins {
   rpc  PinRefCount(PinID) returns (Number) {}
   rpc  DeleteFile(FilePath) returns (Error) {}
   rpc  GetPinsOfUsers(UserIDList) returns (PinsList) {}
+  rpc  CreateReport(Report) returns (ReportID) {}
 }

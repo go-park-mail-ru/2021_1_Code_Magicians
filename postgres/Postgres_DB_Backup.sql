@@ -16,6 +16,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE ONLY public.reports DROP CONSTRAINT reports_fk_1;
+ALTER TABLE ONLY public.reports DROP CONSTRAINT reports_fk;
 ALTER TABLE ONLY public.pairs DROP CONSTRAINT pairs_fk;
 ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_users_follower;
 ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_users_followed;
@@ -28,15 +30,19 @@ ALTER TABLE ONLY public.users DROP CONSTRAINT users_un_email;
 ALTER TABLE ONLY public.boards DROP CONSTRAINT users_un_boards;
 ALTER TABLE ONLY public.users DROP CONSTRAINT users_pk_id;
 ALTER TABLE ONLY public.pins DROP CONSTRAINT pins_pk_pinid;
+ALTER TABLE ONLY public.reports DROP CONSTRAINT one_pin_per_sender;
 ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_pk;
 ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_pk_id;
 ALTER TABLE ONLY public.boards DROP CONSTRAINT boards_pk_oardid;
 ALTER TABLE public.users ALTER COLUMN userid DROP DEFAULT;
+ALTER TABLE public.reports ALTER COLUMN reportid DROP DEFAULT;
 ALTER TABLE public.pins ALTER COLUMN pinid DROP DEFAULT;
 ALTER TABLE public.comments ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.boards ALTER COLUMN boardid DROP DEFAULT;
 DROP SEQUENCE public.users_userid_seq;
 DROP TABLE public.users;
+DROP SEQUENCE public.reports_reportid_seq;
+DROP TABLE public.reports;
 DROP SEQUENCE public.pins_pinid_seq;
 DROP TABLE public.pins;
 DROP TABLE public.pairs;
@@ -190,7 +196,8 @@ CREATE TABLE public.pins (
     imageheight integer DEFAULT 0 NOT NULL,
     imagewidth integer DEFAULT 0 NOT NULL,
     imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL,
-    creationdate timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    creationdate timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    reports_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -223,6 +230,42 @@ ALTER TABLE public.pins_pinid_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.pins_pinid_seq OWNED BY public.pins.pinid;
+
+
+--
+-- Name: reports; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reports (
+    reportid integer NOT NULL,
+    pinid integer NOT NULL,
+    senderid integer NOT NULL,
+    description text NOT NULL
+);
+
+
+ALTER TABLE public.reports OWNER TO postgres;
+
+--
+-- Name: reports_reportid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reports_reportid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.reports_reportid_seq OWNER TO postgres;
+
+--
+-- Name: reports_reportid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reports_reportid_seq OWNED BY public.reports.reportid;
 
 
 --
@@ -298,6 +341,13 @@ ALTER TABLE ONLY public.pins ALTER COLUMN pinid SET DEFAULT nextval('public.pins
 
 
 --
+-- Name: reports reportid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reports ALTER COLUMN reportid SET DEFAULT nextval('public.reports_reportid_seq'::regclass);
+
+
+--
 -- Name: users userid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -340,7 +390,15 @@ COPY public.pairs (boardid, pinid) FROM stdin;
 -- Data for Name: pins; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pins (pinid, title, imagelink, description, userid, imageheight, imagewidth, imageavgcolor, creationdate) FROM stdin;
+COPY public.pins (pinid, title, imagelink, description, userid, imageheight, imagewidth, imageavgcolor, creationdate, reports_count) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reports; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reports (reportid, pinid, senderid, description) FROM stdin;
 \.
 
 
@@ -374,6 +432,13 @@ SELECT pg_catalog.setval('public.pins_pinid_seq', 80, true);
 
 
 --
+-- Name: reports_reportid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reports_reportid_seq', 1, false);
+
+
+--
 -- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -402,6 +467,14 @@ ALTER TABLE ONLY public.comments
 
 ALTER TABLE ONLY public.followers
     ADD CONSTRAINT followers_pk PRIMARY KEY (followerid, followedid);
+
+
+--
+-- Name: reports one_pin_per_sender; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT one_pin_per_sender UNIQUE (pinid, senderid);
 
 
 --
@@ -497,6 +570,22 @@ ALTER TABLE ONLY public.followers
 
 ALTER TABLE ONLY public.pairs
     ADD CONSTRAINT pairs_fk FOREIGN KEY (boardid) REFERENCES public.boards(boardid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: reports reports_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_fk FOREIGN KEY (pinid) REFERENCES public.pins(pinid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: reports reports_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_fk_1 FOREIGN KEY (senderid) REFERENCES public.users(userid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

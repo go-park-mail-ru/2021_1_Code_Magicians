@@ -293,7 +293,8 @@ func (s *service) AddPin(ctx context.Context, pinInBoard *PinInBoard) (*Error, e
 }
 
 const getPinQuery string = "SELECT userID, title, description," +
-	"imageLink, imageHeight, imageWidth, ImageAvgColor, creationDate\n" +
+	"imageLink, imageHeight, imageWidth, ImageAvgColor, " +
+	"creationDate, reports_count\n" +
 	"FROM Pins\n" +
 	"WHERE pinID=$1"
 
@@ -312,7 +313,7 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 	var pinCreationDate time.Time
 	err = row.Scan(&pin.UserID, &pin.Title, &pin.Description,
 		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-		&pinCreationDate)
+		&pinCreationDate, &pin.ReportsCount)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &Pin{}, entity.PinNotFoundError
@@ -329,7 +330,8 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 }
 
 const getPinsByBoardQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pin.reports_count\n" +
 	"FROM Pins\n" +
 	"INNER JOIN pairs on pins.pinID = pairs.pinID WHERE boardID=$1"
 
@@ -356,7 +358,7 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 		pin := Pin{}
 		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pinCreationDate)
+			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
 			return &PinsList{}, entity.GetPinsByBoardIdError
 		}
@@ -404,7 +406,8 @@ func (s *service) GetLastPinID(ctx context.Context, userID *UserID) (*PinID, err
 }
 
 const getLastBoardPinQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM pins\n" +
 	"INNER JOIN pairs on pairs.pinID=pins.pinID\n" +
 	"INNER JOIN boards on boards.boardID=pairs.boardID AND boards.boardID = $1\n" +
@@ -423,7 +426,7 @@ func (s *service) GetLastBoardPin(ctx context.Context, boardID *BoardID) (*Pin, 
 	var pinCreationDate time.Time
 	err = row.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 		&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-		&pinCreationDate)
+		&pinCreationDate, &pin.ReportsCount)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &Pin{}, entity.PinNotFoundError
@@ -626,7 +629,8 @@ func (s *service) UploadPicture(stream Pins_UploadPictureServer) error {
 }
 
 const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title,  pins.description, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
 	"LIMIT $1;"
 
@@ -653,7 +657,7 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 		pin := Pin{}
 		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pinCreationDate)
+			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
 			return &PinsList{}, entity.FeedLoadingError
 		}
@@ -669,7 +673,8 @@ func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsLis
 }
 
 const SearchPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM pins\n" +
 	"WHERE LOWER(pins.title) LIKE $1;"
 
@@ -696,7 +701,7 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 		pin := Pin{}
 		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pinCreationDate)
+			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
 			return &PinsList{}, entity.SearchingError
 		}
@@ -712,7 +717,8 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 }
 
 const GetPinsByUsersIDQuery string = "SELECT pins.pinID, pins.userID, pins.title, pins.description, " +
-	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, pins.creationDate\n" +
+	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
+	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
 	"WHERE pins.UserID = ANY($1)" +
 	"ORDER BY pins.PinID DESC;" // So that newest pins will come up first
@@ -740,7 +746,7 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 		pin := Pin{}
 		err = rows.Scan(&pin.PinID, &pin.UserID, &pin.Title, &pin.Description,
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
-			&pinCreationDate)
+			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
 			return &PinsList{}, entity.GetPinsByUserIdError
 		}
@@ -781,6 +787,39 @@ func (s *service) PinRefCount(ctx context.Context, pinID *PinID) (*Number, error
 		return &Number{}, entity.TransactionCommitError
 	}
 	return &Number{Number: int64(refCount)}, nil
+}
+
+const createReportQuery string = "INSERT INTO Reports (pinID, senderID, description)\n" +
+	"values ($1, $2, $3)\n" +
+	"RETURNING reportID"
+const increaseReportCountQuery string = "UPDATE Pins SET reports_count = reports_count + 1 WHERE pinID=$1"
+
+// CreateReport adds supplied report to database
+// It returns nil on success, error on failure
+func (s *service) CreateReport(ctx context.Context, report *Report) (*ReportID, error) {
+	tx, err := s.db.Begin(context.Background())
+	if err != nil {
+		return &ReportID{}, entity.TransactionBeginError
+	}
+	defer tx.Rollback(context.Background())
+
+	row := tx.QueryRow(context.Background(), createReportQuery, report.PinID, report.SenderID, report.Description)
+	newReportID := 0
+	err = row.Scan(&newReportID)
+	if err != nil {
+		return &ReportID{}, entity.CreateReportError
+	}
+
+	_, err = tx.Exec(context.Background(), increaseReportCountQuery, report.PinID)
+	if err != nil {
+		return &ReportID{}, entity.CreateReportError
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return &ReportID{}, entity.TransactionCommitError
+	}
+	return &ReportID{ReportID: int64(newReportID)}, nil
 }
 
 func (s *service) DeleteFile(ctx context.Context, filename *FilePath) (*Error, error) {

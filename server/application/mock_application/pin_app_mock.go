@@ -64,6 +64,21 @@ func (mr *MockPinAppInterfaceMockRecorder) CreatePin(pin, file, extension interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePin", reflect.TypeOf((*MockPinAppInterface)(nil).CreatePin), pin, file, extension)
 }
 
+// CreateReport mocks base method.
+func (m *MockPinAppInterface) CreateReport(report *entity.Report) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateReport", report)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateReport indicates an expected call of CreateReport.
+func (mr *MockPinAppInterfaceMockRecorder) CreateReport(report interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReport", reflect.TypeOf((*MockPinAppInterface)(nil).CreateReport), report)
+}
+
 // DeletePin mocks base method.
 func (m *MockPinAppInterface) DeletePin(pinID int) error {
 	m.ctrl.T.Helper()

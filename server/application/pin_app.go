@@ -48,6 +48,7 @@ type PinAppInterface interface {
 	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
 	SearchPins(keywords string) ([]entity.Pin, error)
 	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
+	CreateReport(report *entity.Report) (int, error)
 }
 
 // CreatePin creates passed pin and adds it to native user's board
@@ -452,6 +453,26 @@ func (pinApp *PinApp) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
 	return ConvertGrpcPins(grpcPinsList), nil
 }
 
+// CreateReport adds report with parameters of passed report struct to database
+// It returns added report's ID, nil on success, -1, error on failure
+func (pinApp *PinApp) CreateReport(report *entity.Report) (int, error) {
+	grpcReport := grpcPins.Report{}
+	grpcReport.PinID = int64(report.PinID)
+	grpcReport.SenderID = int64(report.SenderID)
+	grpcReport.Description = report.Description
+
+	// TODO: add pin check
+
+	grpcReportID, err := pinApp.grpcClient.CreateReport(context.Background(), &grpcReport)
+	if err != nil {
+		if strings.Contains(err.Error(), entity.CreateReportError.Error()) {
+			return -1, entity.CreateReportError
+		}
+		return -1, err
+	}
+	return int(grpcReportID.ReportID), nil
+}
+
 func (imageStruct *imageInfo) fillFromImage(imageFile io.Reader) error {
 	image, _, err := image.Decode(imageFile)
 	if err != nil {
@@ -476,8 +497,8 @@ func ConvertToGrpcPin(grpcPin *grpcPins.Pin, pin *entity.Pin) {
 	grpcPin.Title = pin.Title
 	grpcPin.Description = pin.Description
 	grpcPin.ImageAvgColor = pin.ImageAvgColor
-	grpcPin.ImageWidth = int32(pin.ImageWidth)
-	grpcPin.ImageHeight = int32(pin.ImageHeight)
+	grpcPin.ImageWidth = int64(pin.ImageWidth)
+	grpcPin.ImageHeight = int64(pin.ImageHeight)
 	grpcPin.ImageLink = pin.ImageLink
 	grpcPin.CreationDate = timestamppb.New(pin.CreationDate)
 }

@@ -13,6 +13,7 @@ type Pin struct {
 	ImageAvgColor string    `json:"imageAvgColor"`
 	Description   string    `json:"description"`
 	CreationDate  time.Time `json:"creationDate"`
+	ReportsCount  int       `json:"reportsCount"`
 }
 
 type PinOutput struct {
@@ -26,6 +27,7 @@ type PinOutput struct {
 	ImageAvgColor string `json:"imageAvgColor"`
 	Description   string `json:"description"`
 	CreationDate  string `json:"creationDate"`
+	ReportsCount  int    `json:"reportsCount"`
 }
 
 type PinsListOutput struct {
@@ -47,4 +49,5 @@ func (pinOutput *PinOutput) FillFromPin(pin *Pin) {
 	pinOutput.ImageAvgColor = pin.ImageAvgColor
 	pinOutput.Description = pin.Description
 	pinOutput.CreationDate = pin.CreationDate.String()
+	pinOutput.ReportsCount = pin.ReportsCount
 }
