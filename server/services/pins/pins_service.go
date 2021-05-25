@@ -629,23 +629,25 @@ func (s *service) UploadPicture(stream Pins_UploadPictureServer) error {
 	return handleS3Error(err)
 }
 
-const getNumOfPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title,  pins.description, " +
+const getPinsWithOffsetQuery string = "SELECT pins.pinID, pins.userID, pins.title,  pins.description, " +
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
 	"pins.creationDate, pins.reports_count\n" +
 	"FROM Pins\n" +
 	"ORDER BY pins.pinID DESC\n" +
-	"LIMIT $1;"
+	"OFFSET $1\n" +
+	"LIMIT $2;"
 
-// GetNumOfPins generates the main feed
-// It returns numOfPins pins and nil on success, nil and error on failure
-func (s *service) GetNumOfPins(ctx context.Context, numOfPins *Number) (*PinsList, error) {
+// GetPinsWithOffset generates the main feed
+// It returns ~amount pins and nil on success, nil and error on failure
+func (s *service) GetPinsWithOffset(ctx context.Context, feedInfo *FeedInfo) (*PinsList, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return &PinsList{}, entity.TransactionBeginError
 	}
 	defer tx.Rollback(context.Background())
 
-	rows, err := tx.Query(context.Background(), getNumOfPinsQuery, numOfPins.Number)
+	rows, err := tx.Query(context.Background(), getPinsWithOffsetQuery,
+		feedInfo.Offset, feedInfo.Amount)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &PinsList{}, nil

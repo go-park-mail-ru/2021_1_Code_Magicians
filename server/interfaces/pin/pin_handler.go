@@ -300,15 +300,15 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 }
 
 func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	numOfPins, err := strconv.Atoi(vars[string(entity.PinAmountLabelKey)])
+	feedInfo := new(entity.FeedInfo)
+	err := json.NewDecoder(r.Body).Decode(feedInfo)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	feedPins, err := pinInfo.pinApp.GetNumOfPins(numOfPins)
+	feedPins, err := pinInfo.pinApp.GetPinsWithOffset(feedInfo.Offset, feedInfo.Amount)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {

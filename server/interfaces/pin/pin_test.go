@@ -304,11 +304,13 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/feed/10",
-			"/pins/feed/{num:[0-9]+}",
+			"/pins/feed",
+			"/pins/feed",
 			"GET",
 			nil,
-			nil,
+			[]byte(`{"offset":0,` +
+				`"amount":10}`,
+			),
 			testPinInfo.HandlePinsFeed,
 			middleware.AuthMid,
 		},
@@ -522,7 +524,7 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().SearchPins("exp", "week").Return(expectedPinsInBoard, nil).Times(1)
 
-	mockPinApp.EXPECT().GetNumOfPins(10).Return(expectedPinsInBoard, nil).Times(1)
+	mockPinApp.EXPECT().GetPinsWithOffset(0, 10).Return(expectedPinsInBoard, nil).Times(1)
 
 	mockPinApp.EXPECT().SavePin(expectedUser.UserID, expectedPinSecond.PinID).Return(nil).Times(1)
 

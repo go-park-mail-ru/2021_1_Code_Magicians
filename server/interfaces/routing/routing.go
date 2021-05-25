@@ -64,7 +64,7 @@ func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, auth
 	r.HandleFunc("/pin/{id:[0-9]+}", pinInfo.HandleGetPinByID).Methods("GET")
 	r.HandleFunc("/pins/{id:[0-9]+}", pinInfo.HandleGetPinsByBoardID).Methods("GET")
 	r.HandleFunc("/pin/add/{id:[0-9]+}", mid.AuthMid(pinInfo.HandleSavePin, authApp)).Methods("POST")
-	r.HandleFunc("/pins/feed/{num:[0-9]+}", pinInfo.HandlePinsFeed).Methods("GET")
+	r.HandleFunc("/pins/feed", pinInfo.HandlePinsFeed).Methods("GET")
 	r.HandleFunc("/pins/search", pinInfo.HandleSearchPins).Methods("GET")
 	r.HandleFunc("/pin/report", mid.AuthMid(pinInfo.HandleCreateReport, authApp)).Methods("POST")
 

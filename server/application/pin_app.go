@@ -45,7 +45,7 @@ type PinAppInterface interface {
 	RemovePin(boardID int, pinID int) error                          // Delete pin from board
 	DeletePin(pinID int) error                                       // Delete pin entirely
 	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
-	GetNumOfPins(numOfPins int) ([]entity.Pin, error)                // Get specified amount of pins
+	GetPinsWithOffset(offset int, amount int) ([]entity.Pin, error)  // Get specified amount of pins
 	SearchPins(keywords string, date string) ([]entity.Pin, error)
 	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
 	CreateReport(report *entity.Report) (int, error)
@@ -392,10 +392,13 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	return nil
 }
 
-// GetNumOfPins generates the main feed
-// It returns numOfPins pins and nil on success, nil and error on failure
-func (pinApp *PinApp) GetNumOfPins(numOfPins int) ([]entity.Pin, error) {
-	grpcPinsList, err := pinApp.grpcClient.GetNumOfPins(context.Background(), &grpcPins.Number{Number: int64(numOfPins)})
+// GetPinsWithOffset generates the main feed
+// It returns ~amount pins and nil on success, nil and error on failure
+func (pinApp *PinApp) GetPinsWithOffset(offset int, amount int) ([]entity.Pin, error) {
+	grpcPinsList, err := pinApp.grpcClient.GetPinsWithOffset(
+		context.Background(),
+		&grpcPins.FeedInfo{Offset: int64(offset), Amount: int64(amount)},
+	)
 	if err != nil {
 		if strings.Contains(err.Error(), entity.FeedLoadingError.Error()) {
 			return nil, entity.FeedLoadingError

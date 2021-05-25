@@ -112,6 +112,11 @@ message Number {
   int64 number = 1;
 }
 
+message FeedInfo {
+  int64 offset = 1;
+  int64 amount = 2;
+}
+
 message FilePath {
   string imagePath = 1;
 }
@@ -136,7 +141,7 @@ service Pins {
   rpc  RemovePin(PinInBoard) returns (Error) {}
   rpc  DeletePin(PinID) returns (Error) {}
   rpc  UploadPicture(stream UploadImage) returns (UploadImageResponse) {}
-  rpc  GetNumOfPins(Number) returns (PinsList) {}
+  rpc  GetPinsWithOffset(FeedInfo) returns (PinsList) {}
   rpc  SearchPins(SearchInput) returns (PinsList) {}
   rpc  PinRefCount(PinID) returns (Number) {}
   rpc  DeleteFile(FilePath) returns (Error) {}
