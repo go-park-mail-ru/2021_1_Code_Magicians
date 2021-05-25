@@ -1,1 +1,0 @@
-All handlers (functions that directly handle http requests/responses) go here

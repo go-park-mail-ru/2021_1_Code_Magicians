@@ -211,18 +211,18 @@ func (mr *MockPinAppInterfaceMockRecorder) SavePin(userID, pinID interface{}) *g
 }
 
 // SearchPins mocks base method.
-func (m *MockPinAppInterface) SearchPins(keywords string) ([]entity.Pin, error) {
+func (m *MockPinAppInterface) SearchPins(keywords, date string) ([]entity.Pin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchPins", keywords)
+	ret := m.ctrl.Call(m, "SearchPins", keywords, date)
 	ret0, _ := ret[0].([]entity.Pin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchPins indicates an expected call of SearchPins.
-func (mr *MockPinAppInterfaceMockRecorder) SearchPins(keywords interface{}) *gomock.Call {
+func (mr *MockPinAppInterfaceMockRecorder) SearchPins(keywords, date interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPins", reflect.TypeOf((*MockPinAppInterface)(nil).SearchPins), keywords)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPins", reflect.TypeOf((*MockPinAppInterface)(nil).SearchPins), keywords, date)
 }
 
 // UploadPicture mocks base method.
