@@ -54,9 +54,12 @@ type PinAppInterface interface {
 // CreatePin creates passed pin and adds it to native user's board
 // It returns pin's assigned ID and nil on success, any number and error on failure
 func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension string) (int, error) {
-	initBoardID, err := pinApp.boardApp.GetInitUserBoard(pin.UserID)
-	if err != nil {
-		return -1, err
+	if pin.BoardID == 0 { // If board was not specified, add pin to default board
+		var err error
+		pin.BoardID, err = pinApp.boardApp.GetInitUserBoard(pin.UserID)
+		if err != nil {
+			return -1, err
+		}
 	}
 
 	pin.CreationDate = time.Now()
@@ -75,7 +78,7 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 	}
 
 	_, err = pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
-		BoardID: int64(initBoardID), PinID: pinID.PinID})
+		BoardID: int64(grpcPin.BoardID), PinID: pinID.PinID})
 	if err != nil {
 		pinApp.grpcClient.DeletePin(context.Background(), pinID)
 		pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
@@ -83,15 +86,6 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 			return -1, entity.AddPinToBoardError
 		}
 		return -1, err
-	}
-
-	if grpcPin.BoardID != int64(initBoardID) && grpcPin.BoardID != 0 {
-		err = pinApp.AddPin(int(grpcPin.BoardID), int(pinID.PinID))
-		if err != nil {
-			pinApp.grpcClient.DeletePin(context.Background(), pinID)
-			pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
-			return -1, err
-		}
 	}
 
 	return int(pinID.PinID), nil
