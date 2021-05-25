@@ -348,6 +348,10 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if searchPinInput.Date == "" { // If no time was specified, search for all time
+		searchPinInput.Date = "allTime"
+	}
+
 	keyString := searchPinInput.KeyWords
 
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)

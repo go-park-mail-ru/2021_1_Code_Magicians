@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc/codes"
@@ -685,7 +686,7 @@ const SearchPeriodPinsQuery string = "SELECT pins.pinID, pins.userID, pins.title
 	"pins.imageLink, pins.imageHeight, pins.imageWidth, pins.imageAvgColor, " +
 	"pins.creationDate, pins.reports_count\n" +
 	"FROM pins\n" +
-	"WHERE LOWER(pins.title) LIKE $1 AND pins.creationdate > now() - interval "
+	"WHERE LOWER(pins.title) LIKE $1 AND now() - pins.creationdate < $2;"
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
@@ -698,11 +699,21 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 
 	var rows pgx.Rows
 
-	if searchInput.Date == "all time" {
+	switch searchInput.Date {
+	case "allTime":
 		rows, err = tx.Query(context.Background(), SearchAllPinsQuery, "%"+searchInput.KeyWords+"%")
-	} else if searchInput.Date == "hour" || searchInput.Date == "day" || searchInput.Date == "week" {
-		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery+"'1 "+searchInput.Date+"';", "%"+searchInput.KeyWords+"%")
-	} else {
+	case "hour", "day", "week":
+		var interval pgtype.Interval
+		switch searchInput.Date {
+		case "hour":
+			interval.Set(time.Hour)
+		case "day":
+			interval.Set(24 * time.Hour)
+		case "week":
+			interval.Set(24 * 7 * time.Hour)
+		}
+		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery, "%"+searchInput.KeyWords+"%", interval)
+	default:
 		return &PinsList{}, entity.SearchingError
 	}
 	if err != nil {
