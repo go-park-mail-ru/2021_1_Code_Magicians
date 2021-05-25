@@ -503,6 +503,7 @@ func ConvertToGrpcPin(grpcPin *grpcPins.Pin, pin *entity.Pin) {
 	grpcPin.ImageHeight = int64(pin.ImageHeight)
 	grpcPin.ImageLink = pin.ImageLink
 	grpcPin.CreationDate = timestamppb.New(pin.CreationDate)
+	grpcPin.ReportsCount = int64(pin.ReportsCount)
 }
 
 func ConvertFromGrpcPin(pin *entity.Pin, grpcPin *grpcPins.Pin) {
@@ -516,6 +517,7 @@ func ConvertFromGrpcPin(pin *entity.Pin, grpcPin *grpcPins.Pin) {
 	pin.ImageHeight = int(grpcPin.ImageHeight)
 	pin.ImageLink = grpcPin.ImageLink
 	pin.CreationDate = grpcPin.CreationDate.AsTime()
+	pin.ReportsCount = int(grpcPin.ReportsCount)
 }
 
 func ConvertGrpcPins(grpcPins *grpcPins.PinsList) []entity.Pin {
