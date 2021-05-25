@@ -747,7 +747,7 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 	}
 	defer tx.Rollback(context.Background())
 
-	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs)
+	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs.Ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return &PinsList{}, entity.NoResultSearch
