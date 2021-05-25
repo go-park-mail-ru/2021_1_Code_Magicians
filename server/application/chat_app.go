@@ -107,19 +107,15 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 		return err
 	}
 
-	if chat.FirstUserID != userID && chat.SecondUserID != userID {
-		return entity.UserNotInChatError
-	}
-
 	var target *entity.User
 	switch {
 	case chat.FirstUserID == userID:
-		target, err = chatApp.userApp.GetUser(chat.SecondUserID)
+		target, err = chatApp.userApp.GetUser(chat.FirstUserID)
 		if err != nil {
 			return entity.UserNotFoundError
 		}
 	case chat.SecondUserID == userID:
-		target, err = chatApp.userApp.GetUser(chat.FirstUserID)
+		target, err = chatApp.userApp.GetUser(chat.SecondUserID)
 		if err != nil {
 			return entity.UserNotFoundError
 		}
