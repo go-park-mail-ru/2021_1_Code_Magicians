@@ -118,7 +118,7 @@ message FilePath {
 message Error {}
 
 service Pins {
-  rpc  AddBoard(Board) returns (BoardID) {}
+  rpc  CreateBoard(Board) returns (BoardID) {}
   rpc  GetBoard(BoardID) returns (Board) {}
   rpc  GetBoards(UserID) returns (BoardsList) {}
   rpc  GetInitUserBoard(UserID) returns (BoardID) {}

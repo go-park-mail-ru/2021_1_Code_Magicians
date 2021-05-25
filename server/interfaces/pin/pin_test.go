@@ -507,7 +507,7 @@ func TestPins(t *testing.T) {
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinSecond.PinID, nil).Times(1)
 
-	mockBoardApp.EXPECT().AddBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
+	mockBoardApp.EXPECT().CreateBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
 	mockPinApp.EXPECT().GetPin(expectedPinSecond.PinID).Return(expectedPinSecond, nil).Times(1)
 

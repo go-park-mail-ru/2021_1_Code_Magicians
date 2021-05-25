@@ -37,9 +37,9 @@ const createBoardQuery string = "INSERT INTO Boards (userID, title, description)
 	"RETURNING boardID"
 const increaseBoardCountQuery string = "UPDATE Users SET boards_count = boards_count + 1 WHERE userID=$1"
 
-// AddBoard add new board to database with passed fields
+// CreateBoard adds new board with passed fields to database
 // It returns board's assigned ID and nil on success, any number and error on failure
-func (s *service) AddBoard(ctx context.Context, board *Board) (*BoardID, error) {
+func (s *service) CreateBoard(ctx context.Context, board *Board) (*BoardID, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
 		return &BoardID{}, entity.TransactionBeginError

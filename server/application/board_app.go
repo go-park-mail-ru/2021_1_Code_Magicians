@@ -16,7 +16,7 @@ func NewBoardApp(grpcClient grpcPins.PinsClient) *BoardApp {
 }
 
 type BoardAppInterface interface {
-	AddBoard(board *entity.Board) (int, error)    // Creating user's board
+	CreateBoard(board *entity.Board) (int, error) // Creating user's board
 	GetBoard(boardID int) (*entity.Board, error)  // Get description of the board
 	GetBoards(userID int) ([]entity.Board, error) // Get boards by authorID
 	GetInitUserBoard(userID int) (int, error)
@@ -25,9 +25,9 @@ type BoardAppInterface interface {
 	UploadBoardAvatar(boardID int, imageLink string, imageHeight int, imageWidth int, imageAvgColor string) error
 }
 
-// AddBoard adds user's board to database
+// CreateBoard adds user's board to database
 // It returns board's assigned ID and nil on success, any number and error on failure
-func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
+func (boardApp *BoardApp) CreateBoard(board *entity.Board) (int, error) {
 	grpcBoard := grpcPins.Board{}
 	ConvertToGrpcBoard(&grpcBoard, board)
 	if board.ImageLink == string(entity.BoardAvatarDefaultPath) {
@@ -36,7 +36,7 @@ func (boardApp *BoardApp) AddBoard(board *entity.Board) (int, error) {
 		grpcBoard.ImageAvgColor = "5a5a5a"
 	}
 
-	grpcBoardID, err := boardApp.grpcClient.AddBoard(context.Background(), &grpcBoard)
+	grpcBoardID, err := boardApp.grpcClient.CreateBoard(context.Background(), &grpcBoard)
 	if err != nil {
 		if strings.Contains(err.Error(), entity.CreateBoardError.Error()) {
 			return -1, entity.CreateBoardError

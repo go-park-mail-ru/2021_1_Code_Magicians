@@ -49,7 +49,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		Title:       currBoard.Title,
 		Description: currBoard.Description,
 	}
-	boardInput.BoardID, err = boardInfo.boardApp.AddBoard(boardInput)
+	boardInput.BoardID, err = boardInfo.boardApp.CreateBoard(boardInput)
 	if err != nil {
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),

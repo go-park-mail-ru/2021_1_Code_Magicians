@@ -329,9 +329,9 @@ func TestBoards(t *testing.T) {
 		expectedBoardSecond,
 	}
 
-	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardFirst.BoardID, nil).Times(1)
+	mockBoardApp.EXPECT().CreateBoard(gomock.Any()).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
-	mockBoardApp.EXPECT().AddBoard(gomock.Any()).Return(expectedBoardSecond.BoardID, nil).Times(1)
+	mockBoardApp.EXPECT().CreateBoard(gomock.Any()).Return(expectedBoardSecond.BoardID, nil).Times(1)
 
 	mockBoardApp.EXPECT().GetBoard(expectedBoardSecond.BoardID).Return(&boardInfo1, nil).Times(1)
 

@@ -46,7 +46,7 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 	}
 
 	initialBoard := &entity.Board{UserID: int(userID.Uid), Title: "Saved pins", Description: "Fast save"}
-	_, err = userApp.boardApp.AddBoard(initialBoard)
+	_, err = userApp.boardApp.CreateBoard(initialBoard)
 	if err != nil {
 
 		_ = userApp.DeleteUser(user.UserID)

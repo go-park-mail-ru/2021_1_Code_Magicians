@@ -34,21 +34,6 @@ func (m *MockBoardAppInterface) EXPECT() *MockBoardAppInterfaceMockRecorder {
 	return m.recorder
 }
 
-// AddBoard mocks base method.
-func (m *MockBoardAppInterface) AddBoard(board *entity.Board) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddBoard", board)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddBoard indicates an expected call of AddBoard.
-func (mr *MockBoardAppInterfaceMockRecorder) AddBoard(board interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).AddBoard), board)
-}
-
 // CheckBoard mocks base method.
 func (m *MockBoardAppInterface) CheckBoard(userID, boardID int) error {
 	m.ctrl.T.Helper()
@@ -61,6 +46,21 @@ func (m *MockBoardAppInterface) CheckBoard(userID, boardID int) error {
 func (mr *MockBoardAppInterfaceMockRecorder) CheckBoard(userID, boardID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).CheckBoard), userID, boardID)
+}
+
+// CreateBoard mocks base method.
+func (m *MockBoardAppInterface) CreateBoard(board *entity.Board) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBoard", board)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBoard indicates an expected call of CreateBoard.
+func (mr *MockBoardAppInterfaceMockRecorder) CreateBoard(board interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBoard", reflect.TypeOf((*MockBoardAppInterface)(nil).CreateBoard), board)
 }
 
 // DeleteBoard mocks base method.
