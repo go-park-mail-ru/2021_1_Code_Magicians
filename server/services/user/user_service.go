@@ -565,7 +565,7 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 }
 
 const getAllFollowedQuery = "SELECT userID, username, email, first_name, last_name, avatar, " +
-	"followed_by, following, board_count, pins_count " +
+	"followed_by, following, boards_count, pins_count " +
 	"FROM Users\n" +
 	"INNER JOIN (SELECT * FROM Followers WHERE followerID = $1) as users_followed\n" +
 	"ON followedID = userID"
