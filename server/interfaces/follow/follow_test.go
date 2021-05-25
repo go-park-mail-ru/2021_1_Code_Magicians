@@ -201,12 +201,13 @@ var followTestSuccess = []struct {
 			nil,
 			[]byte(`{"profiles":[{"ID":0,` +
 				`"username":"TestUsername",` +
-				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1",` +
 				`"following":0,` + // Follow counters are inconsistent, but it's no big deal
-				`"followers":0}]}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}]}`,
 			),
 		},
 		"Testing getting list of followed profiles",
@@ -227,12 +228,13 @@ var followTestSuccess = []struct {
 			nil,
 			[]byte(`{"profiles":[{"ID":0,` +
 				`"username":"TestUsername",` +
-				`"email":"test@example.com",` +
 				`"firstName":"TestFirstName",` +
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1",` +
 				`"following":0,` + // Follow counters are inconsistent, but it's no big deal
-				`"followers":0}]}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}]}`,
 			),
 		},
 		"Testing getting list of followers",

@@ -134,7 +134,9 @@ var profileTestSuccess = []struct {
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1",` +
 				`"following":0,` +
-				`"followers":0}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}`,
 			),
 		},
 		"Testing profile output",
@@ -178,7 +180,9 @@ var profileTestSuccess = []struct {
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1",` +
 				`"following":0,` +
-				`"followers":0}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}`,
 			),
 		},
 		"Testing profile output using profile name",
@@ -204,7 +208,9 @@ var profileTestSuccess = []struct {
 				`"lastName":"TestLastName",` +
 				`"avatarLink":"avatars/1",` +
 				`"following":0,` +
-				`"followers":0}]}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}]}`,
 			),
 		},
 		"Testing searching profiles using keywords",
@@ -253,7 +259,9 @@ var profileTestSuccess = []struct {
 				`"lastName":"new Last Name",` +
 				`"avatarLink":"avatars/2",` +
 				`"following":0,` +
-				`"followers":0}`,
+				`"followers":0,` +
+				`"boardsCount":0,` +
+				`"pinsCount":0}`,
 			),
 		},
 		"Testing profile output using profile id",

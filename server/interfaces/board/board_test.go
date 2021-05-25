@@ -164,7 +164,11 @@ var boardTest = []struct {
 			[]byte(`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2"}`,
+				`"description":"exampleDescription2",` +
+				`"avatarLink":"",` +
+				`"avatarHeight":0,` +
+				`"avatarWidth":0,` +
+				`"avatarAvgColor":""}`,
 			),
 		},
 		"Testing get board by boardID",
@@ -185,11 +189,19 @@ var boardTest = []struct {
 			[]byte(`{"boards":[{"ID":0,` +
 				`"userID":0,` +
 				`"title":"exampletitle1",` +
-				`"description":"exampleDescription1","avatarLink":""},` +
+				`"description":"exampleDescription1",` +
+				`"avatarLink":"",` +
+				`"avatarHeight":0,` +
+				`"avatarWidth":0,` +
+				`"avatarAvgColor":""},` +
 				`{"ID":1,` +
 				`"userID":0,` +
 				`"title":"exampletitle2",` +
-				`"description":"exampleDescription2","avatarLink":""}]}`,
+				`"description":"exampleDescription2",` +
+				`"avatarLink":"",` +
+				`"avatarHeight":0,` +
+				`"avatarWidth":0,` +
+				`"avatarAvgColor":""}]}`,
 			),
 		},
 		"Testing get boards by user id",

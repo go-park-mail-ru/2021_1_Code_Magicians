@@ -3,16 +3,16 @@ package entity
 import "time"
 
 type Pin struct {
-	PinID         int    `json:"ID"`
-	UserID        int    `json:"userID"`
-	BoardID       int    `json:"boardID"`
-	Title         string `json:"title"`
-	ImageLink     string `json:"imageLink"`
-	ImageHeight   int    `json:"imageHeight"`
-	ImageWidth    int    `json:"imageWidth"`
-	ImageAvgColor string `json:"imageAvgColor"`
-	Description   string `json:"description"`
-	CreationDate  time.Time
+	PinID         int       `json:"ID"`
+	UserID        int       `json:"userID"`
+	BoardID       int       `json:"boardID"`
+	Title         string    `json:"title"`
+	ImageLink     string    `json:"imageLink"`
+	ImageHeight   int       `json:"imageHeight"`
+	ImageWidth    int       `json:"imageWidth"`
+	ImageAvgColor string    `json:"imageAvgColor"`
+	Description   string    `json:"description"`
+	CreationDate  time.Time `json:"creationDate"`
 }
 
 type PinOutput struct {
