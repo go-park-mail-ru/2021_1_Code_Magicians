@@ -353,7 +353,7 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)
 
 	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString), searchPinInput.Date)
-	if err != nil && err != entity.NoResultSearch{
+	if err != nil && err != entity.NoResultSearch {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -404,10 +404,15 @@ func (pinInfo *PinInfo) HandleCreateReport(w http.ResponseWriter, r *http.Reques
 	report.SenderID = userID
 	report.ReportID, err = pinInfo.pinApp.CreateReport(report)
 	if err != nil {
+		if err == entity.DuplicateReportError {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+
 		pinInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

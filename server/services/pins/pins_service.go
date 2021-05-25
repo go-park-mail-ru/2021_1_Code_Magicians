@@ -9,6 +9,7 @@ import (
 	"os"
 	"pinterest/domain/entity"
 	. "pinterest/services/pins/proto"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -697,7 +698,7 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 	if searchInput.Date == "all time" {
 		rows, err = tx.Query(context.Background(), SearchAllPinsQuery, "%"+searchInput.KeyWords+"%")
 	} else if searchInput.Date == "hour" || searchInput.Date == "day" || searchInput.Date == "week" {
-		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery + "'1 " + searchInput.Date + "';", "%"+searchInput.KeyWords+"%")
+		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery+"'1 "+searchInput.Date+"';", "%"+searchInput.KeyWords+"%")
 	} else {
 		return &PinsList{}, entity.SearchingError
 	}
@@ -820,6 +821,9 @@ func (s *service) CreateReport(ctx context.Context, report *Report) (*ReportID, 
 	newReportID := 0
 	err = row.Scan(&newReportID)
 	if err != nil {
+		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
+			return &ReportID{}, entity.DuplicateReportError
+		}
 		return &ReportID{}, entity.CreateReportError
 	}
 

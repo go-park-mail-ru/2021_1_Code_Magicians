@@ -463,10 +463,14 @@ func (pinApp *PinApp) CreateReport(report *entity.Report) (int, error) {
 
 	grpcReportID, err := pinApp.grpcClient.CreateReport(context.Background(), &grpcReport)
 	if err != nil {
-		if strings.Contains(err.Error(), entity.CreateReportError.Error()) {
+		switch {
+		case strings.Contains(err.Error(), entity.CreateReportError.Error()):
 			return -1, entity.CreateReportError
+		case strings.Contains(err.Error(), entity.DuplicateReportError.Error()):
+			return -1, entity.DuplicateReportError
+		default:
+			return -1, err
 		}
-		return -1, err
 	}
 	return int(grpcReportID.ReportID), nil
 }

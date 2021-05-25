@@ -72,6 +72,7 @@ const FeedLoadingError customError = "Could not extract pins for feed"
 const NonPositiveNumOfPinsError customError = "Cannot get negative amount of pins"
 
 const CreateReportError customError = "Cannot create report"
+const DuplicateReportError customError = "Reports with these senderID and inID already exists"
 
 const SearchingError customError = "Could not get results of searching"
 const NoResultSearch customError = "Not results for search"
