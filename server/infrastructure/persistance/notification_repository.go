@@ -37,11 +37,10 @@ func (notificationRepo *NotificationRepo) RemoveNotification(notificationID int)
 }
 
 func (notificationRepo *NotificationRepo) EditNotification(notification *entity.Notification) error {
-	notificationAsInterface := notificationToInterfaces(notification)
-	notificationAsInterface[0] = nil // Because we don't know notification's ID
+	updateCommand := []interface{}{[]interface{}{"=", 1, uint(notification.UserID)}, []interface{}{"=", 2, notification.Category},
+		[]interface{}{"=", 3, notification.Title}, []interface{}{"=", 4, notification.Text}, []interface{}{"=", 5, notification.IsRead}}
 	_, err := notificationRepo.tarantoolDB.Update(
-		"notifications", "primary", []interface{}{uint(notification.NotificationID)},
-		[]interface{}{notificationAsInterface},
+		"notifications", "primary", []interface{}{uint(notification.NotificationID)}, updateCommand,
 	)
 	if err != nil {
 		return err

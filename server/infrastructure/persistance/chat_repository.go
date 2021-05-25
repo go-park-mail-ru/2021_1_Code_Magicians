@@ -109,7 +109,7 @@ func (chatRepo *ChatRepo) GetAllChats(userID int) ([]*entity.Chat, error) {
 }
 
 func (chatRepo *ChatRepo) SaveChat(chat *entity.Chat) error {
-	updateCommand := []interface{}{[]interface{}{"=", 4, chat.FirstUserRead}, []interface{}{"=", 5, chat.SecondUserRead}}
+	updateCommand := []interface{}{[]interface{}{"=", 3, chat.FirstUserRead}, []interface{}{"=", 4, chat.SecondUserRead}}
 	_, err := chatRepo.tarantoolDB.Update("chats", "primary", []interface{}{uint(chat.ChatID)}, updateCommand)
 
 	return err
