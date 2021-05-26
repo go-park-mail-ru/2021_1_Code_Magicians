@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+// protoc --go_out=plugins=grpc:. *.proto
+// PATH="${PATH}:${HOME}/go/bin" protoc --go_out=plugins=grpc:. *.proto
+
+option go_package = "./";
+import "google/protobuf/timestamp.proto";
+
+package pins;
+
+message Board {
+  int64     BoardID = 1;
+  int64     UserID = 2;
+  string    Title = 3;
+  string    Description = 4;
+  string    ImageLink = 5;
+  int64     ImageHeight = 6;
+  int64     ImageWidth = 7;
+  string    ImageAvgColor = 8;
+}
+
+message Pin {
+  int64     PinID = 1;
+  int64     BoardID = 2;
+  int64     UserID = 3;
+  string    Title = 4;
+  string    Description = 5;
+  string    ImageLink = 6;
+  int64     ImageHeight = 7;
+  int64     ImageWidth = 8;
+  string    ImageAvgColor = 9;
+  google.protobuf.Timestamp CreationDate = 10;
+  int64     ReportsCount = 11;
+}
+
+message Report {
+  int64     ReportID = 1;
+  int64     PinID = 2;
+  int64     SenderID = 3;
+  string    Description = 4;
+}
+
+message UserID {
+  int64 uid = 1;
+}
+
+message UserIDList {
+  repeated int64 ids = 1;
+}
+
+message BoardID {
+  int64 boardID = 1;
+}
+
+message BoardsList {
+  repeated Board boards = 1;
+}
+
+message PinsList {
+  repeated Pin pins = 1;
+}
+
+message PinID {
+  int64 pinID = 1;
+}
+
+message ReportID {
+  int64 reportID = 1;
+}
+
+message Save {
+  int64 userID = 1;
+  int64 pinID = 2;
+}
+
+message BoardOwner {
+  int64 userID = 1;
+  int64 boardID = 2;
+}
+
+message PinInBoard {
+  int64 boardID = 1;
+  int64 pinID = 2;
+}
+
+message UploadImage {
+  oneof data {
+    string Extension = 1;
+    bytes chunk_data = 2;
+  };
+}
+
+message UploadImageResponse {
+  string path = 1;
+  uint32 size = 2;
+}
+
+message FileInfo {
+  int64  boardID = 1;
+  string imageLink = 2;
+  int64  imageHeight = 3;
+  int64  imageWidth = 4;
+  string imageAvgColor = 5;
+}
+
+message SearchInput {
+  string keyWords = 1;
+  string date     = 2;
+}
+
+message Number {
+  int64 number = 1;
+}
+
+message FeedInfo {
+  int64 offset = 1;
+  int64 amount = 2;
+}
+
+message FilePath {
+  string imagePath = 1;
+}
+
+message Error {}
+
+service Pins {
+  rpc  CreateBoard(Board) returns (BoardID) {}
+  rpc  GetBoard(BoardID) returns (Board) {}
+  rpc  GetBoards(UserID) returns (BoardsList) {}
+  rpc  GetInitUserBoard(UserID) returns (BoardID) {}
+  rpc  DeleteBoard(BoardID) returns (Error) {}
+  rpc  UploadBoardAvatar(FileInfo) returns (Error) {}
+  rpc  CreatePin(Pin) returns (PinID) {}
+  rpc  AddPin(PinInBoard) returns (Error) {}
+  rpc  GetPin(PinID) returns (Pin) {}
+  rpc  GetPins(BoardID) returns (PinsList) {}
+  rpc  GetLastPinID(UserID) returns (PinID) {}
+  rpc  GetLastBoardPin(BoardID) returns (Pin) {}
+  rpc  GetBoardsWithPin(PinID) returns (BoardsList) {}
+  rpc  SavePicture(Pin) returns (Error) {}
+  rpc  RemovePin(PinInBoard) returns (Error) {}
+  rpc  DeletePin(PinID) returns (Error) {}
+  rpc  UploadPicture(stream UploadImage) returns (UploadImageResponse) {}
+  rpc  GetPinsWithOffset(FeedInfo) returns (PinsList) {}
+  rpc  SearchPins(SearchInput) returns (PinsList) {}
+  rpc  PinRefCount(PinID) returns (Number) {}
+  rpc  DeleteFile(FilePath) returns (Error) {}
+  rpc  GetPinsOfUsers(UserIDList) returns (PinsList) {}
+  rpc  CreateReport(Report) returns (ReportID) {}
+}

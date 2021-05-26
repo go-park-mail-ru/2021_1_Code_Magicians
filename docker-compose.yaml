@@ -1,0 +1,90 @@
+version: "3.7"
+
+services:
+  go-main:
+    build: server
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - user-service
+      - auth-service
+      - pins-service
+      - comments-service
+      - tarantool
+      - prometheus
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "server_main.go"]
+  
+  user-service:
+    build: server
+    ports:
+      - 8082:8082
+    depends_on:
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/user/"]
+  
+  auth-service:
+    build: server
+    ports:
+      - 8083:8083
+    depends_on:
+      - user-service
+      - postgres
+      - tarantool
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/auth/"]
+
+  pins-service:
+    build: server
+    ports:
+      - 8084:8084
+    depends_on:
+      - user-service
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/pins/"]
+  
+  comments-service:
+    build: server
+    ports:
+      - 8085:8085
+    depends_on:
+      - user-service
+      - pins-service
+      - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "./cmd/comments/"]
+  
+  postgres:
+    build: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+
+  tarantool:
+    build: tarantool
+    ports:
+      - "3301:3301"
+    volumes:
+      - tarantool-volume:/var/lib/tarantool
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./prometheus:/etc/prometheus"
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.grafana
+
+volumes:
+  tarantool-volume:
+  postgres-volume:
+    

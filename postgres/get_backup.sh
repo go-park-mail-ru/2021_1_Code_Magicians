@@ -1,0 +1,1 @@
+ docker exec -t postgrescontainer pg_dump -U postgres > Postgres_DB_Backup.sql

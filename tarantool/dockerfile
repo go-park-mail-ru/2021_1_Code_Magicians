@@ -1,0 +1,6 @@
+FROM tarantool/tarantool
+
+COPY tarantool-create.lua /opt/tarantool
+
+EXPOSE 8080/tcp
+CMD ["tarantool", "/opt/tarantool/tarantool-create.lua"]
