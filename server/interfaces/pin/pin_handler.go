@@ -372,9 +372,8 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	 keyWords := keywordsList[0]
-	 date := ""
-
+	keyWords := keywordsList[0]
+	date := ""
 	datesList, exists := queryParams["date"]
 	switch exists {
 	case true:

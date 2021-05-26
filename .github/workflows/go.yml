@@ -27,4 +27,6 @@ jobs:
         run: git checkout dev
 
       - name: Test with race detector
-        run: ./server/run-tests.sh
+        run: |
+          cd ./server
+          ./server/run-tests.sh

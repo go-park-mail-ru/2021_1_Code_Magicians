@@ -266,11 +266,11 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/search",
+			"/pins/search?searchKey=exp&date=week",
 			"/pins/search",
 			"GET",
 			nil,
-			[]byte(`{"searchKey": "exp", "date": "week"}`),
+			nil,
 			testPinInfo.HandleSearchPins,
 			middleware.AuthMid,
 		},
@@ -304,13 +304,11 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/feed",
+			"/pins/feed?offset=0&amount=10",
 			"/pins/feed",
 			"GET",
 			nil,
-			[]byte(`{"offset":0,` +
-				`"amount":10}`,
-			),
+			nil,
 			testPinInfo.HandlePinsFeed,
 			middleware.AuthMid,
 		},
