@@ -430,6 +430,66 @@ var pinTest = []struct {
 		},
 		"Testing remove not existent pin from board",
 	},
+	{
+		InputStruct{
+			"/pin/report",
+			"/pin/report",
+			"POST",
+			nil,
+			[]byte(`{"pinID":0,` +
+				`"description":"test report"}`,
+			),
+			testPinInfo.HandleCreateReport,
+			middleware.AuthMid,
+		},
+
+		OutputStruct{
+			201,
+			nil,
+			[]byte(`{"reportID":0}`),
+		},
+		"Testing adding report",
+	},
+	{
+		InputStruct{
+			"/pin/report",
+			"/pin/report",
+			"POST",
+			nil,
+			[]byte(`{"pinID":1234,` +
+				`"description":"test report"}`,
+			),
+			testPinInfo.HandleCreateReport,
+			middleware.AuthMid,
+		},
+
+		OutputStruct{
+			404,
+			nil,
+			nil,
+		},
+		"Testing adding report for nonexistant pin",
+	},
+	{
+		InputStruct{
+			"/pin/report",
+			"/pin/report",
+			"POST",
+			nil,
+			[]byte(`{"pinID":0,` +
+				`"description":"test report"}`,
+			),
+			testPinInfo.HandleCreateReport,
+			middleware.AuthMid,
+		},
+
+		OutputStruct{
+			409,
+			nil,
+			nil,
+		},
+		"Testing adding second report for same pin",
+	},
 }
 
 var successCookies []*http.Cookie
@@ -534,6 +594,12 @@ func TestPins(t *testing.T) {
 	mockPinApp.EXPECT().GetPin(3).Return(nil, entity.PinNotFoundError).Times(1)
 
 	mockPinApp.EXPECT().RemovePin(expectedBoardFirst.BoardID, expectedPinFirst.PinID).Return(entity.PinNotFoundError).Times(1)
+
+	mockPinApp.EXPECT().CreateReport(gomock.Any()).Return(0, nil).Times(1)
+
+	mockPinApp.EXPECT().CreateReport(gomock.Any()).Return(-1, entity.PinNotFoundError).Times(1)
+
+	mockPinApp.EXPECT().CreateReport(gomock.Any()).Return(-1, entity.DuplicateReportError).Times(1)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,

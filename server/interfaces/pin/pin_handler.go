@@ -442,15 +442,17 @@ func (pinInfo *PinInfo) HandleCreateReport(w http.ResponseWriter, r *http.Reques
 	report.SenderID = userID
 	report.ReportID, err = pinInfo.pinApp.CreateReport(report)
 	if err != nil {
-		if err == entity.DuplicateReportError {
+		switch err {
+		case entity.DuplicateReportError:
 			w.WriteHeader(http.StatusConflict)
-			return
+		case entity.PinNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			pinInfo.logger.Info(
+				err.Error(), zap.String("url", r.RequestURI),
+				zap.Int("for user", userID), zap.String("method", r.Method))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
-
-		pinInfo.logger.Info(
-			err.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
