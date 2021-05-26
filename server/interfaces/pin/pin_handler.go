@@ -342,18 +342,25 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 
 func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request) {
 	searchPinInput := new(entity.SearchPinInput)
-	err := json.NewDecoder(r.Body).Decode(searchPinInput)
-	if err != nil {
-		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+	queryParams := r.URL.Query()
+
+	keywordsList, exists := queryParams["searchKey"]
+	if !exists {
+		pinInfo.logger.Info("searchKey was not passed", zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if searchPinInput.Date == "" { // If no time was specified, search for all time
+	searchPinInput.KeyWords = keywordsList[0]
+
+	datesList, exists := queryParams["date"]
+	switch exists {
+	case true:
+		searchPinInput.Date = datesList[0]
+	case false:
 		searchPinInput.Date = "allTime"
 	}
 
 	keyString := searchPinInput.KeyWords
-
 	keyString = strings.NewReplacer("+", " ").Replace(keyString)
 
 	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyString), searchPinInput.Date)
