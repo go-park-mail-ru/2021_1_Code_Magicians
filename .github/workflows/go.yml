@@ -22,11 +22,14 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-        
-      - name: Check out code into the Go module directory
-        run: git checkout dev
+
+      - name: Check branch
+        run: |
+          git branch
+          git checkout master
 
       - name: Test with race detector
         run: |
           cd ./server
+          ls -la
           ./server/run-tests.sh
