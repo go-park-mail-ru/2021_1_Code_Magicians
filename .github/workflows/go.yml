@@ -22,11 +22,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up GolangCI-Lint and run linters
-          uses: golangci/golangci-lint-action@v2
-          with:
-            version: latest
-            working-directory: ./server
-            args: -D errcheck -D gosimple
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+          working-directory: ./server
+          args: -D errcheck -D gosimple
 
   build:
     runs-on: ubuntu-latest
