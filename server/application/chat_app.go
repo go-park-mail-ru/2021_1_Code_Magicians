@@ -148,11 +148,6 @@ func (chatApp *ChatApp) SendChat(chatID int, userID int) error {
 }
 
 func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be log(n) when i'll add actual database
-	target, err := chatApp.userApp.GetUser(userID)
-	if err != nil {
-		return err
-	}
-
 	chats, err := chatApp.chatRepo.GetAllChats(userID)
 	if err != nil {
 		if err != entity.ChatsNotFoundError {
@@ -169,6 +164,22 @@ func (chatApp *ChatApp) SendAllChats(userID int) error { // O(n) now, will be lo
 				return err
 			}
 			messages = make([]*entity.Message, 0)
+		}
+
+		var target *entity.User
+		switch {
+		case chat.FirstUserID == userID:
+			target, err = chatApp.userApp.GetUser(chat.SecondUserID)
+			if err != nil {
+				return entity.UserNotFoundError
+			}
+		case chat.SecondUserID == userID:
+			target, err = chatApp.userApp.GetUser(chat.FirstUserID)
+			if err != nil {
+				return entity.UserNotFoundError
+			}
+		default:
+			return entity.UserNotInChatError
 		}
 
 		var chatOutput entity.ChatOutput
