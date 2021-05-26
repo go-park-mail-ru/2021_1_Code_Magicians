@@ -378,7 +378,13 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	datesList, exists := queryParams["date"]
 	switch exists {
 	case true:
-		searchPinInput.Date = datesList[0]
+		switch datesList[0] {
+		case "day", "week", "hour":
+			searchPinInput.Date = datesList[0]
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	case false:
 		searchPinInput.Date = "allTime"
 	}
