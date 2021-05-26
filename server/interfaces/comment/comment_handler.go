@@ -77,7 +77,7 @@ func (commentInfo *CommentInfo) HandleAddComment(w http.ResponseWriter, r *http.
 		return
 	}
 
-	comment := entity.CommentTextOutput{currComment.PinComment}
+	comment := entity.CommentTextOutput{Text: currComment.PinComment}
 	body, err := json.Marshal(comment)
 	if err != nil {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -111,7 +111,7 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 		return
 	}
 
-	comments := entity.CommentsOutput{pinComments}
+	comments := entity.CommentsOutput{Comments: pinComments}
 
 	body, err := json.Marshal(comments)
 	if err != nil {

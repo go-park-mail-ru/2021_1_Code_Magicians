@@ -59,13 +59,12 @@ func PrometheusMiddleware(next http.Handler) http.Handler {
 		rw := NewResponseWriter(w)
 
 		timer := prometheus.NewTimer(HttpDuration.WithLabelValues(path))
+		defer timer.ObserveDuration()
 
 		next.ServeHTTP(rw, r)
 
 		statusCode := rw.statusCode
 
 		HttpHits.WithLabelValues(strconv.Itoa(statusCode), path).Inc()
-
-		defer timer.ObserveDuration()
 	})
 }

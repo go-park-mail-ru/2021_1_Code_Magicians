@@ -198,13 +198,6 @@ func (pinApp *PinApp) DeletePin(pinID int) error {
 	return nil
 }
 
-type boardAvatarInfo struct {
-	imageLink     string
-	imageHeght    int
-	imageWidth    int
-	ImageAvgColor string
-}
-
 // RemovePin deletes pin from user's passed board
 // It returns nil on success and error on failure
 func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
@@ -311,7 +304,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		return entity.PinNotFoundError
 	}
 
-	fileAsBytes := make([]byte, 0)
+	var fileAsBytes []byte
 	imageStruct := new(imageInfo)
 	switch extension {
 	case ".png", ".jpg", ".gif", ".jpeg":

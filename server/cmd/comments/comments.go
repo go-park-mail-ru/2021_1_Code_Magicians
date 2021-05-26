@@ -55,6 +55,9 @@ func runService(addr string) {
 	commentsProto.RegisterCommentsServer(server, service)
 
 	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalln("Listen comments error: ", err)
+	}
 
 	fmt.Printf("Starting server at localhost%s\n", addr)
 	err = server.Serve(lis)

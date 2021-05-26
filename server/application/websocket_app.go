@@ -15,14 +15,14 @@ type websocketInfo struct {
 }
 
 type WebsocketApp struct {
-	connections map[int]websocketInfo
+	connections map[int]*websocketInfo
 	mu          sync.Mutex
 	userApp     UserAppInterface
 }
 
 func NewWebsocketApp(userApp UserAppInterface) *WebsocketApp {
 	return &WebsocketApp{
-		connections: make(map[int]websocketInfo),
+		connections: make(map[int]*websocketInfo),
 		userApp:     userApp,
 	}
 }
@@ -47,7 +47,7 @@ func (websocketApp *WebsocketApp) ChangeClient(userID int, client *websocket.Con
 			return entity.UserNotFoundError
 		}
 
-		connection = websocketInfo{}
+		connection = &websocketInfo{}
 	}
 
 	if connection.client != nil {
@@ -73,7 +73,7 @@ func (websocketApp *WebsocketApp) getConnection(userID int) (*websocketInfo, err
 		return nil, entity.ClientNotSetError
 	}
 
-	return &connection, nil
+	return connection, nil
 }
 
 func (websocketApp *WebsocketApp) GetClient(userID int) (*websocket.Conn, error) {
@@ -98,7 +98,7 @@ func (websocketApp *WebsocketApp) ChangeToken(userID int, csrfToken string) erro
 
 	connection.csrfToken = csrfToken
 	websocketApp.mu.Lock()
-	websocketApp.connections[userID] = *connection
+	websocketApp.connections[userID] = connection
 	websocketApp.mu.Unlock()
 	return nil
 }

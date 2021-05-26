@@ -1,5 +1,5 @@
 Status of last deployment: <br>
-<img src="https://github.com/go-park-mail-ru/2021_1_Code_Magicians/workflows/Pinterest/badge.svg?branch=master"></b>
+<img src="https://github.com/go-park-mail-ru/2021_1_Code_Magicians/workflows/Pinterbest/badge.svg?branch=master"></b>
 
 This repository will contain Golang code for CodeMagicians' next big project: Pinterbest
 

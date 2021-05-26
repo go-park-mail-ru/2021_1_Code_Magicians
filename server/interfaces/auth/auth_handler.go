@@ -82,7 +82,7 @@ func (info *AuthInfo) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{newUser.UserID, cookie})
+	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{UserID: newUser.UserID, Cookie: cookie})
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		info.userApp.DeleteUser(newUser.UserID)
