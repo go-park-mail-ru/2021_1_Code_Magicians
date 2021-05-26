@@ -301,9 +301,32 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 
 func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 	feedInfo := new(entity.FeedInfo)
-	err := json.NewDecoder(r.Body).Decode(feedInfo)
+	queryParams := r.URL.Query()
+
+	offsetList, exists := queryParams["offset"]
+	if !exists {
+		pinInfo.logger.Info("offset was not passed", zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var err error
+	feedInfo.Offset, err = strconv.Atoi(offsetList[0])
 	if err != nil {
-		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		pinInfo.logger.Info("offset is not a number", zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	amountList, exists := queryParams["amount"]
+	if !exists {
+		pinInfo.logger.Info("amount was not passed", zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	feedInfo.Amount, err = strconv.Atoi(amountList[0])
+	if err != nil {
+		pinInfo.logger.Info("amount is not a number", zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
