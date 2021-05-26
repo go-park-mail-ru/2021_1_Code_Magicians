@@ -90,7 +90,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pinIDOutput := entity.PinID{currPin.PinID}
+	pinIDOutput := entity.PinID{PinID: currPin.PinID}
 	body, err := json.Marshal(pinIDOutput)
 	if err != nil {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
@@ -456,7 +456,7 @@ func (pinInfo *PinInfo) HandleCreateReport(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	reportIDOutput := entity.ReportID{report.ReportID}
+	reportIDOutput := entity.ReportID{ReportID: report.ReportID}
 	body, err := json.Marshal(reportIDOutput)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

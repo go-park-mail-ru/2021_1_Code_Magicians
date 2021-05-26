@@ -209,16 +209,6 @@ func (chatRepo *ChatRepo) GetMessages(chatID int) ([]*entity.Message, error) {
 	return messages, nil
 }
 
-func chatToInterfaces(chat *entity.Chat) []interface{} {
-	chatAsInterfaces := make([]interface{}, 5)
-	chatAsInterfaces[0] = uint(chat.ChatID)
-	chatAsInterfaces[1] = uint(chat.FirstUserID)
-	chatAsInterfaces[2] = uint(chat.SecondUserID)
-	chatAsInterfaces[3] = chat.FirstUserRead
-	chatAsInterfaces[4] = chat.SecondUserRead
-	return chatAsInterfaces
-}
-
 func interfacesToChat(interfaces []interface{}) *entity.Chat {
 	chat := new(entity.Chat)
 	chat.ChatID = int(interfaces[0].(uint64))

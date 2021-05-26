@@ -153,6 +153,9 @@ func (s *service) UpdateAvatar(stream User_UpdateAvatarServer) error {
 		Key:    aws.String(newAvatarPath),
 		Body:   bytes.NewReader(imageData.Bytes()),
 	})
+	if err != nil {
+		return status.Errorf(codes.Unknown, "cannot upload to s3: %v", err)
+	}
 
 	res := &UploadAvatarResponse{
 		Path: newAvatarPath,

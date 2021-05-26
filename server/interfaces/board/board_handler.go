@@ -58,7 +58,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	boardID := entity.BoardID{boardInput.BoardID}
+	boardID := entity.BoardID{BoardID: boardInput.BoardID}
 	body, err := json.Marshal(boardID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -144,7 +144,7 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 		return
 	}
 
-	boards := entity.BoardsOutput{resultBoards}
+	boards := entity.BoardsOutput{Boards: resultBoards}
 
 	boardsBody, err := json.Marshal(boards)
 	if err != nil {

@@ -19,6 +19,7 @@ func init() {
 			matched = govalidator.IsUnixFilePath(i.(string))
 		}
 
+
 		return matched
 	})
 
