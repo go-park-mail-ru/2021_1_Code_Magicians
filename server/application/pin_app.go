@@ -77,8 +77,7 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 		return -1, err
 	}
 
-	_, err = pinApp.grpcClient.AddPin(context.Background(), &grpcPins.PinInBoard{
-		BoardID: int64(grpcPin.BoardID), PinID: pinID.PinID})
+	err = pinApp.AddPin(pin.BoardID, int(pinID.PinID))
 	if err != nil {
 		pinApp.grpcClient.DeletePin(context.Background(), pinID)
 		pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
