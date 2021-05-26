@@ -30,10 +30,10 @@ type PinOutput struct {
 	ReportsCount  int    `json:"reportsCount"`
 }
 
-type SearchPinInput struct {
-	Date     string `json:"date"`
-	KeyWords string `json:"searchKey"`
-}
+//type SearchPinInput struct {
+//	Date     string `json:"date"`
+//	KeyWords string `json:"searchKey"`
+//}
 
 type PinsListOutput struct {
 	Pins []PinOutput `json:"pins"`
