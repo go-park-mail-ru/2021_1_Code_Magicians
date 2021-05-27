@@ -378,7 +378,7 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	switch exists {
 	case true:
 		switch datesList[0] {
-		case "day", "week", "hour":
+		case "day", "week", "hour", "allTime":
 			date = datesList[0]
 		default:
 			w.WriteHeader(http.StatusBadRequest)
