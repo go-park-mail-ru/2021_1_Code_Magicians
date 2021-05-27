@@ -79,10 +79,21 @@ jobs:
       - name: stop script if command error
         uses: appleboy/ssh-action@master
         with:
-          host: 3.67.64.110
-          username: ubuntu
+          host: ${{ secrets.SECRET_HOST }}
+          username: ${{ secrets.SECRET_USERNAME }}
           key: ${{ secrets.PINTEREST_SSH }}
-          script: ls -al
+          script: |
+            cd ..
+            ls -al
+            cd deploy/backend
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Deploy
+        run: |
+          ls -la
+          ./postgres/stop_postgres_separately.sh
           
           
 
