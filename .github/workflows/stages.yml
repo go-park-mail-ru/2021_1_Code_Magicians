@@ -82,4 +82,4 @@ jobs:
             git checkout dev
             git pull -f
             pwd
-            sudo docker-compose -f -d docker-compose-no-postgres.yaml up --build          
+            sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
