@@ -339,7 +339,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
 	}
 	reader := bytes.NewReader(fileAsBytes)
-	buffer := make([]byte, 8*1024*1024)
+	buffer := make([]byte, 3.5*1024*1024) // jrpc cannot receive packages larger than 4 MB
 
 	for {
 		n, err := reader.Read(buffer)
@@ -349,6 +349,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		if err != nil {
 			log.Fatal("cannot read chunk to buffer: ", err)
 		}
+		fmt.Println(n / 1024 / 1024)
 
 		req = &grpcPins.UploadImage{
 			Data: &grpcPins.UploadImage_ChunkData{

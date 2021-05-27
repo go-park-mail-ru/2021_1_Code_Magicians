@@ -186,7 +186,7 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
 	}
 	reader := bufio.NewReader(file)
-	buffer := make([]byte, 8*1024*1024)
+	buffer := make([]byte, 3.5*1024*1024) // jrpc cannot receive packages larger than 4 MB
 
 	for {
 		n, err := reader.Read(buffer)
