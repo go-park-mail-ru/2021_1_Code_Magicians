@@ -70,19 +70,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Go 1.16
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-        id: go
-
-      - name: stop script if command error
+      - name: Connection to machine
         uses: appleboy/ssh-action@master
         with:
-          host: 3.67.64.110
-          username: ubuntu
+          host: ${{ secrets.SECRET_HOST }}
+          username: ${{ secrets.SECRET_USERNAME }}
           key: ${{ secrets.PINTEREST_SSH }}
-          script: ls -al
+          script: |
+            cd ..
+            ls -al
+            cd deploy/backend
+            ls -al
+
+#      - name: Check out code into the Go module directory
+#        uses: actions/checkout@v2
+
+      - name: Deploy
+        run: |
+          ls -la
+          pwd
+          git checkout dev
+          git pull
+#          docker-compose -f docker-compose-no-postgres.yaml up --build
           
           
 
