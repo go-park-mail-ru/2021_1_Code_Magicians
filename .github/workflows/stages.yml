@@ -80,7 +80,7 @@ jobs:
             cd back_repo
             sudo docker container kill $(sudo docker ps -q)
             git checkout dev
-            git pull
+            git pull -f
             sudo docker-compose -f docker-compose-no-postgres.yaml up --build
 
           
