@@ -9,6 +9,9 @@ Instructions with docker:
 
 - add/edit server/.env file: change variable LOCAL_DB_HOST to postgres
 - If you need to use remote (Amazon) Postgresql database, change variable DB_PREFIX in .env file to AMAZON instead of LOCAL
+- add/edit server/passwords.env file, add following lines to it, changing variables to actual username/password pair
+    AMAZON_DB_USER = nameofdbuser  # or LOCAL_DB_USER, if using local database
+    AMAZON_DB_PASSWORD = dbuserpassword  # or LOCAL_DB_USER, if using local database
 - If HTTPS support is needed, edit .env variable HTTPS_ON to true and copy your certificate as cert.pem, key as key.pem, adding them to server directory
 - If CSRF support is needed, edit .env variable CSRF_ON to true
 
