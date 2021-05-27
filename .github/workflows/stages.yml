@@ -78,7 +78,7 @@ jobs:
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
             cd back_repo
-            sudo docker container kill $(sudo docker ps -q)
+            sudo docker-compose -f docker-compose-no-postgres.yaml down
             git checkout dev
             git pull -f
             pwd
