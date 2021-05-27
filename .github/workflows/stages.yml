@@ -81,6 +81,8 @@ jobs:
             ls -al
             cd deploy/backend
             ls -al
+            git branch
+            git checkout dev
 
 #      - name: Check out code into the Go module directory
 #        uses: actions/checkout@v2
