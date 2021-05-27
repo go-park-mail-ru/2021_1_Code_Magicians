@@ -8,7 +8,7 @@ scrape_configs:
       - targets: ['go-main:8080']
     scheme: https
     tls_config:
-      #ca_file: prometheus-example-ca-crt.pem
+      ca_file: ca.pem
       cert_file: cert.pem
       key_file: key.pem
 
