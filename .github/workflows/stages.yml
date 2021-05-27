@@ -78,10 +78,8 @@ jobs:
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
             cd ..
-            ls -al
             cd deploy/backend
-            ls -al
-            git branch
+            git stash
             git checkout dev
 
 #      - name: Check out code into the Go module directory
@@ -91,7 +89,6 @@ jobs:
         run: |
           ls -la
           pwd
-          git checkout dev
           git pull
 #          docker-compose -f docker-compose-no-postgres.yaml up --build
           
