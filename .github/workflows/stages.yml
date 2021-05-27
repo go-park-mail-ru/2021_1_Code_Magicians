@@ -83,7 +83,6 @@ jobs:
           host: ${{ secrets.SECRET_HOST }}
           username: ${{ secrets.SECRET_USERNAME }}
           key: ${{ secrets.PINTEREST_SSH }}
-          script_stop: true
           script: ls -al
           
           
