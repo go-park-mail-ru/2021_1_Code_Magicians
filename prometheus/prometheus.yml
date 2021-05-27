@@ -9,8 +9,8 @@ scrape_configs:
     scheme: https
     tls_config:
       #ca_file: prometheus-example-ca-crt.pem
-      cert_file: /etc/letsencrypt/live/pinter-best.com/fullchain.pem
-      key_file: /etc/letsencrypt/live/pinter-best.com/privkey.pem
+      cert_file: cert.pem
+      key_file: key.pem
 
 rule_files:
   - 'alerts.yml'
