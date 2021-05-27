@@ -77,12 +77,12 @@ jobs:
           username: ${{ secrets.SECRET_USERNAME }}
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
-            cd ..
-            cd deploy/backend
+            cd .. &&  cd deploy/backend
             git stash
             git checkout dev
+#            sudo docker container kill $(docker ps -q)
             git pull
-            docker-compose -f docker-compose-no-postgres.yaml up --build
+#            sudo docker-compose -f docker-compose-no-postgres.yaml up --build
 
           
           
