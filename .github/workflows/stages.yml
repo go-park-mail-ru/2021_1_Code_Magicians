@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Connection to machine
+      - name: Connection to machine and deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SECRET_HOST }}
@@ -81,16 +81,9 @@ jobs:
             cd deploy/backend
             git stash
             git checkout dev
+            git pull
+            docker-compose -f docker-compose-no-postgres.yaml up --build
 
-#      - name: Check out code into the Go module directory
-#        uses: actions/checkout@v2
-
-      - name: Deploy
-        run: |
-          ls -la
-          pwd
-          git pull
-#          docker-compose -f docker-compose-no-postgres.yaml up --build
           
           
 
