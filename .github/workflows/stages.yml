@@ -68,7 +68,6 @@ jobs:
   
   deploy:
     runs-on: ubuntu-latest
-    needs: [tests]
 
     steps:
       - name: Set up Go 1.16
@@ -80,10 +79,9 @@ jobs:
       - name: stop script if command error
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SECRET_HOST }}
-          username: ${{ secrets.SECRET_USERNAME }}
+          host: 3.67.64.110
+          username: ubuntu
           key: ${{ secrets.PINTEREST_SSH }}
-          script_stop: true
           script: ls -al
           
           
