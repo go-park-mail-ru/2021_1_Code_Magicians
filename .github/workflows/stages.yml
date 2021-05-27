@@ -80,9 +80,9 @@ jobs:
             cd .. &&  cd deploy/backend
             git stash
             git checkout dev
-#            sudo docker container kill $(docker ps -q)
+            # sudo docker container kill $(docker ps -q)
             git pull
-#            sudo docker-compose -f docker-compose-no-postgres.yaml up --build
+            # sudo docker-compose -f docker-compose-no-postgres.yaml up --build
 
           
           
