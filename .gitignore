@@ -3,3 +3,4 @@
 *.pem
 .vscode/
 /server/passwords.env
+/grafana
