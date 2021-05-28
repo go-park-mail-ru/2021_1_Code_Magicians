@@ -54,7 +54,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
