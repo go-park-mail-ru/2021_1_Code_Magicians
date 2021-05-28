@@ -90,30 +90,6 @@ var pinTest = []struct {
 }{
 	{
 		InputStruct{
-			"/auth/signup",
-			"/auth/signup",
-			"POST",
-			nil,
-			[]byte(`{"username": "TestUsername",` +
-				`"password": "thisisapassword",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
-				`"email": "test@example.com",` +
-				`"avatar": "avatars/1"}`,
-			),
-			testAuthInfo.HandleCreateUser,
-			middleware.NoAuthMid,
-		},
-
-		OutputStruct{
-			201,
-			nil,
-			nil,
-		},
-		"Testing first profile creation",
-	},
-	{
-		InputStruct{
 			"/pin",
 			"/pin",
 			"POST",
@@ -527,10 +503,8 @@ func TestPins(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
-	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
+	successCookies = nil
+	successCookies = append(successCookies, &expectedCookie)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 

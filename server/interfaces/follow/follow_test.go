@@ -91,30 +91,6 @@ var followTestSuccess = []struct {
 }{
 	{
 		followInputStruct{
-			"/auth/signup",
-			"/auth/signup",
-			"POST",
-			nil,
-			[]byte(`{"username": "TestUsername",` +
-				`"password": "thisisapassword",` +
-				`"email": "test@example.com",` +
-				`"firstName": "TestFirstName",` +
-				`"lastName": "TestLastName",` +
-				`"avatarLink": "avatars/1"}`,
-			),
-			testAuthInfo.HandleCreateUser,
-			middleware.NoAuthMid,
-		},
-
-		followOutputStruct{
-			201,
-			nil,
-			nil,
-		},
-		"Testing profile creation",
-	},
-	{
-		followInputStruct{
 			"/follow/1",
 			"/follow/{id:[0-9]+}",
 			"POST",
@@ -277,10 +253,8 @@ func TestFollowSuccess(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
-	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, gomock.Any()).Return(nil).Times(1) // Adding notification token during user creation
-	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
+	successCookies = nil
+	successCookies = append(successCookies, &expectedCookie)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
