@@ -262,7 +262,7 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 	}
 
 	boardPins, err := pinInfo.pinApp.GetPins(boardID)
-	if err != nil {
+	if err != nil && err != entity.PinsNotFoundError {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {
 		case entity.BoardNotFoundError:
@@ -273,18 +273,16 @@ func (pinInfo *PinInfo) HandleGetPinsByBoardID(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if len(boardPins) == 0 {
-		pinInfo.logger.Info(entity.NoResultSearch.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	pins := new(entity.PinsListOutput)
 
 	for _, pin := range boardPins {
 		var pinOutput entity.PinOutput
 		pinOutput.FillFromPin(&pin)
 		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	if pins.Pins == nil {
+		pins.Pins = make([]entity.PinOutput, 0) // So that [] appears in json and not nil
 	}
 
 	pinsBody, err := json.Marshal(pins)
@@ -316,6 +314,11 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if feedInfo.Offset < 0 {
+		pinInfo.logger.Info("offset cannot be negative", zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	amountList, exists := queryParams["amount"]
 	if !exists {
@@ -323,19 +326,23 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	feedInfo.Amount, err = strconv.Atoi(amountList[0])
 	if err != nil {
 		pinInfo.logger.Info("amount is not a number", zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if feedInfo.Amount < 0 {
+		pinInfo.logger.Info("amount cannot be negative", zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	feedPins, err := pinInfo.pinApp.GetPinsWithOffset(feedInfo.Offset, feedInfo.Amount)
-	if err != nil {
+	if err != nil && err != entity.PinsNotFoundError {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {
-		case entity.NonPositiveNumOfPinsError:
+		case entity.PinScanError:
 			w.WriteHeader(http.StatusBadRequest)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -349,6 +356,10 @@ func (pinInfo *PinInfo) HandlePinsFeed(w http.ResponseWriter, r *http.Request) {
 		var pinOutput entity.PinOutput
 		pinOutput.FillFromPin(&pin)
 		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	if pins.Pins == nil {
+		pins.Pins = make([]entity.PinOutput, 0) // So that [] appears in json and not nil
 	}
 
 	pinsBody, err := json.Marshal(pins)
@@ -391,14 +402,9 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 	keyWords = strings.NewReplacer("+", " ").Replace(keyWords)
 
 	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyWords), date)
-	if err != nil && err != entity.NoResultSearch {
+	if err != nil && err != entity.PinsNotFoundError {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if len(resultPins) == 0 {
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -408,6 +414,10 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		var pinOutput entity.PinOutput
 		pinOutput.FillFromPin(&pin)
 		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	if pins.Pins == nil {
+		pins.Pins = make([]entity.PinOutput, 0) // So that [] appears in json and not nil
 	}
 
 	responseBody, err := json.Marshal(pins)

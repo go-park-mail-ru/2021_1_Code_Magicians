@@ -65,17 +65,20 @@ const CreatePinError customError = "Could not create pin"
 const AddPinToBoardError customError = "Could not add pin to board"
 const GetPinReferencesCountError customError = "Could not count the number of pin references"
 const PinNotFoundError customError = "No pin found"
+const PinsNotFoundError customError = "No pins found"
 const GetPinsByBoardIdError customError = "Could not get pins from passed board"
 const GetPinsByUserIdError customError = "Could not get user's pins by their ID"
 const PinSavingError customError = "Pin saving failed"
 const FeedLoadingError customError = "Could not extract pins for feed"
 const NonPositiveNumOfPinsError customError = "Cannot get negative amount of pins"
 
+const WrongSearchInterval customError = "Passed search interval is not in allowed interval names"
+const BoardScanError customError = "Something went wrong when scanning board from database"
+const PinScanError customError = "Something went wrong when scanning pin from database"
+const UserScanError customError = "Something went wrong when scanning user from database"
+
 const CreateReportError customError = "Cannot create report"
 const DuplicateReportError customError = "Reports with these senderID and inID already exists"
-
-const SearchingError customError = "Could not get results of searching"
-const NoResultSearch customError = "Not results for search"
 
 const AddCommentError customError = "Comment creation failed"
 const GetCommentsError customError = "Could not get comments"

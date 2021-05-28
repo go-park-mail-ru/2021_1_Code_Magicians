@@ -52,7 +52,7 @@ func (s *service) CreateBoard(ctx context.Context, board *Board) (*BoardID, erro
 	newBoardID := 0
 	err = row.Scan(&newBoardID)
 	if err != nil {
-		return &BoardID{}, entity.CreateBoardError
+		return &BoardID{}, entity.BoardScanError
 	}
 
 	_, err = tx.Exec(context.Background(), increaseBoardCountQuery, board.UserID)
@@ -89,8 +89,7 @@ func (s *service) GetBoard(ctx context.Context, boardID *BoardID) (*Board, error
 		if err == pgx.ErrNoRows {
 			return &Board{}, entity.BoardNotFoundError
 		}
-		// Other errors
-		return &Board{}, err
+		return &Board{}, entity.BoardScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -117,9 +116,9 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 	rows, err := tx.Query(context.Background(), getBoardsByUserQuery, userID.Uid)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &BoardsList{}, entity.GetBoardsByUserIDError
+			return &BoardsList{}, entity.BoardsNotFoundError
 		}
-		return &BoardsList{}, err
+		return &BoardsList{}, entity.BoardScanError
 	}
 
 	boards := make([]*Board, 0)
@@ -128,7 +127,7 @@ func (s *service) GetBoards(ctx context.Context, userID *UserID) (*BoardsList, e
 		err = rows.Scan(&board.BoardID, &board.Title, &board.Description,
 			&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 		if err != nil {
-			return &BoardsList{}, err // TODO: error handling
+			return &BoardsList{}, entity.BoardScanError
 		}
 		boards = append(boards, &board)
 	}
@@ -162,9 +161,9 @@ func (s *service) GetInitUserBoard(ctx context.Context, userID *UserID) (*BoardI
 		&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &BoardID{}, entity.NotFoundInitUserBoard
+			return &BoardID{}, entity.BoardNotFoundError
 		}
-		return &BoardID{}, err
+		return &BoardID{}, entity.BoardScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -252,7 +251,7 @@ func (s *service) CreatePin(ctx context.Context, pin *Pin) (*PinID, error) {
 	newPinID := 0
 	err = row.Scan(&newPinID)
 	if err != nil {
-		return &PinID{}, entity.CreatePinError
+		return &PinID{}, entity.PinScanError
 	}
 
 	_, err = tx.Exec(context.Background(), increasePinCountQuery, pin.UserID)
@@ -320,7 +319,7 @@ func (s *service) GetPin(ctx context.Context, pinID *PinID) (*Pin, error) {
 		if err == pgx.ErrNoRows {
 			return &Pin{}, entity.PinNotFoundError
 		}
-		return &Pin{}, err
+		return &Pin{}, entity.PinScanError
 	}
 	pin.CreationDate = timestamppb.New(pinCreationDate)
 
@@ -362,7 +361,7 @@ func (s *service) GetPins(ctx context.Context, boardID *BoardID) (*PinsList, err
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
 			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
-			return &PinsList{}, entity.GetPinsByBoardIdError
+			return &PinsList{}, entity.PinScanError
 		}
 		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
@@ -381,7 +380,7 @@ const getLastUserPinQuery string = "SELECT pins.pinID\n" +
 	"INNER JOIN boards on boards.boardID=pairs.boardID AND boards.userID = $1\n" +
 	"ORDER BY pins.pinID DESC LIMIT 1\n"
 
-// GetLastPinID
+// GetLastPinID returns ID of the last pin added by user
 func (s *service) GetLastPinID(ctx context.Context, userID *UserID) (*PinID, error) {
 	tx, err := s.db.Begin(context.Background())
 	if err != nil {
@@ -396,8 +395,7 @@ func (s *service) GetLastPinID(ctx context.Context, userID *UserID) (*PinID, err
 		if err == pgx.ErrNoRows {
 			return &PinID{}, entity.PinNotFoundError
 		}
-		// Other errors
-		return &PinID{}, err
+		return &PinID{}, entity.PinScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -433,7 +431,7 @@ func (s *service) GetLastBoardPin(ctx context.Context, boardID *BoardID) (*Pin, 
 		if err == pgx.ErrNoRows {
 			return &Pin{}, entity.PinNotFoundError
 		}
-		return &Pin{}, err
+		return &Pin{}, entity.PinScanError
 	}
 	pin.CreationDate = timestamppb.New(pinCreationDate)
 
@@ -470,7 +468,7 @@ func (s *service) GetBoardsWithPin(ctx context.Context, pinID *PinID) (*BoardsLi
 		err = rows.Scan(&board.BoardID, &board.UserID, &board.Title, &board.Description,
 			&board.ImageLink, &board.ImageHeight, &board.ImageWidth, &board.ImageAvgColor)
 		if err != nil {
-			return &BoardsList{}, err // TODO: error handling
+			return &BoardsList{}, entity.PinScanError
 		}
 		boards = append(boards, &board)
 	}
@@ -553,7 +551,7 @@ func (s *service) DeletePin(ctx context.Context, pinID *PinID) (*Error, error) {
 	row := tx.QueryRow(context.Background(), deletePinQuery, pinID.PinID)
 	err = row.Scan(&pinOwnerID)
 	if err != nil {
-		return &Error{}, entity.DeletePinError
+		return &Error{}, entity.PinScanError
 	}
 
 	_, err = tx.Exec(context.Background(), decreasePinCountQuery, pinOwnerID)
@@ -651,7 +649,7 @@ func (s *service) GetPinsWithOffset(ctx context.Context, feedInfo *FeedInfo) (*P
 		feedInfo.Offset, feedInfo.Amount)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &PinsList{}, nil
+			return &PinsList{}, entity.PinsNotFoundError
 		}
 		return &PinsList{}, err
 	}
@@ -664,7 +662,7 @@ func (s *service) GetPinsWithOffset(ctx context.Context, feedInfo *FeedInfo) (*P
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
 			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
-			return &PinsList{}, entity.FeedLoadingError
+			return &PinsList{}, entity.PinScanError
 		}
 		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
@@ -699,12 +697,12 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 
 	var rows pgx.Rows
 
-	switch searchInput.Date {
+	switch searchInput.Interval {
 	case "allTime":
 		rows, err = tx.Query(context.Background(), SearchAllPinsQuery, "%"+searchInput.KeyWords+"%")
 	case "hour", "day", "week":
 		var interval pgtype.Interval
-		switch searchInput.Date {
+		switch searchInput.Interval {
 		case "hour":
 			interval.Set(time.Hour)
 		case "day":
@@ -714,7 +712,7 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 		}
 		rows, err = tx.Query(context.Background(), SearchPeriodPinsQuery, "%"+searchInput.KeyWords+"%", interval)
 	default:
-		return &PinsList{}, entity.SearchingError
+		return &PinsList{}, entity.WrongSearchInterval
 	}
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -731,7 +729,7 @@ func (s *service) SearchPins(ctx context.Context, searchInput *SearchInput) (*Pi
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
 			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
-			return &PinsList{}, entity.SearchingError
+			return &PinsList{}, entity.PinScanError
 		}
 		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)
@@ -763,9 +761,9 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 	rows, err := tx.Query(context.Background(), GetPinsByUsersIDQuery, userIDs.Ids)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &PinsList{}, entity.NoResultSearch
+			return &PinsList{}, entity.PinsNotFoundError
 		}
-		return &PinsList{}, err
+		return &PinsList{}, entity.PinScanError
 	}
 
 	pins := make([]*Pin, 0)
@@ -776,7 +774,7 @@ func (s *service) GetPinsOfUsers(ctx context.Context, userIDs *UserIDList) (*Pin
 			&pin.ImageLink, &pin.ImageHeight, &pin.ImageWidth, &pin.ImageAvgColor,
 			&pinCreationDate, &pin.ReportsCount)
 		if err != nil {
-			return &PinsList{}, entity.GetPinsByUserIdError
+			return &PinsList{}, entity.PinScanError
 		}
 		pin.CreationDate = timestamppb.New(pinCreationDate)
 		pins = append(pins, &pin)

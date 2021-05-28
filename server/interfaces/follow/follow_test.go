@@ -189,7 +189,7 @@ var followTestSuccess = []struct {
 		followInputStruct{
 			"/following/0",
 			"/following/{id:[0-9]+}",
-			"DELETE",
+			"GET",
 			nil,
 			nil,
 			testFollowInfo.HandleGetFollowed,
@@ -216,7 +216,7 @@ var followTestSuccess = []struct {
 		followInputStruct{
 			"/followers/0",
 			"/followers/{id:[0-9]+}",
-			"DELETE",
+			"GET",
 			nil,
 			nil,
 			testFollowInfo.HandleGetFollowers,
@@ -393,7 +393,43 @@ var followTestFailure = []struct {
 		followInputStruct{
 			"/following/0",
 			"/following/{id:[0-9]+}",
-			"DELETE",
+			"GET",
+			nil,
+			nil,
+			testFollowInfo.HandleGetFollowed,
+			nil,
+		},
+
+		followOutputStruct{
+			200,
+			nil,
+			[]byte(`{"profiles":[]}`),
+		},
+		"Testing getting empty list of followed profiles",
+	},
+	{
+		followInputStruct{
+			"/followers/0",
+			"/followers/{id:[0-9]+}",
+			"GET",
+			nil,
+			nil,
+			testFollowInfo.HandleGetFollowers,
+			nil,
+		},
+
+		followOutputStruct{
+			200,
+			nil,
+			[]byte(`{"profiles":[]}`),
+		},
+		"Testing getting empty list of followers",
+	},
+	{
+		followInputStruct{
+			"/following/1234",
+			"/following/{id:[0-9]+}",
+			"GET",
 			nil,
 			nil,
 			testFollowInfo.HandleGetFollowed,
@@ -405,13 +441,13 @@ var followTestFailure = []struct {
 			nil,
 			nil,
 		},
-		"Testing getting empty list of followed profiles",
+		"Testing getting empty list of profiles followed by unexistant profile",
 	},
 	{
 		followInputStruct{
-			"/followers/0",
+			"/followers/1234",
 			"/followers/{id:[0-9]+}",
-			"DELETE",
+			"GET",
 			nil,
 			nil,
 			testFollowInfo.HandleGetFollowers,
@@ -423,7 +459,7 @@ var followTestFailure = []struct {
 			nil,
 			nil,
 		},
-		"Testing getting empty list of followers",
+		"Testing getting empty list of followers of unexistant profile",
 	},
 }
 
@@ -455,6 +491,10 @@ func TestFollowFailure(t *testing.T) {
 	mockFollowApp.EXPECT().GetAllFollowed(expectedUser.UserID).Return(nil, entity.UsersNotFoundError)
 
 	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return(nil, entity.UsersNotFoundError)
+
+	mockFollowApp.EXPECT().GetAllFollowed(1234).Return(nil, entity.UserNotFoundError)
+
+	mockFollowApp.EXPECT().GetAllFollowers(1234).Return(nil, entity.UserNotFoundError)
 
 	testAuthInfo = *auth.NewAuthInfo(
 		mockUserApp,
