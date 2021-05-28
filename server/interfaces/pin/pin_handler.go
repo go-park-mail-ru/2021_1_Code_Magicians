@@ -384,24 +384,24 @@ func (pinInfo *PinInfo) HandleSearchPins(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	keyWords := keywordsList[0]
-	date := ""
-	datesList, exists := queryParams["date"]
+	interval := ""
+	intervalsList, exists := queryParams["interval"]
 	switch exists {
 	case true:
-		switch datesList[0] {
+		switch intervalsList[0] {
 		case "day", "week", "hour", "allTime":
-			date = datesList[0]
+			interval = intervalsList[0]
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	case false:
-		date = "allTime"
+		interval = "allTime"
 	}
 
 	keyWords = strings.NewReplacer("+", " ").Replace(keyWords)
 
-	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyWords), date)
+	resultPins, err := pinInfo.pinApp.SearchPins(strings.ToLower(keyWords), interval)
 	if err != nil && err != entity.PinsNotFoundError {
 		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		w.WriteHeader(http.StatusInternalServerError)
