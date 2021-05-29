@@ -2,9 +2,9 @@ name: Pinterbest
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ rk3 ]
   pull_request:
-    branches: [ dev ]
+    branches: [ rk3 ]
 
 jobs:
   linters:
@@ -78,8 +78,8 @@ jobs:
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
             cd back_repo
-            sudo docker-compose -f docker-compose-no-postgres.yaml down
-            git checkout dev
-            git pull -f
-            pwd
-            sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
+            # sudo docker-compose -f docker-compose-no-postgres.yaml down
+            # git checkout dev
+            # git pull -f
+            # pwd
+            # sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
