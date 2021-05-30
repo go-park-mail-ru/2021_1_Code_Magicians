@@ -25,15 +25,15 @@ type PinInfo struct {
 	boardApp        application.BoardAppInterface
 	s3App           application.S3AppInterface
 	logger          *zap.Logger
+	template        string // Used for creating an e-mail for notifications
+	emailUsername   string
+	emailPassword   string
 }
 
-func NewPinInfo(pinApp application.PinAppInterface,
-	followApp application.FollowAppInterface,
-	notificationApp application.NotificationAppInterface,
-	userApp application.UserAppInterface,
-	boardApp application.BoardAppInterface,
-	s3App application.S3AppInterface,
-	logger *zap.Logger) *PinInfo {
+func NewPinInfo(pinApp application.PinAppInterface, followApp application.FollowAppInterface,
+	notificationApp application.NotificationAppInterface, userApp application.UserAppInterface,
+	boardApp application.BoardAppInterface, s3App application.S3AppInterface,
+	logger *zap.Logger, template string, emailUsername string, emailPassword string) *PinInfo {
 	return &PinInfo{
 		pinApp:          pinApp,
 		followApp:       followApp,
@@ -42,6 +42,9 @@ func NewPinInfo(pinApp application.PinAppInterface,
 		boardApp:        boardApp,
 		s3App:           s3App,
 		logger:          logger,
+		template:        template,
+		emailUsername:   emailUsername,
+		emailPassword:   emailPassword,
 	}
 }
 
@@ -116,6 +119,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var canEmail []entity.CreatePinEmailInfo
 	for _, follower := range followers {
 		notification := entity.Notification{
 			UserID:   follower.UserID,
@@ -129,41 +133,25 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 
 		if err == nil {
 			pinInfo.notificationApp.SendNotification(follower.UserID, notification.NotificationID)
-			// TODO: change to normal, non-hardcoded values
-			templateString := "<!-- template.html -->\n" +
-				"<!DOCTYPE html>\n" +
-				"<html>\n" +
-				"<body>\n" +
-				"	<h3>NotificationTitle:</h3><span>{{.NotificationTitle}}</span><br/><br/>\n" +
-				"	<h3>NotificationText:</h3><span>{{.NotificationText}}</span><br/><br/>\n" +
-				"	<h3>NotificationID:</h3><span>{{.NotificationID}}</span><br/><br/>\n" +
-				"	<h3>NotificationCategory:</h3><span>{{.NotificationCategory}}</span><br/><br/>\n" +
-				"	<h3>Username:</h3><span>{{.Username}}</span><br/><br/>\n" +
-				"</body>\n" +
-				"</html>\n\n"
-			templateStruct := struct {
-				NotificationTitle    string
-				NotificationText     string
-				NotificationID       int
-				NotificationCategory string
-				Username             string
-				PinID                int
-			}{
-				NotificationTitle:    notification.Title,
-				NotificationText:     notification.Text,
-				NotificationID:       notification.NotificationID,
-				NotificationCategory: notification.Category,
-				Username:             follower.Username,
-				PinID:                currPin.PinID,
+			canEmail = append(canEmail, entity.CreatePinEmailInfo{
+				User:         follower,
+				Notification: notification,
+			})
+
+			if err != nil {
+				pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+				pinInfo.pinApp.DeletePin(currPin.PinID)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
-			pinInfo.notificationApp.SendNotificationEmail(follower.UserID, notification.NotificationID,
-				templateString, templateStruct,
-				"pinterbest-informer@mail.ru", "ys3UeY5.zAAQ).F")
+			// TODO: move getenv to server_main?
 		} else {
 			pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 				zap.Int("for user", follower.UserID), zap.String("method", r.Method))
 		}
 	}
+
+	go pinInfo.sendEmails(canEmail, currPin.PinID)
 
 	pinIDOutput := entity.PinID{PinID: currPin.PinID}
 	body, err := json.Marshal(pinIDOutput)
@@ -177,6 +165,29 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
+}
+
+func (pinInfo *PinInfo) sendEmails(emailsInfo []entity.CreatePinEmailInfo, pinID int) {
+	for _, emailInfo := range emailsInfo {
+		templateStruct := struct {
+			NotificationTitle    string
+			NotificationText     string
+			NotificationID       int
+			NotificationCategory string
+			Username             string
+			PinID                int
+		}{
+			NotificationTitle:    emailInfo.Notification.Title,
+			NotificationText:     emailInfo.Notification.Text,
+			NotificationID:       emailInfo.Notification.NotificationID,
+			NotificationCategory: emailInfo.Notification.Category,
+			Username:             emailInfo.User.Username,
+			PinID:                pinID,
+		}
+		pinInfo.notificationApp.SendNotificationEmail(emailInfo.User.UserID, emailInfo.Notification.NotificationID,
+			pinInfo.template, templateStruct,
+			pinInfo.emailUsername, pinInfo.emailPassword)
+	}
 }
 
 func (pinInfo *PinInfo) HandleAddPinToBoard(w http.ResponseWriter, r *http.Request) {

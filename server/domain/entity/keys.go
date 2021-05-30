@@ -23,3 +23,5 @@ const PinInfoLabelKey key = "pinInfo"
 const PinImageLabelKey key = "pinImage"
 const PinIDLabelKey key = "pinID"
 const PinAmountLabelKey key = "num"
+
+const EmailTemplateFilenameKey key = "pin_email_template.html"

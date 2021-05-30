@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"pinterest/application"
@@ -100,6 +101,12 @@ func runServer(addr string) {
 	}
 	defer sessionComments.Close()
 
+	pinEmailTemplteBytes, err := ioutil.ReadFile(string(entity.EmailTemplateFilenameKey))
+	if err != nil {
+		sugarLogger.Fatal("Could not find template for pin emails")
+	}
+	pinEmailTemplate := string(pinEmailTemplteBytes)
+
 	repoUser := protoUser.NewUserClient(sessionUser)
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)
 	repoPins := protoPins.NewPinsClient(sessionPins)
@@ -122,7 +129,8 @@ func runServer(addr string) {
 	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)
 	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, followApp, s3App, notificationApp, logger)
 	followInfo := follow.NewFollowInfo(userApp, followApp, notificationApp, logger)
-	pinInfo := pin.NewPinInfo(pinApp, followApp, notificationApp, userApp, boardApp, s3App, logger)
+	pinInfo := pin.NewPinInfo(pinApp, followApp, notificationApp, userApp, boardApp, s3App, logger,
+		pinEmailTemplate, os.Getenv("EMAIL_USERNAME"), os.Getenv("EMAIL_PASSWORD"))
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
 	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
