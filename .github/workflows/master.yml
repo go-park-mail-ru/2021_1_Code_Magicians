@@ -3,8 +3,6 @@ name: Pinterbest
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   linters:
@@ -13,7 +11,7 @@ jobs:
 
     steps:
       - name: Set up Go 1.16
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.16
         id: go
@@ -34,7 +32,7 @@ jobs:
 
     steps:
       - name: Set up Go 1.16
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.16
         id: go
@@ -53,7 +51,7 @@ jobs:
 
     steps:
       - name: Set up Go 1.16
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.16
         id: go
@@ -65,3 +63,22 @@ jobs:
         run: |
           cd ./server
           ./run-tests.sh
+  
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [tests]
+
+    steps:
+      - name: Connection to machine and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SECRET_HOST }}
+          username: ${{ secrets.SECRET_USERNAME }}
+          key: ${{ secrets.PINTEREST_SSH }}
+          script: |
+            cd back_repo
+            sudo docker-compose -f docker-compose-no-postgres.yaml down
+            git checkout master
+            git pull -f
+            pwd
+            sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
