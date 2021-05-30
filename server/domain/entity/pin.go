@@ -56,8 +56,3 @@ func (pinOutput *PinOutput) FillFromPin(pin *Pin) {
 	pinOutput.CreationDate = pin.CreationDate.String()
 	pinOutput.ReportsCount = pin.ReportsCount
 }
-
-type CreatePinEmailInfo struct {
-	User         User
-	Notification Notification
-}

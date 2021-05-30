@@ -37,6 +37,7 @@ type NotificationAppInterface interface {
 	GetNotification(userID int, notificationID int) (*entity.Notification, error) // Get notification from db using user's and notification's IDs
 	SendAllNotifications(userID int) error                                        // Send all of the notifications that this user has
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
+	SendNotificationsToUsers(usersAndNotifications []entity.UserNotificationInfo) // Send notifications to users
 	SendNotificationEmail(userID int, notificationID int,
 		templateString string, templateStruct interface{},
 		serverEmail string, serverPassword string) error // Send specified notification to specified user as an e-mail
@@ -133,6 +134,12 @@ func (notificationApp *NotificationApp) SendNotification(userID int, notificatio
 	return err
 }
 
+func (notificationApp *NotificationApp) SendNotificationsToUsers(usersAndNotifications []entity.UserNotificationInfo) {
+	for _, pair := range usersAndNotifications {
+		notificationApp.SendNotification(pair.UserID, pair.NotificationID)
+	}
+}
+
 // SendMailTLS not use STARTTLS commond
 func sendMailTLS(addr string, auth smtp.Auth, from string, to []string, msg []byte) error {
 	host, _, err := net.SplitHostPort(addr)
@@ -220,7 +227,10 @@ func (notificationApp *NotificationApp) SendNotificationEmail(userID int, notifi
 	// Authentication.
 	auth := smtp.PlainAuth("", serverEmail, serverPassword, smtpHost)
 
-	t, _ := template.New("EMail Template").Parse(templateString)
+	t, err := template.New("EMail Template").Parse(templateString)
+	if err != nil {
+		return err
+	}
 
 	var body bytes.Buffer
 

@@ -111,47 +111,7 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	followers, err := pinInfo.followApp.GetAllFollowers(userID)
-	if err != nil && err != entity.UsersNotFoundError {
-		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		pinInfo.pinApp.DeletePin(currPin.PinID)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	var canEmail []entity.CreatePinEmailInfo
-	for _, follower := range followers {
-		notification := entity.Notification{
-			UserID:   follower.UserID,
-			Title:    "New Pin from people you've subscribed to!",
-			Category: "subscribed pins",
-			Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
-				follower.Username, user.Username, currPin.Title),
-			IsRead: false,
-		}
-		notification.NotificationID, err = pinInfo.notificationApp.AddNotification(&notification)
-
-		if err == nil {
-			pinInfo.notificationApp.SendNotification(follower.UserID, notification.NotificationID)
-			canEmail = append(canEmail, entity.CreatePinEmailInfo{
-				User:         follower,
-				Notification: notification,
-			})
-
-			if err != nil {
-				pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-				pinInfo.pinApp.DeletePin(currPin.PinID)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			// TODO: move getenv to server_main?
-		} else {
-			pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
-				zap.Int("for user", follower.UserID), zap.String("method", r.Method))
-		}
-	}
-
-	go pinInfo.sendEmails(canEmail, currPin.PinID)
+	go pinInfo.sendNotificationsAndEmails(user, currPin)
 
 	pinIDOutput := entity.PinID{PinID: currPin.PinID}
 	body, err := json.Marshal(pinIDOutput)
@@ -167,8 +127,58 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-func (pinInfo *PinInfo) sendEmails(emailsInfo []entity.CreatePinEmailInfo, pinID int) {
-	for _, emailInfo := range emailsInfo {
+func (pinInfo *PinInfo) sendNotificationsAndEmails(sender *entity.User, pin entity.Pin) {
+	var usersWithNotifications []entity.UserNotificationInfo
+	var err error
+
+	followers, err := pinInfo.followApp.GetAllFollowers(sender.UserID)
+	if err != nil {
+		return
+	}
+
+	for _, user := range followers {
+		notification := entity.Notification{
+			UserID:   user.UserID,
+			Title:    "New Pin from people you've subscribed to!",
+			Category: "subscribed pins",
+			Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
+				user.Username, sender.Username, pin.Title),
+			IsRead: false,
+		}
+		notification.NotificationID, err = pinInfo.notificationApp.AddNotification(&notification)
+
+		switch err {
+		case nil:
+			usersWithNotifications = append(usersWithNotifications, entity.UserNotificationInfo{
+				UserID:         user.UserID,
+				NotificationID: notification.NotificationID,
+			})
+		default:
+			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendNotificationsAndEmails"),
+				zap.Int("for user", user.UserID))
+		}
+	}
+
+	go pinInfo.notificationApp.SendNotificationsToUsers(usersWithNotifications)
+
+	go pinInfo.sendEmails(usersWithNotifications, pin.PinID)
+}
+
+func (pinInfo *PinInfo) sendEmails(usersAndNotifications []entity.UserNotificationInfo, pinID int) {
+	for _, pair := range usersAndNotifications {
+		user, err := pinInfo.userApp.GetUser(pair.UserID)
+		if err != nil {
+			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendEmails"),
+				zap.Int("for user", user.UserID))
+			continue
+		}
+		notification, err := pinInfo.notificationApp.GetNotification(pair.UserID, pair.NotificationID)
+		if err != nil {
+			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendEmails"),
+				zap.Int("for user", user.UserID))
+			continue
+		}
+
 		templateStruct := struct {
 			NotificationTitle    string
 			NotificationText     string
@@ -177,16 +187,20 @@ func (pinInfo *PinInfo) sendEmails(emailsInfo []entity.CreatePinEmailInfo, pinID
 			Username             string
 			PinID                int
 		}{
-			NotificationTitle:    emailInfo.Notification.Title,
-			NotificationText:     emailInfo.Notification.Text,
-			NotificationID:       emailInfo.Notification.NotificationID,
-			NotificationCategory: emailInfo.Notification.Category,
-			Username:             emailInfo.User.Username,
+			NotificationTitle:    notification.Title,
+			NotificationText:     notification.Text,
+			NotificationID:       notification.NotificationID,
+			NotificationCategory: notification.Category,
+			Username:             user.Username,
 			PinID:                pinID,
 		}
-		pinInfo.notificationApp.SendNotificationEmail(emailInfo.User.UserID, emailInfo.Notification.NotificationID,
+		err = pinInfo.notificationApp.SendNotificationEmail(user.UserID, notification.NotificationID,
 			pinInfo.template, templateStruct,
 			pinInfo.emailUsername, pinInfo.emailPassword)
+		if err != nil {
+			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendEmails"),
+				zap.Int("for user", user.UserID))
+		}
 	}
 }
 
