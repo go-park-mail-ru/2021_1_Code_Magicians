@@ -187,10 +187,10 @@ func (followInfo *FollowInfo) HandleGetFollowers(w http.ResponseWriter, r *http.
 	id, _ := strconv.Atoi(idStr)
 
 	followers, err := followInfo.followApp.GetAllFollowers(id)
-	if err != nil {
+	if err != nil && err != entity.UsersNotFoundError { // No followers is a normal situation
 		followInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {
-		case entity.UserNotFoundError, entity.UsersNotFoundError:
+		case entity.UserNotFoundError:
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -205,6 +205,10 @@ func (followInfo *FollowInfo) HandleGetFollowers(w http.ResponseWriter, r *http.
 		userOutput.FillFromUser(&user)
 		userOutput.Email = "" // Emails are private and should not be passed to unrelated users
 		usersOutput.Users = append(usersOutput.Users, userOutput)
+	}
+
+	if usersOutput.Users == nil {
+		usersOutput.Users = make([]entity.UserOutput, 0) // So that [] appears in json and not nil
 	}
 
 	responseBody, err := json.Marshal(usersOutput)
@@ -225,10 +229,10 @@ func (followInfo *FollowInfo) HandleGetFollowed(w http.ResponseWriter, r *http.R
 	id, _ := strconv.Atoi(idStr)
 
 	followedUsers, err := followInfo.followApp.GetAllFollowed(id)
-	if err != nil {
+	if err != nil && err != entity.UsersNotFoundError { // No followed users is a normal situation
 		followInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {
-		case entity.UserNotFoundError, entity.UsersNotFoundError:
+		case entity.UserNotFoundError:
 			w.WriteHeader(http.StatusNotFound)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -243,6 +247,10 @@ func (followInfo *FollowInfo) HandleGetFollowed(w http.ResponseWriter, r *http.R
 		userOutput.FillFromUser(&user)
 		userOutput.Email = "" // Emails are private and should not be passed to unrelated users
 		usersOutput.Users = append(usersOutput.Users, userOutput)
+	}
+
+	if usersOutput.Users == nil {
+		usersOutput.Users = make([]entity.UserOutput, 0) // So that [] appears in json and not nil
 	}
 
 	responseBody, err := json.Marshal(usersOutput)
@@ -261,14 +269,14 @@ func (followInfo *FollowInfo) HandleGetFollowedPinsList(w http.ResponseWriter, r
 	userID := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo).UserID
 
 	resultPins, err := followInfo.followApp.GetPinsOfFollowedUsers(userID)
-	if err != nil {
+	if err != nil && err != entity.PinsNotFoundError && err != entity.UsersNotFoundError { // No followed users is a normal situation
 		followInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if len(resultPins) == 0 {
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.UserNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -278,6 +286,10 @@ func (followInfo *FollowInfo) HandleGetFollowedPinsList(w http.ResponseWriter, r
 		var pinOutput entity.PinOutput
 		pinOutput.FillFromPin(&pin)
 		pins.Pins = append(pins.Pins, pinOutput)
+	}
+
+	if pins.Pins == nil {
+		pins.Pins = make([]entity.PinOutput, 0) // So that [] appears in json and not nil
 	}
 
 	responseBody, err := json.Marshal(pins)

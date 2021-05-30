@@ -90,30 +90,6 @@ var pinTest = []struct {
 }{
 	{
 		InputStruct{
-			"/auth/signup",
-			"/auth/signup",
-			"POST",
-			nil,
-			[]byte(`{"username": "TestUsername",` +
-				`"password": "thisisapassword",` +
-				`"first_name": "TestFirstName",` +
-				`"last_name": "TestLastname",` +
-				`"email": "test@example.com",` +
-				`"avatar": "avatars/1"}`,
-			),
-			testAuthInfo.HandleCreateUser,
-			middleware.NoAuthMid,
-		},
-
-		OutputStruct{
-			201,
-			nil,
-			nil,
-		},
-		"Testing first profile creation",
-	},
-	{
-		InputStruct{
 			"/pin",
 			"/pin",
 			"POST",
@@ -266,7 +242,7 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/search?searchKey=exp&date=week",
+			"/pins/search?searchKey=exp&interval=week",
 			"/pins/search",
 			"GET",
 			nil,
@@ -499,6 +475,8 @@ func TestPins(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockFollowApp := mock_application.NewMockFollowAppInterface(mockCtrl)
+	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
 	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
@@ -527,10 +505,19 @@ func TestPins(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
-	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
+	expectedFollower := &entity.User{
+		UserID:    1,
+		Username:  "FollowerUsername",
+		Password:  "thisisanotherpassword",
+		FirstName: "TestFollowerFirstName",
+		LastName:  "TestFollowerLastName",
+		Email:     "testFollower@example.com",
+		Avatar:    "avatars/2",
+		Salt:      "",
+	}
+
+	successCookies = nil
+	successCookies = append(successCookies, &expectedCookie)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests
 
@@ -571,8 +558,16 @@ func TestPins(t *testing.T) {
 	}
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinFirst.PinID, nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
+	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinSecond.PinID, nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
+	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
 
 	mockBoardApp.EXPECT().CreateBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
@@ -613,10 +608,13 @@ func TestPins(t *testing.T) {
 	testBoardInfo = *board.NewBoardInfo(mockBoardApp, testLogger)
 
 	testPinInfo = PinInfo{
-		pinApp:   mockPinApp,
-		boardApp: mockBoardApp,
-		s3App:    nil, // S3 is not needed, as we do not currently test file upload
-		logger:   testLogger,
+		pinApp:          mockPinApp,
+		followApp:       mockFollowApp,
+		notificationApp: mockNotificationApp,
+		userApp:         mockUserApp,
+		boardApp:        mockBoardApp,
+		s3App:           nil, // S3 is not needed, as we do not currently test file upload
+		logger:          testLogger,
 	}
 	for _, tt := range pinTest {
 		tt := tt

@@ -64,11 +64,10 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 	newUserID := 0
 	err = row.Scan(&newUserID)
 	if err != nil {
-		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return nil, entity.UsernameEmailDuplicateError
 		}
-		return nil, err
+		return nil, entity.UserScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -94,12 +93,10 @@ func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, erro
 	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Email,
 		user.FirstName, user.LastName, user.Avatar, user.UserID)
 	if err != nil {
-		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return &Error{}, entity.UsernameEmailDuplicateError
 		}
-		// Other errors
-		return &Error{}, err
+		return &Error{}, entity.UserScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -192,12 +189,10 @@ func (s *service) ChangePassword(ctx context.Context, pswrd *Password) (*Error, 
 
 	_, err = tx.Exec(context.Background(), changePasswordQuery, pswrd.Password, pswrd.UserID)
 	if err != nil {
-		// If username/email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return &Error{}, entity.UsernameEmailDuplicateError
 		}
-		// Other errors
-		return &Error{}, err
+		return &Error{}, entity.UserScanError
 	}
 
 	err = tx.Commit(context.Background())
@@ -258,7 +253,7 @@ func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, err
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
 		}
-		return nil, err
+		return nil, entity.UserScanError
 	}
 
 	user.FirstName = *emptyIfNil(firstNamePtr)
@@ -306,7 +301,7 @@ func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutp
 			if err == pgx.ErrNoRows {
 				return nil, entity.UserNotFoundError
 			}
-			return nil, err
+			return nil, entity.UserScanError
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)
@@ -347,7 +342,7 @@ func (s *service) GetUserByUsername(ctx context.Context, username *Username) (*U
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
 		}
-		return nil, err
+		return nil, entity.UserScanError
 	}
 
 	user.FirstName = *emptyIfNil(firstNamePtr)
@@ -500,7 +495,7 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
 		if err != nil {
-			return nil, entity.SearchingError
+			return nil, entity.UserScanError
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)
@@ -550,7 +545,7 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
 		if err != nil {
-			return nil, entity.SearchingError
+			return nil, entity.UserScanError
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)
@@ -601,7 +596,7 @@ func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersLis
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
 			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
 		if err != nil {
-			return nil, entity.SearchingError
+			return nil, entity.UserScanError
 		}
 
 		user.FirstName = *emptyIfNil(firstNamePtr)

@@ -36,18 +36,18 @@ func NewPinApp(grpcClient grpcPins.PinsClient, boardApp BoardAppInterface) *PinA
 
 type PinAppInterface interface {
 	CreatePin(pin *entity.Pin, file io.Reader, extension string) (int, error)
-	SavePin(userID int, pinID int) error                             // Add pin to user's initial board
-	AddPin(boardID int, pinID int) error                             // Add pin to specified board
-	GetPin(pinID int) (*entity.Pin, error)                           // Get pin by pinID
-	GetPins(boardID int) ([]entity.Pin, error)                       // Get pins by boardID
-	GetLastPinID(userID int) (int, error)                            // Get user's last pin's ID
-	SavePicture(pin *entity.Pin) error                               // Update pin's picture properties
-	RemovePin(boardID int, pinID int) error                          // Delete pin from board
-	DeletePin(pinID int) error                                       // Delete pin entirely
-	UploadPicture(pinID int, file io.Reader, extension string) error // Upload pin's image
-	GetPinsWithOffset(offset int, amount int) ([]entity.Pin, error)  // Get specified amount of pins
-	SearchPins(keywords string, date string) ([]entity.Pin, error)
-	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) // Get all pins belonging to users
+	SavePin(userID int, pinID int) error                               // Add pin to user's initial board
+	AddPin(boardID int, pinID int) error                               // Add pin to specified board
+	GetPin(pinID int) (*entity.Pin, error)                             // Get pin by pinID
+	GetPins(boardID int) ([]entity.Pin, error)                         // Get pins by boardID
+	GetLastPinID(userID int) (int, error)                              // Get user's last pin's ID
+	SavePicture(pin *entity.Pin) error                                 // Update pin's picture properties
+	RemovePin(boardID int, pinID int) error                            // Delete pin from board
+	DeletePin(pinID int) error                                         // Delete pin entirely
+	UploadPicture(pinID int, file io.Reader, extension string) error   // Upload pin's image
+	GetPinsWithOffset(offset int, amount int) ([]entity.Pin, error)    // Get specified amount of pins
+	SearchPins(keywords string, interval string) ([]entity.Pin, error) // Search pins by keywords during interval
+	GetPinsOfUsers(userIDs []int) ([]entity.Pin, error)                // Get all pins belonging to users
 	CreateReport(report *entity.Report) (int, error)
 }
 
@@ -68,7 +68,14 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 	ConvertToGrpcPin(&grpcPin, pin)
 	pinID, err := pinApp.grpcClient.CreatePin(context.Background(), &grpcPin)
 	if err != nil {
-		return -1, err
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return -1, entity.PinScanError
+		case strings.Contains(err.Error(), entity.CreatePinError.Error()):
+			return -1, entity.CreatePinError
+		default:
+			return -1, err
+		}
 	}
 
 	err = pinApp.UploadPicture(int(pinID.PinID), file, extension)
@@ -90,7 +97,7 @@ func (pinApp *PinApp) CreatePin(pin *entity.Pin, file io.Reader, extension strin
 	return int(pinID.PinID), nil
 }
 
-// SavePin adds any pin to native user's board
+// SavePin adds any pin to user's initial board
 // It returns nil on success, error on failure
 func (pinApp *PinApp) SavePin(userID int, pinID int) error {
 	initBoardID, err := pinApp.boardApp.GetInitUserBoard(userID)
@@ -145,8 +152,16 @@ func (pinApp *PinApp) AddPin(boardID int, pinID int) error {
 func (pinApp *PinApp) GetPin(pinID int) (*entity.Pin, error) {
 	grpcPin, err := pinApp.grpcClient.GetPin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
-		return nil, err
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return nil, entity.PinScanError
+		case strings.Contains(err.Error(), entity.PinNotFoundError.Error()):
+			return nil, entity.PinNotFoundError
+		default:
+			return nil, err
+		}
 	}
+
 	pin := entity.Pin{}
 	ConvertFromGrpcPin(&pin, grpcPin)
 	return &pin, nil
@@ -157,8 +172,16 @@ func (pinApp *PinApp) GetPin(pinID int) (*entity.Pin, error) {
 func (pinApp *PinApp) GetPins(boardID int) ([]entity.Pin, error) {
 	grpcPinsList, err := pinApp.grpcClient.GetPins(context.Background(), &grpcPins.BoardID{BoardID: int64(boardID)})
 	if err != nil {
-		return nil, err
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return nil, entity.PinScanError
+		case strings.Contains(err.Error(), entity.PinsNotFoundError.Error()):
+			return nil, entity.PinsNotFoundError
+		default:
+			return nil, err
+		}
 	}
+
 	return ConvertGrpcPins(grpcPinsList), nil
 }
 
@@ -170,24 +193,16 @@ func (pinApp *PinApp) DeletePin(pinID int) error {
 		return err
 	}
 
-	boards, err := pinApp.grpcClient.GetBoardsWithPin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
-	switch {
-	case err == nil:
-		for _, board := range boards.Boards {
-			pinApp.RemovePin(int(board.BoardID), pin.PinID)
-		}
-	case strings.Contains(err.Error(), entity.BoardsNotFoundError.Error()):
-		break
-	default:
-		return err
-	}
-
 	_, err = pinApp.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
 	if err != nil {
-		if strings.Contains(err.Error(), entity.DeletePinError.Error()) {
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return entity.PinScanError
+		case strings.Contains(err.Error(), entity.DeletePinError.Error()):
 			return entity.DeletePinError
+		default:
+			return err
 		}
-		return err
 	}
 
 	_, err = pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
@@ -252,11 +267,8 @@ func (pinApp *PinApp) RemovePin(boardID int, pinID int) error {
 	}
 
 	if refCount.Number == 0 {
-		_, err = pinApp.grpcClient.DeletePin(context.Background(), &grpcPins.PinID{PinID: int64(pinID)})
+		err = pinApp.DeletePin(pinID)
 		if err != nil {
-			if strings.Contains(err.Error(), entity.DeletePinError.Error()) {
-				return entity.DeletePinError
-			}
 			return err
 		}
 		_, err = pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: pin.ImageLink})
@@ -287,13 +299,17 @@ func (pinApp *PinApp) SavePicture(pin *entity.Pin) error {
 func (pinApp *PinApp) GetLastPinID(userID int) (int, error) {
 	grpcPinID, err := pinApp.grpcClient.GetLastPinID(context.Background(), &grpcPins.UserID{Uid: int64(userID)})
 	if err != nil {
-		if strings.Contains(err.Error(), entity.PinNotFoundError.Error()) {
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return -1, entity.PinScanError
+		case strings.Contains(err.Error(), entity.PinNotFoundError.Error()):
 			return -1, entity.PinNotFoundError
+		default:
+			return -1, err
 		}
-		return -1, err
 	}
 
-	return int(grpcPinID.PinID), err
+	return int(grpcPinID.PinID), nil
 }
 
 //UploadPicture uploads picture to pin and saves new picture path in S3
@@ -339,7 +355,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
 	}
 	reader := bytes.NewReader(fileAsBytes)
-	buffer := make([]byte, 8*1024*1024)
+	buffer := make([]byte, 3.5*1024*1024) // jrpc cannot receive packages larger than 4 MB
 
 	for {
 		n, err := reader.Read(buffer)
@@ -373,11 +389,6 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 
 	err = pinApp.SavePicture(pin)
 	if err != nil {
-		pinApp.grpcClient.DeleteFile(context.Background(), &grpcPins.FilePath{ImagePath: res.Path})
-
-		if strings.Contains(err.Error(), entity.PinSavingError.Error()) {
-			return entity.PinSavingError
-		}
 		return err
 	}
 
@@ -392,10 +403,14 @@ func (pinApp *PinApp) GetPinsWithOffset(offset int, amount int) ([]entity.Pin, e
 		&grpcPins.FeedInfo{Offset: int64(offset), Amount: int64(amount)},
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), entity.FeedLoadingError.Error()) {
-			return nil, entity.FeedLoadingError
+		switch {
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return nil, entity.PinScanError
+		case strings.Contains(err.Error(), entity.PinsNotFoundError.Error()):
+			return nil, entity.PinsNotFoundError
+		default:
+			return nil, err
 		}
-		return nil, err
 	}
 
 	return ConvertGrpcPins(grpcPinsList), nil
@@ -403,15 +418,15 @@ func (pinApp *PinApp) GetPinsWithOffset(offset int, amount int) ([]entity.Pin, e
 
 // SearchPins returns pins by keywords
 // It returns suitable pins and nil on success, nil and error on failure
-func (pinApp *PinApp) SearchPins(keyWords string, date string) ([]entity.Pin, error) {
+func (pinApp *PinApp) SearchPins(keyWords string, interval string) ([]entity.Pin, error) {
 	grpcPinsList, err := pinApp.grpcClient.SearchPins(context.Background(),
-		&grpcPins.SearchInput{KeyWords: keyWords, Date: date})
+		&grpcPins.SearchInput{KeyWords: keyWords, Interval: interval})
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
-			return nil, entity.NoResultSearch
-		case strings.Contains(err.Error(), entity.SearchingError.Error()):
-			return nil, entity.SearchingError
+		case strings.Contains(err.Error(), entity.PinsNotFoundError.Error()):
+			return nil, entity.PinsNotFoundError
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return nil, entity.PinScanError
 		default:
 			return nil, err
 		}
@@ -431,10 +446,10 @@ func (pinApp *PinApp) GetPinsOfUsers(userIDs []int) ([]entity.Pin, error) {
 	grpcPinsList, err := pinApp.grpcClient.GetPinsOfUsers(context.Background(), &grpcPins.UserIDList{Ids: userIdsForGrpc})
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), entity.NoResultSearch.Error()):
-			return nil, entity.NoResultSearch
-		case strings.Contains(err.Error(), entity.GetPinsByUserIdError.Error()):
-			return nil, entity.GetPinsByUserIdError
+		case strings.Contains(err.Error(), entity.PinsNotFoundError.Error()):
+			return nil, entity.PinsNotFoundError
+		case strings.Contains(err.Error(), entity.PinScanError.Error()):
+			return nil, entity.PinScanError
 		default:
 			return nil, err
 		}

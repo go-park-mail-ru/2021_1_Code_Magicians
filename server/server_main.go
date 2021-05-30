@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"pinterest/application"
@@ -40,6 +41,11 @@ func runServer(addr string) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		sugarLogger.Fatal("Could not load .env file", zap.String("error", err.Error()))
+	}
+
+	err = godotenv.Load("passwords.env")
+	if err != nil {
+		sugarLogger.Fatal("Could not load passwords.env file", zap.String("error", err.Error()))
 	}
 
 	err = godotenv.Load("s3.env")
@@ -95,13 +101,18 @@ func runServer(addr string) {
 	}
 	defer sessionComments.Close()
 
+	pinEmailTemplteBytes, err := ioutil.ReadFile(string(entity.EmailTemplateFilenameKey))
+	if err != nil {
+		sugarLogger.Fatal("Could not find template for pin emails")
+	}
+	pinEmailTemplate := string(pinEmailTemplteBytes)
+
 	repoUser := protoUser.NewUserClient(sessionUser)
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)
 	repoPins := protoPins.NewPinsClient(sessionPins)
 	repoComments := protoComments.NewCommentsClient(sessionComments)
 	repoNotification := persistance.NewNotificationRepository(tarantoolConn)
 	repoChat := persistance.NewChatRepository(tarantoolConn)
-
 	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
 	boardApp := application.NewBoardApp(repoPins)
 	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
@@ -118,7 +129,8 @@ func runServer(addr string) {
 	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)
 	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, followApp, s3App, notificationApp, logger)
 	followInfo := follow.NewFollowInfo(userApp, followApp, notificationApp, logger)
-	pinInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
+	pinInfo := pin.NewPinInfo(pinApp, followApp, notificationApp, userApp, boardApp, s3App, logger,
+		pinEmailTemplate, os.Getenv("EMAIL_USERNAME"), os.Getenv("EMAIL_PASSWORD"))
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
 	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
@@ -126,7 +138,7 @@ func runServer(addr string) {
 	// TODO divide file
 
 	r := routing.CreateRouter(authApp, boardInfo, authInfo, profileInfo, followInfo, pinInfo, commentsInfo,
-		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true")
+		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true", os.Getenv("HTTPS_ON") == "true")
 
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {

@@ -43,7 +43,16 @@ func (commentApp *CommentApp) AddComment(comment *entity.Comment) error {
 func (commentApp *CommentApp) GetComments(pinID int) ([]entity.Comment, error) {
 	comments, err := commentApp.grpcClient.GetComments(context.Background(), &grpcComments.PinID{PinID: int64(pinID)})
 	if err != nil {
-		return nil, err
+		switch {
+		case strings.Contains(err.Error(), entity.CommentsNotFoundError.Error()):
+			return nil, entity.CommentsNotFoundError
+		case strings.Contains(err.Error(), entity.GetCommentsError.Error()):
+			return nil, entity.GetCommentsError
+		case strings.Contains(err.Error(), entity.CommentScanError.Error()):
+			return nil, entity.CommentScanError
+		default:
+			return nil, err
+		}
 	}
 	resComments := ConvertGrpcComments(comments)
 

@@ -54,7 +54,7 @@ func (boardInfo *BoardInfo) HandleCreateBoard(w http.ResponseWriter, r *http.Req
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -84,7 +84,14 @@ func (boardInfo *BoardInfo) HandleDelBoardByID(w http.ResponseWriter, r *http.Re
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		case entity.CheckBoardOwnerError:
+			w.WriteHeader(http.StatusForbidden)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -104,7 +111,12 @@ func (boardInfo *BoardInfo) HandleGetBoardByID(w http.ResponseWriter, r *http.Re
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
+		switch err {
+		case entity.BoardNotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -128,20 +140,16 @@ func (boardInfo *BoardInfo) HandleGetBoardsByUserID(w http.ResponseWriter, r *ht
 	}
 
 	resultBoards, err := boardInfo.boardApp.GetBoards(userID)
-	if err != nil {
+	if err != nil && err != entity.BoardsNotFoundError { // It's fine if no boards were found
 		boardInfo.logger.Info(
 			err.Error(), zap.String("url", r.RequestURI),
 			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if len(resultBoards) == 0 {
-		boardInfo.logger.Info(
-			entity.NoResultSearch.Error(), zap.String("url", r.RequestURI),
-			zap.Int("for user", userID), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusNotFound)
-		return
+	if resultBoards == nil {
+		resultBoards = make([]entity.Board, 0) // So that [] appears in json and not nil
 	}
 
 	boards := entity.BoardsOutput{Boards: resultBoards}

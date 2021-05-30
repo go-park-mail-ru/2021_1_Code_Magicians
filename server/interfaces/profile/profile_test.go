@@ -91,30 +91,6 @@ var profileTestSuccess = []struct {
 }{
 	{
 		profileInputStruct{
-			"/auth/signup",
-			"/auth/signup",
-			"POST",
-			nil,
-			[]byte(`{"username": "TestUsername",` +
-				`"password": "thisisapassword",` +
-				`"email": "test@example.com",` +
-				`"firstName": "TestFirstName",` +
-				`"lastName": "TestLastName",` +
-				`"avatarLink": "avatars/1"}`,
-			),
-			testAuthInfo.HandleCreateUser,
-			middleware.NoAuthMid,
-		},
-
-		profileOutputStruct{
-			201,
-			nil,
-			nil,
-		},
-		"Testing profile creation",
-	},
-	{
-		profileInputStruct{
 			"/profile",
 			"/profile",
 			"GET",
@@ -349,10 +325,8 @@ func TestProfileSuccess(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
-	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
+	successCookies = nil
+	successCookies = append(successCookies, &expectedCookie)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 
@@ -452,30 +426,6 @@ var profileTestFailure = []struct {
 	out  profileOutputStruct
 	name string
 }{
-	{
-		profileInputStruct{
-			"/auth/signup",
-			"/auth/signup",
-			"POST",
-			nil,
-			[]byte(`{"username": "TestUsername",` +
-				`"password": "thisisapassword",` +
-				`"email": "test@example.com",` +
-				`"firstName": "TestFirstName",` +
-				`"lastName": "TestLastName",` +
-				`"avatarLink": "avatars/1"}`,
-			),
-			testAuthInfo.HandleCreateUser,
-			middleware.NoAuthMid,
-		},
-
-		profileOutputStruct{
-			201,
-			nil,
-			nil,
-		},
-		"Testing profile creation",
-	},
 	{
 		profileInputStruct{
 			"/profile/password",
@@ -703,10 +653,8 @@ func TestProfileFailure(t *testing.T) {
 		Cookie: &expectedCookie,
 	}
 
-	mockCookieApp.EXPECT().GenerateCookie().Return(&expectedCookie, nil).Times(1)
-	mockUserApp.EXPECT().CreateUser(gomock.Any()).Return(expectedUser.UserID, nil).Times(1)
-	mockWebsocketApp.EXPECT().ChangeToken(expectedUser.UserID, "").Times(1)
-	mockCookieApp.EXPECT().AddCookieInfo(gomock.Any()).Return(nil).Times(1)
+	failureCookies = nil
+	failureCookies = append(failureCookies, &expectedCookie)
 
 	mockAuthApp.EXPECT().CheckCookie(gomock.Any()).Return(&expectedCookieInfo, true).AnyTimes() // User is never logged out during these tests, except for the last one
 

@@ -2,10 +2,11 @@ package comments
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"pinterest/domain/entity"
 	. "pinterest/services/comments/proto"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type service struct {
@@ -59,7 +60,7 @@ func (s *service) GetComments(ctx context.Context, pinID *PinID) (*CommentsList,
 	rows, err := tx.Query(context.Background(), getCommentsByPinQuery, pinID.PinID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return &CommentsList{}, nil
+			return &CommentsList{}, entity.CommentsNotFoundError
 		}
 		return &CommentsList{}, entity.GetCommentsError
 	}
@@ -68,7 +69,7 @@ func (s *service) GetComments(ctx context.Context, pinID *PinID) (*CommentsList,
 		comment := Comment{}
 		err = rows.Scan(&comment.UserID, &comment.PinID, &comment.PinComment)
 		if err != nil {
-			return &CommentsList{}, entity.ReturnCommentsError
+			return &CommentsList{}, entity.CommentScanError
 		}
 		comments = append(comments, &comment)
 	}

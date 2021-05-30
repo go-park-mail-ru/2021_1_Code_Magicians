@@ -91,8 +91,8 @@ func (followApp *FollowApp) GetAllFollowers(followedID int) ([]entity.User, erro
 		switch {
 		case strings.Contains(err.Error(), entity.UsersNotFoundError.Error()):
 			return nil, entity.UsersNotFoundError
-		case strings.Contains(err.Error(), entity.SearchingError.Error()):
-			return nil, entity.SearchingError
+		case strings.Contains(err.Error(), entity.UserScanError.Error()):
+			return nil, entity.UserScanError
 		}
 		return nil, err
 	}
@@ -115,8 +115,8 @@ func (followApp *FollowApp) GetAllFollowed(followerID int) ([]entity.User, error
 		switch {
 		case strings.Contains(err.Error(), entity.UsersNotFoundError.Error()):
 			return nil, entity.UsersNotFoundError
-		case strings.Contains(err.Error(), entity.SearchingError.Error()):
-			return nil, entity.SearchingError
+		case strings.Contains(err.Error(), entity.UserScanError.Error()):
+			return nil, entity.UserScanError
 		}
 		return nil, err
 	}

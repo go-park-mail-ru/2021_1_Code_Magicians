@@ -5,7 +5,11 @@ global:
 scrape_configs:
   - job_name: 'golang'
     static_configs:
-      - targets: ['go-main:8080']
+      - targets: ['pinter-best.com:8080']
+    scheme: https
+    tls_config:
+      cert_file: cert.pem
+      key_file: key.pem
 
 rule_files:
   - 'alerts.yml'

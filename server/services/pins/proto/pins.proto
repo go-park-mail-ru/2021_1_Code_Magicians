@@ -105,7 +105,7 @@ message FileInfo {
 
 message SearchInput {
   string keyWords = 1;
-  string date     = 2;
+  string interval     = 2;
 }
 
 message Number {

@@ -18,3 +18,8 @@ type OneNotificationOutput struct {
 	Type         key          `json:"type"`
 	Notification Notification `json:"notification"`
 }
+
+type UserNotificationInfo struct {
+	UserID         int
+	NotificationID int
+}
