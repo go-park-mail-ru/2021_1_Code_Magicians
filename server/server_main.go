@@ -22,6 +22,7 @@ import (
 	protoComments "pinterest/services/comments/proto"
 	protoPins "pinterest/services/pins/proto"
 	protoUser "pinterest/services/user/proto"
+	"text/template"
 	"time"
 
 	"go.uber.org/zap"
@@ -105,7 +106,11 @@ func runServer(addr string) {
 	if err != nil {
 		sugarLogger.Fatal("Could not find template for pin emails")
 	}
-	pinEmailTemplate := string(pinEmailTemplteBytes)
+	pinEmailTemplateString := string(pinEmailTemplteBytes)
+	pinEmailTemplate, err := template.New("EMail Template").Parse(pinEmailTemplateString)
+	if err != nil {
+		sugarLogger.Fatal("Could not parse template for pin emails", err)
+	}
 
 	repoUser := protoUser.NewUserClient(sessionUser)
 	repoAuth := protoAuth.NewAuthClient(sessionAuth)

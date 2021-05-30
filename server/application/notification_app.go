@@ -39,7 +39,7 @@ type NotificationAppInterface interface {
 	SendNotification(userID int, notificationID int) error                        // Send specified  notification to specified user
 	SendNotificationsToUsers(usersAndNotifications []entity.UserNotificationInfo) // Send notifications to users
 	SendNotificationEmail(userID int, notificationID int,
-		templateString string, templateStruct interface{},
+		templateForMail *template.Template, templateStruct interface{},
 		serverEmail string, serverPassword string) error // Send specified notification to specified user as an e-mail
 	ReadNotification(userID int, notificationID int) error // Changes notification's status to "Read"
 }
@@ -203,7 +203,7 @@ func validateLine(line string) error {
 }
 
 func (notificationApp *NotificationApp) SendNotificationEmail(userID int, notificationID int,
-	templateString string, templateStruct interface{},
+	templateForMail *template.Template, templateStruct interface{},
 	serverEmail string, serverPassword string) error {
 	user, err := notificationApp.userApp.GetUser(userID)
 	if err != nil {
@@ -221,23 +221,18 @@ func (notificationApp *NotificationApp) SendNotificationEmail(userID int, notifi
 	}
 
 	// smtp server configuration.
-	smtpHost := "smtp.mail.ru"
+	smtpHost := "smtp.gmail.com"
 	smtpPort := "465"
 
 	// Authentication.
 	auth := smtp.PlainAuth("", serverEmail, serverPassword, smtpHost)
-
-	t, err := template.New("EMail Template").Parse(templateString)
-	if err != nil {
-		return err
-	}
 
 	var body bytes.Buffer
 
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n"
 	body.Write([]byte(fmt.Sprintf("Subject: %s \n%s", notification.Title, mimeHeaders)))
 
-	t.Execute(&body, templateStruct)
+	templateForMail.Execute(&body, templateStruct)
 
 	// Sending email.
 	err = sendMailTLS(smtpHost+":"+smtpPort, auth, serverEmail, to, body.Bytes())

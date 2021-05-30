@@ -7,6 +7,7 @@ package mock_application
 import (
 	entity "pinterest/domain/entity"
 	reflect "reflect"
+	template "text/template"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -135,17 +136,17 @@ func (mr *MockNotificationAppInterfaceMockRecorder) SendNotification(userID, not
 }
 
 // SendNotificationEmail mocks base method.
-func (m *MockNotificationAppInterface) SendNotificationEmail(userID, notificationID int, templateString string, templateStruct interface{}, serverEmail, serverPassword string) error {
+func (m *MockNotificationAppInterface) SendNotificationEmail(userID, notificationID int, templateForMail *template.Template, templateStruct interface{}, serverEmail, serverPassword string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendNotificationEmail", userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+	ret := m.ctrl.Call(m, "SendNotificationEmail", userID, notificationID, templateForMail, templateStruct, serverEmail, serverPassword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendNotificationEmail indicates an expected call of SendNotificationEmail.
-func (mr *MockNotificationAppInterfaceMockRecorder) SendNotificationEmail(userID, notificationID, templateString, templateStruct, serverEmail, serverPassword interface{}) *gomock.Call {
+func (mr *MockNotificationAppInterfaceMockRecorder) SendNotificationEmail(userID, notificationID, templateForMail, templateStruct, serverEmail, serverPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotificationEmail", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotificationEmail), userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotificationEmail", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotificationEmail), userID, notificationID, templateForMail, templateStruct, serverEmail, serverPassword)
 }
 
 // SendNotificationsToUsers mocks base method.

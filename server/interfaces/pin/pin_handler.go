@@ -9,6 +9,7 @@ import (
 	"pinterest/domain/entity"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"go.uber.org/zap"
 
@@ -18,33 +19,34 @@ import (
 )
 
 type PinInfo struct {
-	pinApp          application.PinAppInterface
-	followApp       application.FollowAppInterface
-	notificationApp application.NotificationAppInterface
-	userApp         application.UserAppInterface
-	boardApp        application.BoardAppInterface
-	s3App           application.S3AppInterface
-	logger          *zap.Logger
-	template        string // Used for creating an e-mail for notifications
-	emailUsername   string
-	emailPassword   string
+	pinApp           application.PinAppInterface
+	followApp        application.FollowAppInterface
+	notificationApp  application.NotificationAppInterface
+	userApp          application.UserAppInterface
+	boardApp         application.BoardAppInterface
+	s3App            application.S3AppInterface
+	logger           *zap.Logger
+	templateForEmail *template.Template // Used for creating an e-mail for notifications
+	emailUsername    string
+	emailPassword    string
 }
 
 func NewPinInfo(pinApp application.PinAppInterface, followApp application.FollowAppInterface,
 	notificationApp application.NotificationAppInterface, userApp application.UserAppInterface,
 	boardApp application.BoardAppInterface, s3App application.S3AppInterface,
-	logger *zap.Logger, template string, emailUsername string, emailPassword string) *PinInfo {
+	logger *zap.Logger, templateForEmail *template.Template,
+	emailUsername string, emailPassword string) *PinInfo {
 	return &PinInfo{
-		pinApp:          pinApp,
-		followApp:       followApp,
-		notificationApp: notificationApp,
-		userApp:         userApp,
-		boardApp:        boardApp,
-		s3App:           s3App,
-		logger:          logger,
-		template:        template,
-		emailUsername:   emailUsername,
-		emailPassword:   emailPassword,
+		pinApp:           pinApp,
+		followApp:        followApp,
+		notificationApp:  notificationApp,
+		userApp:          userApp,
+		boardApp:         boardApp,
+		s3App:            s3App,
+		logger:           logger,
+		templateForEmail: templateForEmail,
+		emailUsername:    emailUsername,
+		emailPassword:    emailPassword,
 	}
 }
 
@@ -195,7 +197,7 @@ func (pinInfo *PinInfo) sendEmails(usersAndNotifications []entity.UserNotificati
 			PinID:                pinID,
 		}
 		err = pinInfo.notificationApp.SendNotificationEmail(user.UserID, notification.NotificationID,
-			pinInfo.template, templateStruct,
+			pinInfo.templateForEmail, templateStruct,
 			pinInfo.emailUsername, pinInfo.emailPassword)
 		if err != nil {
 			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendEmails"),
