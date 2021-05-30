@@ -133,3 +133,29 @@ func (mr *MockNotificationAppInterfaceMockRecorder) SendNotification(userID, not
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotification", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotification), userID, notificationID)
 }
+
+// SendNotificationEmail mocks base method.
+func (m *MockNotificationAppInterface) SendNotificationEmail(userID, notificationID int, templateString string, templateStruct interface{}, serverEmail, serverPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendNotificationEmail", userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendNotificationEmail indicates an expected call of SendNotificationEmail.
+func (mr *MockNotificationAppInterfaceMockRecorder) SendNotificationEmail(userID, notificationID, templateString, templateStruct, serverEmail, serverPassword interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotificationEmail", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotificationEmail), userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+}
+
+// SendNotificationsToUsers mocks base method.
+func (m *MockNotificationAppInterface) SendNotificationsToUsers(usersAndNotifications []entity.UserNotificationInfo) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendNotificationsToUsers", usersAndNotifications)
+}
+
+// SendNotificationsToUsers indicates an expected call of SendNotificationsToUsers.
+func (mr *MockNotificationAppInterfaceMockRecorder) SendNotificationsToUsers(usersAndNotifications interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotificationsToUsers", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotificationsToUsers), usersAndNotifications)
+}
