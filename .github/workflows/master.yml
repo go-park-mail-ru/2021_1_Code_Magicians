@@ -78,7 +78,8 @@ jobs:
           script: |
             cd back_repo
             sudo docker-compose -f docker-compose-no-postgres.yaml down
-            git checkout dev
+
+            git checkout master
             git pull -f
             pwd
             sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
