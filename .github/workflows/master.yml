@@ -77,10 +77,10 @@ jobs:
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
             cd /home/deploy/backend
-            sudo docker-compose -f docker-compose-no-postgres.yaml down
+            sudo docker-compose -f docker-compose-no-monitoring.yaml down
 
             git checkout master
             git pull -f
 
             pwd
-            sudo docker-compose -f docker-compose-no-postgres.yaml up --build -d
+            sudo docker-compose -f docker-compose-no-monitoring.yaml up --build -d
