@@ -1,0 +1,80 @@
+<!-- template.html -->
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="x-apple-disable-message-reformatting">
+	<title>Письмо</title>
+</head>
+<body>
+<div style="background-color: #ffffff;margin: 0px;padding: 0px; font-family: 'roboto' , 'arial' , sans-serif;">
+	<table border="0" cellpadding="0" cellspacing="0" width="100%">
+		<tr>
+			<td align="center" bgcolor="#eeeeee">
+				<div style="max-width: 600px">
+					<table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;min-width:320px;">
+						<tr>
+							<td align="center" style="background-color: white;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+									<tr>
+										<td align="center" style="font-size: 24px; padding: 10px 15px; border-bottom: 4px solid #eeeeee;">
+											<div style="text-align: center; color: #52976F">Good old</div>
+											<div style="color: black">Pinter-best</div>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td align="center">
+								<table  align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+									<tr>
+										<td align="center" height="335px">
+											<img src="https://pinterbestbucket.s3.eu-central-1.amazonaws.com/pins/i2x4lXm0kAlIzh5FA06aovLek3ISrITBRwisq2DphL3gJ5d531NSTA==.jpg" width="100%" height="100%" style="background-color: #FFFFFF; border:medium; object-fit:contain;">
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td align="center" bgcolor="white">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" width="95%" style="max-width: 540px">
+									<tr>
+										<td align="center">
+											<div style="font-size:0;height:40px;line-height:40px">&nbsp;</div>
+											<div style="text-align: left; font-size: 20px; color: #52976F; font-weight: 500;">Greetings,<br />{{.Username}}</div>
+											<div style="font-size:0;height:20px;line-height:10px">&nbsp;</div>
+											<div style="text-align: left; font-size: 16px; line-height:25px; color: #333333;">{{.NotificationTitle}}</div>
+
+											<div style="text-align: left; font-size: 16px; line-height:25px; color: #333333;">{{.NotificationText}}</div>
+											<a href="https://pinter-best.com/pin/{{.PinID}}">
+												<div style="text-align: left; font-size: 16px; line-height:25px; color: #333333;">Click here to view.</div>
+											</a>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td align="center" bgcolor="white">
+								<table border="0" cellpadding="0" cellspacing="0" width="100%">
+									<tr>
+										<td align="center">
+											<div style="font-size:0;height:20px;line-height:40px">&nbsp;</div>
+											<div style="background-color: #333333; padding: 15px 20px; text-align: center; color: #f9f9f9; vertical-align: middle;">
+												{{.NotificationCategory}}<br />
+											</div>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
+</body>
+</html>
