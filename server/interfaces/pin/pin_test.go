@@ -242,7 +242,7 @@ var pinTest = []struct {
 	},
 	{
 		InputStruct{
-			"/pins/search?searchKey=exp&date=week",
+			"/pins/search?searchKey=exp&interval=week",
 			"/pins/search",
 			"GET",
 			nil,
@@ -475,6 +475,8 @@ func TestPins(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockUserApp := mock_application.NewMockUserAppInterface(mockCtrl)
+	mockFollowApp := mock_application.NewMockFollowAppInterface(mockCtrl)
+	mockNotificationApp := mock_application.NewMockNotificationAppInterface(mockCtrl)
 	mockAuthApp := mock_application.NewMockAuthAppInterface(mockCtrl)
 	mockCookieApp := mock_application.NewMockCookieAppInterface(mockCtrl)
 	mockPinApp := mock_application.NewMockPinAppInterface(mockCtrl)
@@ -501,6 +503,17 @@ func TestPins(t *testing.T) {
 	expectedCookieInfo := entity.CookieInfo{
 		UserID: expectedUser.UserID,
 		Cookie: &expectedCookie,
+	}
+
+	expectedFollower := &entity.User{
+		UserID:    1,
+		Username:  "FollowerUsername",
+		Password:  "thisisanotherpassword",
+		FirstName: "TestFollowerFirstName",
+		LastName:  "TestFollowerLastName",
+		Email:     "testFollower@example.com",
+		Avatar:    "avatars/2",
+		Salt:      "",
 	}
 
 	successCookies = nil
@@ -545,8 +558,16 @@ func TestPins(t *testing.T) {
 	}
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinFirst.PinID, nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
+	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinSecond.PinID, nil).Times(1)
+	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
+	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
 
 	mockBoardApp.EXPECT().CreateBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 
@@ -587,10 +608,13 @@ func TestPins(t *testing.T) {
 	testBoardInfo = *board.NewBoardInfo(mockBoardApp, testLogger)
 
 	testPinInfo = PinInfo{
-		pinApp:   mockPinApp,
-		boardApp: mockBoardApp,
-		s3App:    nil, // S3 is not needed, as we do not currently test file upload
-		logger:   testLogger,
+		pinApp:          mockPinApp,
+		followApp:       mockFollowApp,
+		notificationApp: mockNotificationApp,
+		userApp:         mockUserApp,
+		boardApp:        mockBoardApp,
+		s3App:           nil, // S3 is not needed, as we do not currently test file upload
+		logger:          testLogger,
 	}
 	for _, tt := range pinTest {
 		tt := tt

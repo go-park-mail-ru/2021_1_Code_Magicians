@@ -2,6 +2,7 @@ package pin
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -17,21 +18,30 @@ import (
 )
 
 type PinInfo struct {
-	pinApp   application.PinAppInterface
-	boardApp application.BoardAppInterface
-	s3App    application.S3AppInterface
-	logger   *zap.Logger
+	pinApp          application.PinAppInterface
+	followApp       application.FollowAppInterface
+	notificationApp application.NotificationAppInterface
+	userApp         application.UserAppInterface
+	boardApp        application.BoardAppInterface
+	s3App           application.S3AppInterface
+	logger          *zap.Logger
 }
 
 func NewPinInfo(pinApp application.PinAppInterface,
-	s3App application.S3AppInterface,
+	followApp application.FollowAppInterface,
+	notificationApp application.NotificationAppInterface,
+	userApp application.UserAppInterface,
 	boardApp application.BoardAppInterface,
+	s3App application.S3AppInterface,
 	logger *zap.Logger) *PinInfo {
 	return &PinInfo{
-		pinApp:   pinApp,
-		boardApp: boardApp,
-		s3App:    s3App,
-		logger:   logger,
+		pinApp:          pinApp,
+		followApp:       followApp,
+		notificationApp: notificationApp,
+		userApp:         userApp,
+		boardApp:        boardApp,
+		s3App:           s3App,
+		logger:          logger,
 	}
 }
 
@@ -88,6 +98,39 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
+	}
+
+	user, err := pinInfo.userApp.GetUser(userID)
+	if err != nil {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		pinInfo.pinApp.DeletePin(currPin.PinID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	followers, err := pinInfo.followApp.GetAllFollowers(userID)
+	if err != nil && err != entity.UsersNotFoundError {
+		pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		pinInfo.pinApp.DeletePin(currPin.PinID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, follower := range followers {
+		notificationID, err := pinInfo.notificationApp.AddNotification(&entity.Notification{
+			UserID:   follower.UserID,
+			Title:    "New Pin from people you've subscribed to!",
+			Category: "subscribed pins",
+			Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
+				follower.Username, user.Username, currPin.Title),
+			IsRead: false,
+		})
+		if err == nil {
+			pinInfo.notificationApp.SendNotification(follower.UserID, notificationID)
+		} else {
+			pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+				zap.Int("for user", follower.UserID), zap.String("method", r.Method))
+		}
 	}
 
 	pinIDOutput := entity.PinID{PinID: currPin.PinID}

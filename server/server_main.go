@@ -106,7 +106,6 @@ func runServer(addr string) {
 	repoComments := protoComments.NewCommentsClient(sessionComments)
 	repoNotification := persistance.NewNotificationRepository(tarantoolConn)
 	repoChat := persistance.NewChatRepository(tarantoolConn)
-
 	cookieApp := application.NewCookieApp(repoAuth, 40, 10*time.Hour)
 	boardApp := application.NewBoardApp(repoPins)
 	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
@@ -123,7 +122,7 @@ func runServer(addr string) {
 	authInfo := auth.NewAuthInfo(userApp, authApp, cookieApp, s3App, boardApp, websocketApp, logger)
 	profileInfo := profile.NewProfileInfo(userApp, authApp, cookieApp, followApp, s3App, notificationApp, logger)
 	followInfo := follow.NewFollowInfo(userApp, followApp, notificationApp, logger)
-	pinInfo := pin.NewPinInfo(pinApp, s3App, boardApp, logger)
+	pinInfo := pin.NewPinInfo(pinApp, followApp, notificationApp, userApp, boardApp, s3App, logger)
 	commentsInfo := comment.NewCommentInfo(commentApp, pinApp, logger)
 	websocketInfo := websocket.NewWebsocketInfo(notificationApp, chatApp, websocketApp, os.Getenv("CSRF_ON") == "true", logger)
 	notificationInfo := notification.NewNotificationInfo(notificationApp, logger)
