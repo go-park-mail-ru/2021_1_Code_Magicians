@@ -100,18 +100,16 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 	}
 
 	pinComments, err := commentInfo.commentApp.GetComments(pinID)
-	if err != nil {
+	if err != nil && err != entity.CommentsNotFoundError {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		switch err {
-		case entity.PinNotFoundError:
-			w.WriteHeader(http.StatusNotFound)
-		default:
-			w.WriteHeader(http.StatusBadRequest)
-		}
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	comments := entity.CommentsOutput{Comments: pinComments}
+	if comments.Comments == nil {
+		comments.Comments = make([]entity.Comment, 0)
+	}
 
 	body, err := json.Marshal(comments)
 	if err != nil {

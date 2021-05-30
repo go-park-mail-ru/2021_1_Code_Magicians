@@ -83,6 +83,8 @@ const DuplicateReportError customError = "Reports with these senderID and inID a
 const AddCommentError customError = "Comment creation failed"
 const GetCommentsError customError = "Could not get comments"
 const ReturnCommentsError customError = "Could not return comments"
+const CommentScanError customError = "something went wrong when scanning comment from database"
+const CommentsNotFoundError customError = "No comments found"
 
 const NoPicturePassed customError = "No picture was passed"
 const TooLargePicture customError = "Picture is too large"
