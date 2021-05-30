@@ -133,3 +133,17 @@ func (mr *MockNotificationAppInterfaceMockRecorder) SendNotification(userID, not
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotification", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotification), userID, notificationID)
 }
+
+// SendNotificationEmail mocks base method.
+func (m *MockNotificationAppInterface) SendNotificationEmail(userID, notificationID int, templateString string, templateStruct interface{}, serverEmail, serverPassword string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendNotificationEmail", userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendNotificationEmail indicates an expected call of SendNotificationEmail.
+func (mr *MockNotificationAppInterfaceMockRecorder) SendNotificationEmail(userID, notificationID, templateString, templateStruct, serverEmail, serverPassword interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNotificationEmail", reflect.TypeOf((*MockNotificationAppInterface)(nil).SendNotificationEmail), userID, notificationID, templateString, templateStruct, serverEmail, serverPassword)
+}

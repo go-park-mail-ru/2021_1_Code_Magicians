@@ -117,16 +117,48 @@ func (pinInfo *PinInfo) HandleAddPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, follower := range followers {
-		notificationID, err := pinInfo.notificationApp.AddNotification(&entity.Notification{
+		notification := entity.Notification{
 			UserID:   follower.UserID,
 			Title:    "New Pin from people you've subscribed to!",
 			Category: "subscribed pins",
 			Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
 				follower.Username, user.Username, currPin.Title),
 			IsRead: false,
-		})
+		}
+		notification.NotificationID, err = pinInfo.notificationApp.AddNotification(&notification)
+
 		if err == nil {
-			pinInfo.notificationApp.SendNotification(follower.UserID, notificationID)
+			pinInfo.notificationApp.SendNotification(follower.UserID, notification.NotificationID)
+			// TODO: change to normal, non-hardcoded values
+			templateString := "<!-- template.html -->\n" +
+				"<!DOCTYPE html>\n" +
+				"<html>\n" +
+				"<body>\n" +
+				"	<h3>NotificationTitle:</h3><span>{{.NotificationTitle}}</span><br/><br/>\n" +
+				"	<h3>NotificationText:</h3><span>{{.NotificationText}}</span><br/><br/>\n" +
+				"	<h3>NotificationID:</h3><span>{{.NotificationID}}</span><br/><br/>\n" +
+				"	<h3>NotificationCategory:</h3><span>{{.NotificationCategory}}</span><br/><br/>\n" +
+				"	<h3>Username:</h3><span>{{.Username}}</span><br/><br/>\n" +
+				"</body>\n" +
+				"</html>\n\n"
+			templateStruct := struct {
+				NotificationTitle    string
+				NotificationText     string
+				NotificationID       int
+				NotificationCategory string
+				Username             string
+				PinID                int
+			}{
+				NotificationTitle:    notification.Title,
+				NotificationText:     notification.Text,
+				NotificationID:       notification.NotificationID,
+				NotificationCategory: notification.Category,
+				Username:             follower.Username,
+				PinID:                currPin.PinID,
+			}
+			pinInfo.notificationApp.SendNotificationEmail(follower.UserID, notification.NotificationID,
+				templateString, templateStruct,
+				"pinterbest-informer@mail.ru", "ys3UeY5.zAAQ).F")
 		} else {
 			pinInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI),
 				zap.Int("for user", follower.UserID), zap.String("method", r.Method))
