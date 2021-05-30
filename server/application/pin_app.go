@@ -365,7 +365,6 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		if err != nil {
 			log.Fatal("cannot read chunk to buffer: ", err)
 		}
-		fmt.Println(n / 1024 / 1024)
 
 		req = &grpcPins.UploadImage{
 			Data: &grpcPins.UploadImage_ChunkData{
