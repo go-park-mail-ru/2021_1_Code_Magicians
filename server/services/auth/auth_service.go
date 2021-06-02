@@ -193,15 +193,6 @@ func vkTokenInfoToInterfaces(tokenInfo *VkTokenInfo) []interface{} {
 	return tokenInfoAsInterface
 }
 
-func interfacesToVkTokenInfo(interfaces []interface{}) *VkTokenInfo {
-	tokenInfo := new(VkTokenInfo)
-	tokenInfo.VkUserID = int64(interfaces[0].(uint64))
-	tokenInfo.Token = interfaces[1].(string)
-	tokenInfo.Expires = timestamppb.New(unixTimestampToTime(int64(interfaces[2].(uint64))))
-	tokenInfo.UserID = int64(interfaces[3].(uint64))
-	return tokenInfo
-}
-
 func unixTimestampToTime(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
