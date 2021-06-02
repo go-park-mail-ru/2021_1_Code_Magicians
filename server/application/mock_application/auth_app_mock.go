@@ -49,6 +49,20 @@ func (mr *MockAuthAppInterfaceMockRecorder) AddVkCode(userID, code, redirectURI 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVkCode", reflect.TypeOf((*MockAuthAppInterface)(nil).AddVkCode), userID, code, redirectURI)
 }
 
+// AddVkToken mocks base method.
+func (m *MockAuthAppInterface) AddVkToken(userID int, tokenInput *entity.UserVkTokenInput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddVkToken", userID, tokenInput)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddVkToken indicates an expected call of AddVkToken.
+func (mr *MockAuthAppInterfaceMockRecorder) AddVkToken(userID, tokenInput interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVkToken", reflect.TypeOf((*MockAuthAppInterface)(nil).AddVkToken), userID, tokenInput)
+}
+
 // CheckCookie mocks base method.
 func (m *MockAuthAppInterface) CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) {
 	m.ctrl.T.Helper()

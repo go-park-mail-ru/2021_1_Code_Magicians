@@ -208,6 +208,14 @@ func (info *AuthInfo) HandleCreateUserWithVK(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	err = info.authApp.AddVkToken(userID, tokenInput)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		info.userApp.DeleteUser(userID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{UserID: userID, Cookie: cookie})
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))

@@ -41,6 +41,7 @@ type AuthAppInterface interface {
 	CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool)                      // Check if passed cookie value is present in any active session
 	CheckVkCode(code string, redirectURI string) (*entity.CookieInfo, error)         // Use public vk token to get private one and log user with that token in
 	AddVkCode(userID int, code string, redirectURI string) error                     // Use public vk token to get private one and associate it with user
+	AddVkToken(userID int, tokenInput *entity.UserVkTokenInput) error                // Add token to database
 	VkCodeToToken(code string, redirectURI string) (*entity.UserVkTokenInput, error) // Get private token from vk using code
 }
 
@@ -106,8 +107,8 @@ func (authApp *AuthApp) CheckVkCode(code string, redirectURI string) (*entity.Co
 		return nil, err
 	}
 
-	grpcUserID, err := authApp.grpcClient.CheckUserByVkToken(context.Background(),
-		&grpcAuth.VkToken{Token: tokenInput.Token})
+	userID, err := authApp.grpcClient.CheckUserByVkToken(context.Background(),
+		&grpcAuth.VkTokenInfo{VkUserID: int64(tokenInput.VkUserID)}) // TODO: add other fields
 
 	//TODO: fix behaviour when token expires and is replaced in vk's response
 
@@ -123,7 +124,7 @@ func (authApp *AuthApp) CheckVkCode(code string, redirectURI string) (*entity.Co
 		cookie, err = authApp.cookieApp.GenerateCookie()
 	}
 
-	resultCookieInfo := &entity.CookieInfo{UserID: int(grpcUserID.Uid), Cookie: cookie}
+	resultCookieInfo := &entity.CookieInfo{UserID: int(userID.Uid), Cookie: cookie}
 	err = authApp.cookieApp.AddCookieInfo(resultCookieInfo)
 	if err != nil {
 		return nil, err
@@ -138,8 +139,12 @@ func (authApp *AuthApp) AddVkCode(userID int, code string, redirectURI string) e
 		return err
 	}
 
-	_, err = authApp.grpcClient.AddVkToken(context.Background(),
-		&grpcAuth.VkTokenInfo{UserID: int64(userID), Token: tokenInput.Token, Expires: secondsLeftToTimestamp(tokenInput.Expires)})
+	return authApp.AddVkToken(userID, tokenInput)
+}
+
+func (authApp *AuthApp) AddVkToken(userID int, tokenInput *entity.UserVkTokenInput) error {
+	_, err := authApp.grpcClient.AddVkToken(context.Background(),
+		&grpcAuth.VkTokenInfo{UserID: int64(userID), VkUserID: int64(tokenInput.VkUserID), Token: tokenInput.Token, Expires: secondsLeftToTimestamp(tokenInput.Expires)})
 
 	if err != nil {
 		if strings.Contains(err.Error(), entity.VkTokenDuplicateError.Error()) {
@@ -178,5 +183,5 @@ func (authApp *AuthApp) VkCodeToToken(code string, redirectURI string) (*entity.
 
 // return timestamp seconds away from now
 func secondsLeftToTimestamp(seconds int) *timestamppb.Timestamp {
-	return timestamppb.New(time.Now().Add(time.Duration(int64(seconds) * 1000)))
+	return timestamppb.New(time.Now().Add(time.Duration(int64(seconds) * 1000 * 1000 * 1000))) // 1 second = 1000 * 1000 * 1000 ns
 }

@@ -25,13 +25,14 @@ pcall(restore_sessions_schema)
 function restore_vk_tokens_schema()
     sessions = box.schema.space.create('vk_tokens')
     sessions:format({
-             {name = 'user_id', type = 'unsigned'},
+             {name = 'vk_id', type = 'unsigned'},
              {name = 'vk_token', type = 'string'},
-             {name = 'expiration_date', type = 'unsigned'}
+             {name = 'expiration_date', type = 'unsigned'},
+             {name = 'user_id', type = 'unsigned'}
              })
     sessions:create_index('primary', {
              type = 'tree',
-             parts = {'user_id'},
+             parts = {'vk_id'},
              unique = true
              })
     sessions:create_index('secondary', {
