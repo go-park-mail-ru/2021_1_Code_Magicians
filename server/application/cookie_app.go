@@ -43,7 +43,7 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 	expirationTime := time.Now().Add(cookieApp.duration)
 	if os.Getenv("HTTPS_ON") == "true" {
 		return &http.Cookie{
-			Name:     entity.CookieNameKey,
+			Name:     string(entity.CookieNameKey),
 			Value:    sessionValue,
 			Path:     "/", // Cookie should be usable on entire website
 			Expires:  expirationTime,
@@ -53,7 +53,7 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 		}, nil
 	}
 	return &http.Cookie{
-		Name:     entity.CookieNameKey,
+		Name:     string(entity.CookieNameKey),
 		Value:    sessionValue,
 		Path:     "/", // Cookie should be usable on entire website
 		Expires:  expirationTime,

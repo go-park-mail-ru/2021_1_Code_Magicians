@@ -59,6 +59,11 @@ func runServer(addr string) {
 		sugarLogger.Fatal("Could not load docker_vars.env file", zap.String("error", err.Error()))
 	}
 
+	err = godotenv.Load("vk_info.env")
+	if err != nil {
+		sugarLogger.Fatal("Could not load vk_info.env file", zap.String("error", err.Error()))
+	}
+
 	dockerStatus := os.Getenv("CONTAINER_PREFIX")
 	if dockerStatus != "DOCKER" && dockerStatus != "LOCALHOST" {
 		sugarLogger.Fatalf("Wrong prefix: %s , should be DOCKER or LOCALHOST", dockerStatus)
@@ -122,7 +127,8 @@ func runServer(addr string) {
 	boardApp := application.NewBoardApp(repoPins)
 	s3App := application.NewS3App(sess, os.Getenv("BUCKET_NAME"))
 	userApp := application.NewUserApp(repoUser, boardApp)
-	authApp := application.NewAuthApp(repoAuth, userApp, cookieApp)
+	authApp := application.NewAuthApp(repoAuth, userApp, cookieApp,
+		os.Getenv("VK_CLIENT_ID"), os.Getenv("VK_CLIENT_SECRET"))
 	pinApp := application.NewPinApp(repoPins, boardApp)
 	followApp := application.NewFollowApp(repoUser, pinApp)
 	commentApp := application.NewCommentApp(repoComments)

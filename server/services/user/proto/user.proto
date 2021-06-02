@@ -14,6 +14,7 @@ message UserReg {
   string  FirstName = 3;
   string  LastName = 4;
   string  Email = 5;
+  int64   VkID = 6;
 }
 
 message UserEditInput {
@@ -25,6 +26,7 @@ message UserEditInput {
   string  Salt = 6;
   string  AvatarLink = 7;
   int64   UserID = 8;
+  int64   VkID = 9;
 }
 
 message UserAuth {
@@ -43,6 +45,7 @@ message UserOutput {
   int64    FollowedBy = 8;
   int64    BoardsCount = 9;
   int64    PinsCount = 10;
+  int64    VkID = 11;
 }
 
 message UsersListOutput {

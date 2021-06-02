@@ -3,10 +3,15 @@ package application
 import (
 	"bufio"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -21,7 +26,9 @@ func NewUserApp(us grpcUser.UserClient, boardApp BoardAppInterface) *UserApp {
 }
 
 type UserAppInterface interface {
-	CreateUser(user *entity.User) (int, error)                       // Create user, returns created user's ID
+	CreateUser(user *entity.User) (int, error) // Create user, returns created user's ID
+	CreateUserWithVK(tokenInput *entity.UserVkTokenInput,
+		redirectURI string) (int, error) // Create user using vk's info
 	SaveUser(user *entity.User) error                                // Save changed user to database
 	ChangePassword(user *entity.User) error                          // Change user's password
 	DeleteUser(userID int) error                                     // Delete user with passed userID from database
@@ -32,7 +39,7 @@ type UserAppInterface interface {
 	SearchUsers(keywords string) ([]entity.User, error)              // Get all users by passed keywords
 }
 
-// CreateUser add new user to database with passed fields
+// CreateUser adds new user to database with passed fields
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 	newUser := new(grpcUser.UserReg)
@@ -54,6 +61,56 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 	}
 
 	return int(userID.Uid), nil
+}
+
+// CreateUserWithVK add new user to database with fields from vk's response
+// It returns user's assigned ID and nil on success, any number and error on failure
+func (userApp *UserApp) CreateUserWithVK(tokenInput *entity.UserVkTokenInput, redirectURI string) (int, error) {
+	user, err := userApp.getUserByVkToken(tokenInput)
+	if err != nil {
+		return -1, err
+	}
+
+	return userApp.CreateUser(user)
+}
+
+// getUserByToken takes vk token and returns corresponding user using info from vk's servers
+func (userApp *UserApp) getUserByVkToken(tokenInput *entity.UserVkTokenInput) (*entity.User, error) {
+	resp, err := http.Get(fmt.Sprintf("%smethod/users.get?params[user_ids]=%d&params[fields]=first_name,last_name&"+
+		"params[name_case]=Nom&access_token=%s&v=5.131",
+		entity.VkAPIURLKey, tokenInput.VkUserID, tokenInput.Token))
+
+	if err != nil {
+		fmt.Println(err)
+		// TODO: error handling
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println(resp.StatusCode)
+		data, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string(data))
+		// TODO: proper vk errors handling
+		return nil, fmt.Errorf("Could not get token from vk")
+	}
+
+	userVkRegInputs := new(entity.UserVkRegInputs)
+	err = json.NewDecoder(resp.Body).Decode(userVkRegInputs)
+	if err != nil {
+		return nil, err
+	}
+	if len(userVkRegInputs.Users) == 0 {
+		return nil, fmt.Errorf("Could not parse user from vk api's response")
+	}
+
+	user := new(entity.User)
+	user.Username = "vk_user:" + strconv.Itoa(tokenInput.VkUserID)
+	// user.Avatar = userVkFullInput.Avatar
+	user.FirstName = userVkRegInputs.Users[0].FirstName
+	user.LastName = userVkRegInputs.Users[0].LastName
+	user.Email = tokenInput.Email
+	user.VkID = tokenInput.VkUserID
+	return user, nil
 }
 
 // SaveUser saves user to database with passed fields
@@ -270,6 +327,7 @@ func FillEditForm(user *entity.User, userEdit *grpcUser.UserEditInput) {
 	userEdit.Password = user.Password
 	userEdit.AvatarLink = user.Avatar
 	userEdit.Salt = user.Salt
+	userEdit.VkID = int64(user.VkID)
 }
 
 func FillOutForm(user *entity.User, userOut *grpcUser.UserOutput) {
@@ -283,6 +341,7 @@ func FillOutForm(user *entity.User, userOut *grpcUser.UserOutput) {
 	user.FollowedBy = int(userOut.FollowedBy)
 	user.BoardsCount = int(userOut.BoardsCount)
 	user.PinsCount = int(userOut.PinsCount)
+	user.VkID = int(userOut.VkID)
 }
 
 func ReturnUsersList(userOutList []*grpcUser.UserOutput) []entity.User {
@@ -298,6 +357,7 @@ func ReturnUsersList(userOutList []*grpcUser.UserOutput) []entity.User {
 		user.Avatar = userOut.Avatar
 		user.Following = int(userOut.Following)
 		user.FollowedBy = int(userOut.FollowedBy)
+		user.VkID = int(userOut.VkID)
 
 		userList = append(userList, user)
 	}

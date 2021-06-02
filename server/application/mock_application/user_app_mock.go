@@ -64,6 +64,21 @@ func (mr *MockUserAppInterfaceMockRecorder) CreateUser(user interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUser), user)
 }
 
+// CreateUserWithVK mocks base method.
+func (m *MockUserAppInterface) CreateUserWithVK(tokenInput *entity.UserVkTokenInput, redirectURI string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUserWithVK", tokenInput, redirectURI)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUserWithVK indicates an expected call of CreateUserWithVK.
+func (mr *MockUserAppInterfaceMockRecorder) CreateUserWithVK(tokenInput, redirectURI interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserWithVK", reflect.TypeOf((*MockUserAppInterface)(nil).CreateUserWithVK), tokenInput, redirectURI)
+}
+
 // DeleteUser mocks base method.
 func (m *MockUserAppInterface) DeleteUser(userID int) error {
 	m.ctrl.T.Helper()
