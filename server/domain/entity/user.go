@@ -57,6 +57,7 @@ type User struct {
 	FollowedBy  int    `json:"followed"`
 	BoardsCount int    `json:"boardsCount"`
 	PinsCount   int    `json:"pinsCount"`
+	VkID        int    `json:"-"`
 }
 
 // UserOutput is used to marshal JSON with users' data
@@ -89,8 +90,26 @@ type UserLoginInput struct {
 	Password string `json:"password"`
 }
 
+type UserVkCodeInput struct {
+	Code string `json:"code"`
+}
+
 type UserVkTokenInput struct {
-	Token string `json:"token"`
+	VkUserID int    `json:"user_id"`
+	Token    string `json:"access_token"`
+	Expires  int    `json:"expires_in"`
+	Email    string `json:"email"`
+}
+
+type UserVkRegInput struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"photo_max_orig"` // path to avatar
+	VkID      int    `json:"id"`
+}
+
+type UserVkRegInputs struct {
+	Users []UserVkRegInput `json:"response"`
 }
 
 // UserPassChangeInput is used when parsing JSON in profile/password handler
