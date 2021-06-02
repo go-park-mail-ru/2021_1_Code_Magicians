@@ -14,6 +14,7 @@ Instructions with docker:
     AMAZON_DB_PASSWORD = dbuserpassword  # or LOCAL_DB_USER, if using local database
     EMAIL_USERNAME = YourServersEmail@example.com # These will be used for sending some notifications
     EMAIL_PASSWORD = YourServerEmailsPassword
+    VK_CLIENT_SECRET = Yout Vk app secret # For VK authorization
 - If HTTPS support is needed, edit .env variable HTTPS_ON to true and copy your certificate as cert.pem, key as key.pem, adding them to server directory
 - If CSRF support is needed, edit .env variable CSRF_ON to true
 

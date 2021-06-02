@@ -60,14 +60,14 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.boards (
-    boardid integer NOT NULL,
-    userid bigint NOT NULL,
-    title character varying(100) NOT NULL,
-    description text,
-    imagelink character varying(70) DEFAULT 'assets/img/default-board-avatar.jpg'::character varying NOT NULL,
-    imageheight integer DEFAULT 480 NOT NULL,
-    imagewidth integer DEFAULT 1200 NOT NULL,
-    imageavgcolor character(6) DEFAULT '5a5a5a'::bpchar NOT NULL
+                               boardid integer NOT NULL,
+                               userid bigint NOT NULL,
+                               title character varying(100) NOT NULL,
+                               description text,
+                               imagelink character varying(70) DEFAULT 'assets/img/default-board-avatar.jpg'::character varying NOT NULL,
+                               imageheight integer DEFAULT 480 NOT NULL,
+                               imagewidth integer DEFAULT 1200 NOT NULL,
+                               imageavgcolor character(6) DEFAULT '5a5a5a'::bpchar NOT NULL
 );
 
 
@@ -107,10 +107,10 @@ ALTER SEQUENCE public.boards_boardid_seq OWNED BY public.boards.boardid;
 --
 
 CREATE TABLE public.comments (
-    userid integer NOT NULL,
-    pinid integer NOT NULL,
-    id integer NOT NULL,
-    text text NOT NULL
+                                 userid integer NOT NULL,
+                                 pinid integer NOT NULL,
+                                 id integer NOT NULL,
+                                 text text NOT NULL
 );
 
 
@@ -143,8 +143,8 @@ ALTER SEQUENCE public.comments_id_seq OWNED BY public.comments.id;
 --
 
 CREATE TABLE public.followers (
-    followerid integer NOT NULL,
-    followedid integer NOT NULL
+                                  followerid integer NOT NULL,
+                                  followedid integer NOT NULL
 );
 
 
@@ -169,8 +169,8 @@ COMMENT ON COLUMN public.followers.followedid IS 'User who is followed';
 --
 
 CREATE TABLE public.pairs (
-    boardid integer NOT NULL,
-    pinid integer NOT NULL
+                              boardid integer NOT NULL,
+                              pinid integer NOT NULL
 );
 
 
@@ -188,16 +188,16 @@ COMMENT ON TABLE public.pairs IS 'Pairs board-pin that users have created';
 --
 
 CREATE TABLE public.pins (
-    pinid integer NOT NULL,
-    title character varying(100) NOT NULL,
-    imagelink character varying(70) NOT NULL,
-    description text,
-    userid integer,
-    imageheight integer DEFAULT 0 NOT NULL,
-    imagewidth integer DEFAULT 0 NOT NULL,
-    imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL,
-    creationdate timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    reports_count integer DEFAULT 0 NOT NULL
+                             pinid integer NOT NULL,
+                             title character varying(100) NOT NULL,
+                             imagelink character varying(70) NOT NULL,
+                             description text,
+                             userid integer,
+                             imageheight integer DEFAULT 0 NOT NULL,
+                             imagewidth integer DEFAULT 0 NOT NULL,
+                             imageavgcolor character(6) DEFAULT 'FFFFFF'::bpchar NOT NULL,
+                             creationdate timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                             reports_count integer DEFAULT 0 NOT NULL
 );
 
 
@@ -237,10 +237,10 @@ ALTER SEQUENCE public.pins_pinid_seq OWNED BY public.pins.pinid;
 --
 
 CREATE TABLE public.reports (
-    reportid integer NOT NULL,
-    pinid integer NOT NULL,
-    senderid integer NOT NULL,
-    description text NOT NULL
+                                reportid integer NOT NULL,
+                                pinid integer NOT NULL,
+                                senderid integer NOT NULL,
+                                description text NOT NULL
 );
 
 
@@ -273,18 +273,19 @@ ALTER SEQUENCE public.reports_reportid_seq OWNED BY public.reports.reportid;
 --
 
 CREATE TABLE public.users (
-    username character varying(45) NOT NULL,
-    passwordhash character varying(40) NOT NULL,
-    salt character(8) NOT NULL,
-    email character varying(254) NOT NULL,
-    last_name character varying(42),
-    first_name character varying(42),
-    avatar character varying(70) DEFAULT 'assets/img/default-avatar.jpg'::character varying NOT NULL,
-    userid integer NOT NULL,
-    following integer DEFAULT 0 NOT NULL,
-    followed_by integer DEFAULT 0 NOT NULL,
-    pins_count integer DEFAULT 0 NOT NULL,
-    boards_count integer DEFAULT 0 NOT NULL
+                              username character varying(45) NOT NULL,
+                              passwordhash character varying(40) NOT NULL,
+                              salt character(8) NOT NULL,
+                              email character varying(254) NOT NULL,
+                              last_name character varying(42),
+                              first_name character varying(42),
+                              avatar character varying(70) DEFAULT 'assets/img/default-avatar.jpg'::character varying NOT NULL,
+                              userid integer NOT NULL,
+                              following integer DEFAULT 0 NOT NULL,
+                              followed_by integer DEFAULT 0 NOT NULL,
+                              pins_count integer DEFAULT 0 NOT NULL,
+                              boards_count integer DEFAULT 0 NOT NULL,
+                              vk_id integer DEFAULT 0 NOT NULL
 );
 
 
@@ -406,7 +407,7 @@ COPY public.reports (reportid, pinid, senderid, description) FROM stdin;
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by, pins_count, boards_count) FROM stdin;
+COPY public.users (username, passwordhash, salt, email, last_name, first_name, avatar, userid, following, followed_by, pins_count, boards_count, vk_id) FROM stdin;
 \.
 
 
@@ -591,4 +592,3 @@ ALTER TABLE ONLY public.reports
 --
 -- PostgreSQL database dump complete
 --
-

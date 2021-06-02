@@ -181,7 +181,7 @@ func TestAuthSuccess(t *testing.T) {
 		Salt:      "",
 	}
 	expectedCookie := http.Cookie{
-		Name:     entity.CookieNameKey,
+		Name:     string(entity.CookieNameKey),
 		Value:    "someRandomSessionValue",
 		Path:     "/", // Cookie should be usable on entire website
 		Expires:  time.Now().Add(10 * time.Hour),
@@ -436,7 +436,7 @@ func TestAuthFailure(t *testing.T) {
 		Salt:      "",
 	}
 	expectedCookie := http.Cookie{
-		Name:     entity.CookieNameKey,
+		Name:     string(entity.CookieNameKey),
 		Value:    "someRandomSessionValue",
 		Path:     "/", // Cookie should be usable on entire website
 		Expires:  time.Now().Add(10 * time.Hour),

@@ -126,6 +126,52 @@ func (s *service) RemoveCookie(ctx context.Context, cookieInfo *CookieInfo) (*Er
 	return &Error{}, err
 }
 
+const GetUser = "SELECT passwordhash FROM Users WHERE username=$1;"
+
+func (s *service) CheckUserByVkToken(ctx context.Context, token *VkToken) (*UserID, error) {
+	resp, err := s.tarantoolDB.Select("vk_tokens", "secondary", 0, 1, tarantool.IterEq, []interface{}{token.Token})
+
+	if err != nil {
+		switch resp.Code {
+		case tarantool.ErrTupleNotFound:
+			return nil, entity.VkTokenNotFoundError
+		default:
+			return nil, err
+		}
+	}
+
+	if len(resp.Tuples()) != 1 {
+		return nil, entity.VkTokenNotFoundError
+	}
+
+	vkToken := interfacesToVkTokenInfo(resp.Tuples()[0])
+
+	if vkToken.Expires.AsTime().Before(time.Now()) { // We check if cookie is not past it's expiration date
+		s.RemoveVkToken(ctx, vkToken)
+		return nil, entity.VkTokenNotFoundError
+	}
+
+	return &UserID{Uid: vkToken.UserID}, nil
+}
+
+func (s *service) AddVkToken(ctx context.Context, tokenInfo *VkTokenInfo) (*Error, error) {
+	tokenInfoAsInterface := vkTokenInfoToInterfaces(tokenInfo)
+	resp, err := s.tarantoolDB.Replace("vk_tokens", tokenInfoAsInterface) // If session already exists, we update it
+	if err != nil {
+		switch resp.Code {
+		case tarantool.ErrTupleFound:
+			return &Error{}, entity.VkTokenDuplicateError
+		}
+	}
+
+	return &Error{}, nil
+}
+
+func (s *service) RemoveVkToken(ctx context.Context, tokenInfo *VkTokenInfo) (*Error, error) {
+	_, err := s.tarantoolDB.Delete("vk_tokens", "primary", []interface{}{tokenInfo.UserID})
+	return &Error{}, err
+}
+
 func cookieInfoToInterfaces(cookieInfo *CookieInfo) []interface{} {
 	cookieAsInterfaces := make([]interface{}, 3)
 	cookieAsInterfaces[0] = uint(cookieInfo.UserID)
@@ -143,6 +189,22 @@ func interfacesToCookieInfo(interfaces []interface{}) *CookieInfo {
 	cookieInfo.UserID = int64(interfaces[0].(uint64))
 	cookieInfo.Cookie = cookie
 	return cookieInfo
+}
+
+func vkTokenInfoToInterfaces(tokenInfo *VkTokenInfo) []interface{} {
+	cookieAsInterfaces := make([]interface{}, 3)
+	cookieAsInterfaces[0] = uint(tokenInfo.UserID)
+	cookieAsInterfaces[1] = tokenInfo.Token
+	cookieAsInterfaces[2] = uint(timeToUnixTimestamp(tokenInfo.Expires.AsTime()))
+	return cookieAsInterfaces
+}
+
+func interfacesToVkTokenInfo(interfaces []interface{}) *VkTokenInfo {
+	tokenInfo := new(VkTokenInfo)
+	tokenInfo.UserID = int64(interfaces[0].(uint64))
+	tokenInfo.Token = interfaces[1].(string)
+	tokenInfo.Expires = timestamppb.New(unixTimestampToTime(int64(interfaces[2].(uint64))))
+	return tokenInfo
 }
 
 func unixTimestampToTime(timestamp int64) time.Time {

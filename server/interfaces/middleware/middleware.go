@@ -72,7 +72,7 @@ func CSRFSettingMid(next http.Handler) http.Handler {
 
 // CheckCookies returns *CookieInfo and true if cookie is present in sessions slice, nil and false othervise
 func CheckCookies(r *http.Request, cookieApp application.AuthAppInterface) (*entity.CookieInfo, bool) {
-	cookie, err := r.Cookie(entity.CookieNameKey)
+	cookie, err := r.Cookie(string(entity.CookieNameKey))
 	if err == http.ErrNoCookie {
 		return nil, false
 	}

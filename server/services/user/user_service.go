@@ -33,8 +33,8 @@ func NewService(db *pgxpool.Pool, s3 *session.Session) *service {
 	return &service{db, s3}
 }
 
-const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwordhash, salt, email, first_name, last_name, avatar)\n" +
-	"values ($1, $2, $3, $4, $5, $6, DEFAULT)\n" +
+const createUserQueryDefaulAvatar string = "INSERT INTO Users (username, passwordhash, salt, email, first_name, last_name, vk_id, avatar)\n" +
+	"values ($1, $2, $3, $4, $5, $6, $7, DEFAULT)\n" +
 	"RETURNING userID"
 
 // CreateUser add new user to database with passed fields
@@ -57,9 +57,8 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 		lastNamePtr = nil
 	}
 
-	var row pgx.Row
-	row = tx.QueryRow(context.Background(), createUserQueryDefaulAvatar,
-		user.Username, user.Password, user.Salt, user.Email, &firstNamePtr, &lastNamePtr)
+	row := tx.QueryRow(context.Background(), createUserQueryDefaulAvatar,
+		user.Username, user.Password, user.Salt, user.Email, &firstNamePtr, &lastNamePtr, user.VkID)
 
 	newUserID := 0
 	err = row.Scan(&newUserID)
@@ -79,8 +78,8 @@ func (s *service) CreateUser(ctx context.Context, us *UserReg) (*UserID, error) 
 }
 
 const saveUserQuery string = "UPDATE Users\n" +
-	"SET username=$1, email=$2, first_name=$3, last_name=$4, avatar=$5\n" +
-	"WHERE userID=$6"
+	"SET username=$1, email=$2, first_name=$3, last_name=$4, avatar=$5, vk_id=$6\n" +
+	"WHERE userID=$7"
 
 func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, error) {
 	user := FillFromEditForm(us)
@@ -91,7 +90,7 @@ func (s *service) SaveUser(ctx context.Context, us *UserEditInput) (*Error, erro
 	defer tx.Rollback(context.Background())
 
 	_, err = tx.Exec(context.Background(), saveUserQuery, user.Username, user.Email,
-		user.FirstName, user.LastName, user.Avatar, user.UserID)
+		user.FirstName, user.LastName, user.Avatar, user.VkID, user.UserID)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			return &Error{}, entity.UsernameEmailDuplicateError
@@ -229,7 +228,7 @@ func (s *service) DeleteUser(ctx context.Context, userID *UserID) (*Error, error
 }
 
 const getUserQuery string = "SELECT username, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count\n" +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users WHERE userID=$1"
 
 // GetUser fetches user with passed ID from database
@@ -248,7 +247,8 @@ func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, err
 
 	row := tx.QueryRow(context.Background(), getUserQuery, userID.Uid)
 	err = row.Scan(&user.Username, &user.Email, &firstNamePtr,
-		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+		&user.BoardsCount, &user.PinsCount, &user.VkID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
@@ -268,7 +268,7 @@ func (s *service) GetUser(ctx context.Context, userID *UserID) (*UserOutput, err
 }
 
 const getUsersQuery string = "SELECT userID, username, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count\n" +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users"
 
 // GetUsers fetches all users from database
@@ -296,7 +296,8 @@ func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutp
 		avatarPtr := new(string)
 
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
-			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+			&user.BoardsCount, &user.PinsCount, &user.VkID)
 		if err != nil {
 			if err == pgx.ErrNoRows {
 				return nil, entity.UserNotFoundError
@@ -318,7 +319,7 @@ func (s *service) GetUsers(ctx context.Context, in *empty.Empty) (*UsersListOutp
 }
 
 const getUserByUsernameQuery string = "SELECT userID, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count\n" +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users WHERE username=$1"
 
 // GetUserByUsername fetches user with passed username from database
@@ -337,7 +338,8 @@ func (s *service) GetUserByUsername(ctx context.Context, username *Username) (*U
 
 	row := tx.QueryRow(context.Background(), getUserByUsernameQuery, username.Username)
 	err = row.Scan(&user.UserID, &user.Email, &firstNamePtr,
-		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+		&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+		&user.BoardsCount, &user.PinsCount, &user.VkID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, entity.UserNotFoundError
@@ -463,7 +465,7 @@ func (s *service) CheckIfFollowed(ctx context.Context, follows *Follows) (*IfFol
 }
 
 const SearchUsersQuery string = "SELECT userID, username, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count " +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users\n" +
 	"WHERE LOWER(username) LIKE $1;"
 
@@ -493,7 +495,8 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 		avatarPtr := new(string)
 
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
-			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+			&user.BoardsCount, &user.PinsCount, &user.VkID)
 		if err != nil {
 			return nil, entity.UserScanError
 		}
@@ -512,7 +515,7 @@ func (s *service) SearchUsers(ctx context.Context, keyWords *SearchInput) (*User
 }
 
 const getAllFollowersQuery = "SELECT userID, username, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count " +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users\n" +
 	"INNER JOIN (SELECT * FROM Followers WHERE followedID = $1) as users_followers\n" +
 	"ON followerID = userID"
@@ -543,7 +546,8 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 		avatarPtr := new(string)
 
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
-			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+			&user.BoardsCount, &user.PinsCount, &user.VkID)
 		if err != nil {
 			return nil, entity.UserScanError
 		}
@@ -563,7 +567,7 @@ func (s *service) GetAllFollowers(ctx context.Context, userID *UserID) (*UsersLi
 }
 
 const getAllFollowedQuery = "SELECT userID, username, email, first_name, last_name, avatar, " +
-	"followed_by, following, boards_count, pins_count " +
+	"followed_by, following, boards_count, pins_count, vk_id\n" +
 	"FROM Users\n" +
 	"INNER JOIN (SELECT * FROM Followers WHERE followerID = $1) as users_followed\n" +
 	"ON followedID = userID"
@@ -594,7 +598,8 @@ func (s *service) GetAllFollowed(ctx context.Context, userID *UserID) (*UsersLis
 		avatarPtr := new(string)
 
 		err = rows.Scan(&user.UserID, &user.Username, &user.Email, &firstNamePtr,
-			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following, &user.BoardsCount, &user.PinsCount)
+			&secondNamePtr, &avatarPtr, &user.FollowedBy, &user.Following,
+			&user.BoardsCount, &user.PinsCount, &user.VkID)
 		if err != nil {
 			return nil, entity.UserScanError
 		}
@@ -640,6 +645,7 @@ func FillFromEditForm(us *UserEditInput) *entity.User {
 		Salt:       us.Salt, // TODO salt realize
 		Following:  0,
 		FollowedBy: 0,
+		VkID:       int(us.VkID),
 	}
 }
 

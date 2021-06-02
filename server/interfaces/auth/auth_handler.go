@@ -172,3 +172,118 @@ func (info *AuthInfo) HandleCheckUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// HandleCreateUser creates user with parameters passed in JSON
+func (info *AuthInfo) HandleCreateUserWithVK(w http.ResponseWriter, r *http.Request) {
+	vkCodeInput := new(entity.UserVkCodeInput)
+	err := json.NewDecoder(r.Body).Decode(vkCodeInput)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := info.cookieApp.GenerateCookie()
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tokenInput, err := info.authApp.VkCodeToToken(vkCodeInput.Code, string(entity.VkCreateUserURLKey))
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	userID, err := info.userApp.CreateUserWithVK(tokenInput, string(entity.VkCreateUserURLKey))
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = info.cookieApp.AddCookieInfo(&entity.CookieInfo{UserID: userID, Cookie: cookie})
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		info.userApp.DeleteUser(userID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Replacing token in websocket connection info
+	token := r.Header.Get("X-CSRF-Token")
+	err = info.websocketApp.ChangeToken(userID, token)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (info *AuthInfo) HandleCheckVkToken(w http.ResponseWriter, r *http.Request) {
+	vkCodeInput := new(entity.UserVkCodeInput)
+	err := json.NewDecoder(r.Body).Decode(vkCodeInput)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	cookieInfo, err := info.authApp.CheckVkCode(vkCodeInput.Code, string(entity.VkAuthenticateURLKey))
+
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		switch err {
+		case entity.VkTokenNotFoundError:
+			w.WriteHeader(http.StatusUnauthorized)
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Replacing token in websocket connection info
+	token := r.Header.Get("X-CSRF-Token")
+	err = info.websocketApp.ChangeToken(cookieInfo.UserID, token)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI),
+			zap.Int("for user", cookieInfo.UserID),
+			zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, cookieInfo.Cookie)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (info *AuthInfo) HandleAddVkToken(w http.ResponseWriter, r *http.Request) {
+	userCookie := r.Context().Value(entity.CookieInfoKey).(*entity.CookieInfo)
+	userID := userCookie.UserID
+	vkCodeInput := new(entity.UserVkCodeInput)
+	err := json.NewDecoder(r.Body).Decode(vkCodeInput)
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = info.authApp.AddVkCode(userID, vkCodeInput.Code, string(entity.VkAddTokenURLKey))
+
+	if err != nil {
+		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

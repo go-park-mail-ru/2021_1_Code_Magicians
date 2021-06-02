@@ -44,6 +44,9 @@ func CreateRouter(authApp *application.AuthApp, boardInfo *board.BoardInfo, auth
 	r.HandleFunc("/api/auth/login", mid.NoAuthMid(authInfo.HandleLoginUser, authApp)).Methods("POST")
 	r.HandleFunc("/api/auth/logout", mid.AuthMid(authInfo.HandleLogoutUser, authApp)).Methods("POST")
 	r.HandleFunc("/api/auth/check", authInfo.HandleCheckUser).Methods("GET")
+	r.HandleFunc("/api/vk_token/signup", mid.NoAuthMid(authInfo.HandleCreateUserWithVK, authApp)).Methods("POST")
+	r.HandleFunc("/api/vk_token/login", mid.NoAuthMid(authInfo.HandleCheckVkToken, authApp)).Methods("POST")
+	r.HandleFunc("/api/vk_token/add", mid.AuthMid(authInfo.HandleAddVkToken, authApp)).Methods("POST")
 
 	r.HandleFunc("/api/profile/password", mid.AuthMid(profileInfo.HandleChangePassword, authApp)).Methods("PUT")
 	r.HandleFunc("/api/profile/edit", mid.AuthMid(profileInfo.HandleEditProfile, authApp)).Methods("PUT")

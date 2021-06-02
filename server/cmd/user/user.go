@@ -1,79 +1,191 @@
-package main
+package entity
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"pinterest/domain/entity"
-	userService "pinterest/services/user"
-	userProto "pinterest/services/user/proto"
+	"errors"
+	"regexp"
 
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/joho/godotenv"
+	"github.com/asaskevich/govalidator"
 )
 
-func runService(addr string) {
-	logger, _ := zap.NewDevelopment()
-	defer logger.Sync()
+const usernameRegexp = "^[a-zA-Z][a-zA-Z0-9_]{1,41}$"
+const firstNameRegexp = "^[a-zA-Z ]{0,42}$"
 
-	sugarLogger := logger.Sugar()
+// init initiates custom validators for User struct
+func init() {
+	govalidator.CustomTypeTagMap.Set("filepath", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched = govalidator.IsUnixFilePath(i.(string))
+		}
 
-	err := godotenv.Load(".env")
-	if err != nil {
-		sugarLogger.Fatal("Could not load .env file", zap.String("error", err.Error()))
-	}
+		return matched
+	})
 
-	err = godotenv.Load("passwords.env")
-	if err != nil {
-		sugarLogger.Fatal("Could not load passwords.env file", zap.String("error", err.Error()))
-	}
+	govalidator.CustomTypeTagMap.Set("name", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched, _ = regexp.MatchString(firstNameRegexp, i.(string))
+		}
 
-	err = godotenv.Load("s3.env")
-	if err != nil {
-		sugarLogger.Fatal("Could not load s3.env file", zap.String("error", err.Error()))
-	}
+		return matched
+	})
 
-	dbPrefix := os.Getenv("DB_PREFIX")
-	if dbPrefix != "AMAZON" && dbPrefix != "LOCAL" {
-		sugarLogger.Fatalf("Wrong prefix: %s , should be AMAZON or LOCAL", dbPrefix)
-	}
+	govalidator.CustomTypeTagMap.Set("username", func(i interface{}, context interface{}) bool {
+		matched := false
+		switch i.(type) {
+		case string:
+			matched, _ = regexp.MatchString(usernameRegexp, i.(string))
+		}
 
-	connectionString := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv(dbPrefix+"_DB_USER"), os.Getenv(dbPrefix+"_DB_PASSWORD"), os.Getenv(dbPrefix+"_DB_HOST"),
-		os.Getenv(dbPrefix+"_DB_PORT"), os.Getenv(dbPrefix+"_DB_NAME"))
-	conn, err := pgxpool.Connect(context.Background(), connectionString)
-	if err != nil {
-		sugarLogger.Fatal("Could not connect to postgres database", zap.String("error", err.Error()))
-		return
-	}
-
-	fmt.Println("Successfully connected to postgres database")
-	defer conn.Close()
-
-	sess := entity.ConnectAws()
-
-	server := grpc.NewServer()
-
-	service := userService.NewService(conn, sess)
-	userProto.RegisterUserServer(server, service)
-
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatalln("Listen user error: ", err)
-	}
-
-	fmt.Printf("Starting server at localhost%s\n", addr)
-	err = server.Serve(lis)
-	if err != nil {
-		log.Fatalln("Serve auth error: ", err)
-	}
+		return matched
+	})
 }
 
-func main() {
-	runService(":8082")
+// User is, well, a struct depicting a user
+type User struct {
+	UserID      int    `json:"ID"`
+	Username    string `json:"username,omitempty"`
+	Password    string `json:"-"` // TODO: hashing
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Avatar      string `json:"avatarLink,omitempty"` // path to avatar
+	Salt        string `json:"-"`
+	Following   int    `json:"following"`
+	FollowedBy  int    `json:"followed"`
+	BoardsCount int    `json:"boardsCount"`
+	PinsCount   int    `json:"pinsCount"`
+}
+
+// UserOutput is used to marshal JSON with users' data
+type UserOutput struct {
+	UserID      int    `json:"ID"`
+	Username    string `json:"username,omitempty"`
+	Email       string `json:"email,omitempty"`
+	FirstName   string `json:"firstName,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	Avatar      string `json:"avatarLink,omitempty"`
+	Following   int    `json:"following"`
+	FollowedBy  int    `json:"followers"`
+	BoardsCount int    `json:"boardsCount"`
+	PinsCount   int    `json:"pinsCount"`
+	Followed    *bool  `json:"followed,omitempty"` // pointer because we need to not send this sometimes
+}
+
+// UserRegInput is used when parsing JSON in auth/signup handler
+type UserRegInput struct {
+	Username  string `json:"username" valid:"username"`
+	Password  string `json:"password" valid:"stringlength(8|30)"`
+	Email     string `json:"email" valid:"email"`
+	FirstName string `json:"firstName" valid:"name,optional"`
+	LastName  string `json:"lastName" valid:"name,optional"`
+}
+
+// UserLoginInput is used when parsing JSON in auth/login handler
+type UserLoginInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type UserVkTokenInput struct {
+	Token string `json:"token"`
+}
+
+// UserPassChangeInput is used when parsing JSON in profile/password handler
+type UserPassChangeInput struct {
+	Password string `json:"password" valid:"stringlength(8|30)"`
+}
+
+// UserEditInput is used when parsing JSON in profile/edit handler
+type UserEditInput struct {
+	Username  string `json:"username" valid:"username,optional"`
+	Email     string `json:"email" valid:"email,optional"`
+	FirstName string `json:"firstName" valid:"name,optional"`
+	LastName  string `json:"lastName" valid:"name,optional"`
+	Avatar    string `json:"avatarLink" valid:"filepath,optional"`
+}
+
+// UsersListOutput is used to marshal JSON with users' data in the search feed
+type UserListOutput struct {
+	Users []UserOutput `json:"profiles"`
+}
+
+// Validate validates UserRegInput struct according to following rules:
+// Username - 2-42 alphanumeric, "_" or " " characters
+// Password - 8-30 characters
+// Email - standard email validity check
+// Username uniqueness is NOT checked
+func (userInput *UserRegInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// Validate validates UserPassChangeInput struct - Password is 8-30 characters
+func (userInput *UserPassChangeInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// Validate validates UserEditInput struct according to following rules:
+// Username - 2-42 alphanumeric, "_" or whitespace characters
+// LastName, FirstName - 0-42 alpha or whitespace characters
+// Email - standard email validity check
+// Avatar - some Unix file path
+// Username uniqueness or Avatar actual existance are NOT checked
+func (userInput *UserEditInput) Validate() (bool, error) {
+	return govalidator.ValidateStruct(*userInput)
+}
+
+// UpdateFrom changes user fields with non-empty fields of userInput
+// By default it's assumed that userInput is validated
+func (user *User) UpdateFrom(userInput interface{}) error {
+	switch userInput.(type) {
+	case *UserRegInput:
+		{
+			userRegInput := *userInput.(*UserRegInput)
+			user.Username = userRegInput.Username
+			user.Password = userRegInput.Password // TODO: hashing
+			user.Email = userRegInput.Email
+			user.FirstName = userRegInput.FirstName
+			user.LastName = userRegInput.LastName
+		}
+	case *UserPassChangeInput:
+		user.Password = userInput.(*UserPassChangeInput).Password // TODO: hashing
+	case *UserEditInput:
+		{
+			userEditInput := *userInput.(*UserEditInput)
+			if userEditInput.Username != "" {
+				user.Username = userEditInput.Username
+			}
+			if userEditInput.FirstName != "" {
+				user.FirstName = userEditInput.FirstName
+			}
+			if userEditInput.LastName != "" {
+				user.LastName = userEditInput.LastName
+			}
+			if userEditInput.Email != "" {
+				user.Email = userEditInput.Email
+			}
+			if userEditInput.Avatar != "" {
+				user.Avatar = userEditInput.Avatar
+			}
+		}
+	default:
+		return errors.New("auth.UpdateFrom: Unknown input type")
+	}
+
+	return nil
+}
+
+func (userOutput *UserOutput) FillFromUser(user *User) {
+	userOutput.UserID = user.UserID
+	userOutput.Username = user.Username
+	userOutput.Email = user.Email
+	userOutput.FirstName = user.FirstName
+	userOutput.LastName = user.LastName
+	userOutput.Avatar = user.Avatar
+	userOutput.Following = user.Following
+	userOutput.FollowedBy = user.FollowedBy
+	userOutput.BoardsCount = user.BoardsCount
+	userOutput.PinsCount = user.PinsCount
 }

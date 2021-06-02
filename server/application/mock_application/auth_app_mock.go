@@ -35,6 +35,20 @@ func (m *MockAuthAppInterface) EXPECT() *MockAuthAppInterfaceMockRecorder {
 	return m.recorder
 }
 
+// AddVkCode mocks base method.
+func (m *MockAuthAppInterface) AddVkCode(userID int, code, redirectURI string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddVkCode", userID, code, redirectURI)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddVkCode indicates an expected call of AddVkCode.
+func (mr *MockAuthAppInterfaceMockRecorder) AddVkCode(userID, code, redirectURI interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVkCode", reflect.TypeOf((*MockAuthAppInterface)(nil).AddVkCode), userID, code, redirectURI)
+}
+
 // CheckCookie mocks base method.
 func (m *MockAuthAppInterface) CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool) {
 	m.ctrl.T.Helper()
@@ -65,6 +79,21 @@ func (mr *MockAuthAppInterfaceMockRecorder) CheckUserCredentials(username, passw
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserCredentials", reflect.TypeOf((*MockAuthAppInterface)(nil).CheckUserCredentials), username, password)
 }
 
+// CheckVkCode mocks base method.
+func (m *MockAuthAppInterface) CheckVkCode(code, redirectURI string) (*entity.CookieInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckVkCode", code, redirectURI)
+	ret0, _ := ret[0].(*entity.CookieInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckVkCode indicates an expected call of CheckVkCode.
+func (mr *MockAuthAppInterfaceMockRecorder) CheckVkCode(code, redirectURI interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckVkCode", reflect.TypeOf((*MockAuthAppInterface)(nil).CheckVkCode), code, redirectURI)
+}
+
 // LogoutUser mocks base method.
 func (m *MockAuthAppInterface) LogoutUser(userID int) error {
 	m.ctrl.T.Helper()
@@ -77,4 +106,19 @@ func (m *MockAuthAppInterface) LogoutUser(userID int) error {
 func (mr *MockAuthAppInterfaceMockRecorder) LogoutUser(userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutUser", reflect.TypeOf((*MockAuthAppInterface)(nil).LogoutUser), userID)
+}
+
+// VkCodeToToken mocks base method.
+func (m *MockAuthAppInterface) VkCodeToToken(code, redirectURI string) (*entity.UserVkTokenInput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VkCodeToToken", code, redirectURI)
+	ret0, _ := ret[0].(*entity.UserVkTokenInput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VkCodeToToken indicates an expected call of VkCodeToToken.
+func (mr *MockAuthAppInterfaceMockRecorder) VkCodeToToken(code, redirectURI interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VkCodeToToken", reflect.TypeOf((*MockAuthAppInterface)(nil).VkCodeToToken), code, redirectURI)
 }
