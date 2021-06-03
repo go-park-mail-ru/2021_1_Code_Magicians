@@ -66,7 +66,7 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 // CreateUserWithVK add new user to database with fields from vk's response
 // It returns user's assigned ID and nil on success, any number and error on failure
 func (userApp *UserApp) CreateUserWithVK(tokenInput *entity.UserVkTokenInput, redirectURI string) (int, error) {
-	user, err := userApp.getUserByVkToken(tokenInput)
+	user, err := userApp.parseUserByVkToken(tokenInput)
 	if err != nil {
 		return -1, err
 	}
@@ -75,10 +75,10 @@ func (userApp *UserApp) CreateUserWithVK(tokenInput *entity.UserVkTokenInput, re
 }
 
 // getUserByToken takes vk token and returns corresponding user using info from vk's servers
-func (userApp *UserApp) getUserByVkToken(tokenInput *entity.UserVkTokenInput) (*entity.User, error) {
+func (userApp *UserApp) parseUserByVkToken(tokenInput *entity.UserVkTokenInput) (*entity.User, error) {
 	resp, err := http.Get(fmt.Sprintf("%smethod/users.get?params[user_ids]=%d&params[fields]=first_name,last_name&"+
 		"params[name_case]=Nom&access_token=%s&v=5.131",
-		entity.VkAPIURLKey, tokenInput.VkUserID, tokenInput.Token))
+		entity.VkAPIURLKey, tokenInput.VkID, tokenInput.Token))
 
 	if err != nil {
 		fmt.Println(err)
@@ -104,12 +104,12 @@ func (userApp *UserApp) getUserByVkToken(tokenInput *entity.UserVkTokenInput) (*
 	}
 
 	user := new(entity.User)
-	user.Username = "vk_user:" + strconv.Itoa(tokenInput.VkUserID)
+	user.Username = "vk_user:" + strconv.Itoa(tokenInput.VkID) // TODO: fix username matches with this and usual registrations
 	// user.Avatar = userVkFullInput.Avatar
 	user.FirstName = userVkRegInputs.Users[0].FirstName
 	user.LastName = userVkRegInputs.Users[0].LastName
 	user.Email = tokenInput.Email
-	user.VkID = tokenInput.VkUserID
+	user.VkID = tokenInput.VkID
 	return user, nil
 }
 
@@ -316,6 +316,7 @@ func FillRegForm(user *entity.User, userReg *grpcUser.UserReg) {
 	userReg.FirstName = user.FirstName
 	userReg.LastName = user.LastName
 	userReg.Password = user.Password
+	userReg.VkID = int64(user.VkID)
 }
 
 func FillEditForm(user *entity.User, userEdit *grpcUser.UserEditInput) {

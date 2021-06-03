@@ -630,6 +630,7 @@ func FillFromRegForm(us *UserReg) entity.User {
 		Salt:       "", // TODO salt realize
 		Following:  0,
 		FollowedBy: 0,
+		VkID:       int(us.VkID),
 	}
 }
 

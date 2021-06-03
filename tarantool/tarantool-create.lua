@@ -22,28 +22,6 @@ end
 
 pcall(restore_sessions_schema)
 
-function restore_vk_tokens_schema()
-    sessions = box.schema.space.create('vk_tokens')
-    sessions:format({
-             {name = 'vk_id', type = 'unsigned'},
-             {name = 'vk_token', type = 'string'},
-             {name = 'expiration_date', type = 'unsigned'},
-             {name = 'user_id', type = 'unsigned'}
-             })
-    sessions:create_index('primary', {
-             type = 'tree',
-             parts = {'vk_id'},
-             unique = true
-             })
-    sessions:create_index('secondary', {
-             type = 'tree',
-             parts = {'vk_token'},
-             unique = true
-             })
-end
-
-pcall(restore_vk_tokens_schema)
-
 function restore_notifications_schema()
     notifications = box.schema.space.create('notifications')
     notifications:format({

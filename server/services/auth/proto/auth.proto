@@ -14,11 +14,13 @@ message UserAuth {
   string Password = 2;
 }
 
-message VkTokenInfo {
+message VkIDInfo {
+  int64 VkID = 1;
+}
+
+message VkAndUserIDInfo {
   int64 UserID = 1;
-  int64 VkUserID = 2;
-  string Token = 3;
-  google.protobuf.Timestamp Expires = 4;
+  int64 VkID = 2;
 }
 
 message CookieValue {
@@ -46,7 +48,6 @@ service Auth {
   rpc   SearchByValue(CookieValue) returns (CookieInfo) {}
   rpc   SearchByUserID(UserID) returns (CookieInfo) {}
   rpc   RemoveCookie(CookieInfo) returns (Error) {}
-  rpc   CheckUserByVkToken(VkTokenInfo) returns (UserID) {}
-  rpc   AddVkToken(VkTokenInfo) returns (Error) {}
-  rpc   RemoveVkToken(VkTokenInfo) returns (Error) {}
+  rpc   GetUserByVkID(VkIDInfo) returns (UserID) {}
+  rpc   AddVkID(VkAndUserIDInfo) returns (Error) {}
 }

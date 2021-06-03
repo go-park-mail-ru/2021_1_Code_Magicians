@@ -8,7 +8,7 @@ const TransactionCommitError customError = "Could not commit transaction"
 const DuplicatingCookieValueError customError = "Cookie with such session value already exists"
 const UserNotLoggedInError customError = "User is not logged in"
 
-const VkTokenNotFoundError customError = "Vk token is not found in database"
+const VkIDNotFoundError customError = "User with passed VK's id is not found in database"
 const VkTokenDuplicateError customError = "Vk token already exists in database"
 
 const UserNotFoundError customError = "User not found"
