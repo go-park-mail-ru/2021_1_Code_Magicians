@@ -95,10 +95,10 @@ type UserVkCodeInput struct {
 }
 
 type UserVkTokenInput struct {
-	VkUserID int    `json:"user_id"`
-	Token    string `json:"access_token"`
-	Expires  int    `json:"expires_in"`
-	Email    string `json:"email"`
+	VkID    int    `json:"user_id"`
+	Token   string `json:"access_token"`
+	Expires int    `json:"expires_in"`
+	Email   string `json:"email"`
 }
 
 type UserVkRegInput struct {

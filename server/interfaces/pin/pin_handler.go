@@ -174,6 +174,7 @@ func (pinInfo *PinInfo) sendEmails(usersAndNotifications []entity.UserNotificati
 				zap.Int("for user", user.UserID))
 			continue
 		}
+
 		notification, err := pinInfo.notificationApp.GetNotification(pair.UserID, pair.NotificationID)
 		if err != nil {
 			pinInfo.logger.Info(err.Error(), zap.String("function", "PinInfo.sendEmails"),
@@ -196,6 +197,7 @@ func (pinInfo *PinInfo) sendEmails(usersAndNotifications []entity.UserNotificati
 			Username:             user.Username,
 			PinID:                pinID,
 		}
+
 		err = pinInfo.notificationApp.SendNotificationEmail(user.UserID, notification.NotificationID,
 			pinInfo.templateForEmail, templateStruct,
 			pinInfo.emailUsername, pinInfo.emailPassword)

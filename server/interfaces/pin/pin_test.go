@@ -158,8 +158,7 @@ var pinTest = []struct {
 			"/board",
 			"POST",
 			nil,
-			[]byte(`{"userID":0,` +
-				`"title":"exampletitle1",` +
+			[]byte(`{"title":"exampletitle1",` +
 				`"description":"exampleDescription1"}`),
 			testBoardInfo.HandleCreateBoard,
 			middleware.AuthMid, // If user is not logged in, they can't access their profile
@@ -557,17 +556,46 @@ func TestPins(t *testing.T) {
 		*expectedPinSecond,
 	}
 
+	expectedNotificationFirst := &entity.Notification{
+		NotificationID: 0,
+		UserID:         expectedUser.UserID,
+		Title:          "New Pin from people you've subscribed to!",
+		Category:       "subscribed pins",
+		Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
+			expectedUser.Username, expectedUser.Username, expectedPinFirst.Title),
+		IsRead: false,
+	}
+	expectedNotificationSecond := &entity.Notification{
+		NotificationID: 0,
+		UserID:         expectedUser.UserID,
+		Title:          "New Pin from people you've subscribed to!",
+		Category:       "subscribed pins",
+		Text: fmt.Sprintf(`%s! You have a new pin from user %s: "%s"`,
+			expectedUser.Username, expectedUser.Username, expectedPinSecond.Title),
+		IsRead: false,
+	}
+
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinFirst.PinID, nil).Times(1)
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
 	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
-	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
-	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(expectedNotificationFirst.NotificationID, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotificationsToUsers(gomock.Any()).Return().Times(1)
+	mockUserApp.EXPECT().GetUser(expectedFollower.UserID).Return(expectedFollower, nil).Times(1)
+	mockNotificationApp.EXPECT().GetNotification(expectedFollower.UserID, expectedNotificationFirst.NotificationID).
+		Return(expectedNotificationFirst, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotificationEmail(expectedFollower.UserID, expectedNotificationFirst.NotificationID,
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	mockPinApp.EXPECT().CreatePin(gomock.Any(), gomock.Any(), ".jpg").Return(expectedPinSecond.PinID, nil).Times(1)
 	mockUserApp.EXPECT().GetUser(expectedUser.UserID).Return(expectedUser, nil).Times(1)
 	mockFollowApp.EXPECT().GetAllFollowers(expectedUser.UserID).Return([]entity.User{*expectedFollower}, nil).Times(1)
-	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(0, nil).Times(1)
-	mockNotificationApp.EXPECT().SendNotification(expectedFollower.UserID, 0).Return(nil).Times(1)
+	mockNotificationApp.EXPECT().AddNotification(gomock.Any()).Return(expectedNotificationSecond.NotificationID, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotificationsToUsers(gomock.Any()).Return().Times(1)
+	mockUserApp.EXPECT().GetUser(expectedFollower.UserID).Return(expectedFollower, nil).Times(1)
+	mockNotificationApp.EXPECT().GetNotification(expectedFollower.UserID, expectedNotificationSecond.NotificationID).
+		Return(expectedNotificationSecond, nil).Times(1)
+	mockNotificationApp.EXPECT().SendNotificationEmail(expectedFollower.UserID, expectedNotificationSecond.NotificationID,
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	mockBoardApp.EXPECT().CreateBoard(expectedBoardFirst).Return(expectedBoardFirst.BoardID, nil).Times(1)
 

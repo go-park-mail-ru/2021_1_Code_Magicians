@@ -10,9 +10,6 @@ import (
 	grpcAuth "pinterest/services/auth/proto"
 	_ "pinterest/services/user/proto"
 	"strings"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AuthApp struct {
@@ -41,6 +38,7 @@ type AuthAppInterface interface {
 	CheckCookie(cookie *http.Cookie) (*entity.CookieInfo, bool)                      // Check if passed cookie value is present in any active session
 	CheckVkCode(code string, redirectURI string) (*entity.CookieInfo, error)         // Use public vk token to get private one and log user with that token in
 	AddVkCode(userID int, code string, redirectURI string) error                     // Use public vk token to get private one and associate it with user
+	AddVkID(userID int, vkID int) error                                              // Add token to database
 	VkCodeToToken(code string, redirectURI string) (*entity.UserVkTokenInput, error) // Get private token from vk using code
 }
 
@@ -106,14 +104,12 @@ func (authApp *AuthApp) CheckVkCode(code string, redirectURI string) (*entity.Co
 		return nil, err
 	}
 
-	grpcUserID, err := authApp.grpcClient.CheckUserByVkToken(context.Background(),
-		&grpcAuth.VkToken{Token: tokenInput.Token})
-
-	//TODO: fix behaviour when token expires and is replaced in vk's response
+	userID, err := authApp.grpcClient.GetUserByVkID(context.Background(),
+		&grpcAuth.VkIDInfo{VkID: int64(tokenInput.VkID)})
 
 	if err != nil {
-		if strings.Contains(err.Error(), entity.VkTokenNotFoundError.Error()) {
-			return nil, entity.VkTokenNotFoundError
+		if strings.Contains(err.Error(), entity.VkIDNotFoundError.Error()) {
+			return nil, entity.VkIDNotFoundError
 		}
 		return nil, err
 	}
@@ -123,7 +119,7 @@ func (authApp *AuthApp) CheckVkCode(code string, redirectURI string) (*entity.Co
 		cookie, err = authApp.cookieApp.GenerateCookie()
 	}
 
-	resultCookieInfo := &entity.CookieInfo{UserID: int(grpcUserID.Uid), Cookie: cookie}
+	resultCookieInfo := &entity.CookieInfo{UserID: int(userID.Uid), Cookie: cookie}
 	err = authApp.cookieApp.AddCookieInfo(resultCookieInfo)
 	if err != nil {
 		return nil, err
@@ -138,12 +134,16 @@ func (authApp *AuthApp) AddVkCode(userID int, code string, redirectURI string) e
 		return err
 	}
 
-	_, err = authApp.grpcClient.AddVkToken(context.Background(),
-		&grpcAuth.VkTokenInfo{UserID: int64(userID), Token: tokenInput.Token, Expires: secondsLeftToTimestamp(tokenInput.Expires)})
+	return authApp.AddVkID(userID, tokenInput.VkID)
+}
+
+func (authApp *AuthApp) AddVkID(userID int, vkID int) error {
+	_, err := authApp.grpcClient.AddVkID(context.Background(),
+		&grpcAuth.VkAndUserIDInfo{UserID: int64(userID), VkID: int64(vkID)})
 
 	if err != nil {
-		if strings.Contains(err.Error(), entity.VkTokenDuplicateError.Error()) {
-			return entity.VkTokenDuplicateError
+		if strings.Contains(err.Error(), entity.UserNotFoundError.Error()) {
+			return entity.UserNotFoundError
 		}
 		return err
 	}
@@ -174,9 +174,4 @@ func (authApp *AuthApp) VkCodeToToken(code string, redirectURI string) (*entity.
 	}
 
 	return userTokenInput, nil
-}
-
-// return timestamp seconds away from now
-func secondsLeftToTimestamp(seconds int) *timestamppb.Timestamp {
-	return timestamppb.New(time.Now().Add(time.Duration(int64(seconds) * 1000)))
 }

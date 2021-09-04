@@ -24,6 +24,7 @@ ALTER TABLE ONLY public.followers DROP CONSTRAINT followers_users_followed;
 ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_user_fk;
 ALTER TABLE ONLY public.comments DROP CONSTRAINT comments_pin_fk;
 ALTER TABLE ONLY public.boards DROP CONSTRAINT boards_fk;
+DROP INDEX public.users_vk_id_idx;
 DROP INDEX public.users_un_avatar;
 ALTER TABLE ONLY public.users DROP CONSTRAINT users_un_username;
 ALTER TABLE ONLY public.users DROP CONSTRAINT users_un_email;
@@ -523,6 +524,13 @@ ALTER TABLE ONLY public.users
 --
 
 CREATE UNIQUE INDEX users_un_avatar ON public.users USING btree (avatar) WHERE ((avatar)::text <> 'assets/img/default-avatar.jpg'::text);
+
+
+--
+-- Name: users_vk_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX users_vk_id_idx ON public.users USING btree (vk_id);
 
 
 --

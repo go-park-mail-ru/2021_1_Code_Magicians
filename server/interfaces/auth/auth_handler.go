@@ -197,7 +197,7 @@ func (info *AuthInfo) HandleCreateUserWithVK(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	userID, err := info.userApp.CreateUserWithVK(tokenInput, string(entity.VkCreateUserURLKey))
+	userID, err := info.userApp.CreateUserWithVK(tokenInput, string(entity.VkCreateUserURLKey)) // CreateUser but with vk_id, basically
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		if strings.Contains(err.Error(), entity.UsernameEmailDuplicateError.Error()) {
@@ -243,7 +243,7 @@ func (info *AuthInfo) HandleCheckVkToken(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		info.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
 		switch err {
-		case entity.VkTokenNotFoundError:
+		case entity.VkIDNotFoundError:
 			w.WriteHeader(http.StatusUnauthorized)
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
