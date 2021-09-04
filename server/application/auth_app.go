@@ -10,9 +10,6 @@ import (
 	grpcAuth "pinterest/services/auth/proto"
 	_ "pinterest/services/user/proto"
 	"strings"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AuthApp struct {
@@ -177,9 +174,4 @@ func (authApp *AuthApp) VkCodeToToken(code string, redirectURI string) (*entity.
 	}
 
 	return userTokenInput, nil
-}
-
-// return timestamp seconds away from now
-func secondsLeftToTimestamp(seconds int) *timestamppb.Timestamp {
-	return timestamppb.New(time.Now().Add(time.Duration(int64(seconds) * 1000 * 1000 * 1000))) // 1 second = 1000 * 1000 * 1000 ns
 }
