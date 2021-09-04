@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"pinterest/domain/entity"
-	authProto "pinterest/services/auth/proto"
 	grpcAuth "pinterest/services/auth/proto"
 	"time"
 
@@ -29,9 +28,9 @@ func NewCookieApp(grpcClient grpcAuth.AuthClient, cookieLength int, duration tim
 type CookieAppInterface interface {
 	GenerateCookie() (*http.Cookie, error)
 	AddCookieInfo(cookieInfo *entity.CookieInfo) error
-	SearchByValue(sessionValue string) (*authProto.CookieInfo, bool)
-	SearchByUserID(userID int) (*authProto.CookieInfo, bool)
-	RemoveCookie(*authProto.CookieInfo) error
+	SearchByValue(sessionValue string) (*grpcAuth.CookieInfo, bool)
+	SearchByUserID(userID int) (*grpcAuth.CookieInfo, bool)
+	RemoveCookie(*grpcAuth.CookieInfo) error
 }
 
 func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
@@ -61,7 +60,7 @@ func (cookieApp *CookieApp) GenerateCookie() (*http.Cookie, error) {
 	}, nil
 }
 
-func (cookieApp *CookieApp) SearchByUserID(userID int) (*authProto.CookieInfo, bool) {
+func (cookieApp *CookieApp) SearchByUserID(userID int) (*grpcAuth.CookieInfo, bool) {
 	resCookieInfo, err := cookieApp.grpcClient.SearchByUserID(context.Background(), &grpcAuth.UserID{Uid: int64(userID)})
 	if err != nil {
 		return nil, false
@@ -70,7 +69,7 @@ func (cookieApp *CookieApp) SearchByUserID(userID int) (*authProto.CookieInfo, b
 	return resCookieInfo, true
 }
 
-func (cookieApp *CookieApp) SearchByValue(cookieValue string) (*authProto.CookieInfo, bool) {
+func (cookieApp *CookieApp) SearchByValue(cookieValue string) (*grpcAuth.CookieInfo, bool) {
 	resCookieInfo, err := cookieApp.grpcClient.SearchByValue(context.Background(), &grpcAuth.CookieValue{CookieValue: cookieValue})
 	if err != nil {
 		return nil, false
@@ -90,21 +89,21 @@ func (cookieApp *CookieApp) AddCookieInfo(cookieInfo *entity.CookieInfo) error {
 		return entity.DuplicatingCookieValueError
 	}
 
-	grpcCookie := authProto.Cookie{}
+	grpcCookie := grpcAuth.Cookie{}
 	FillGRPCCookie(&grpcCookie, cookieInfo.Cookie)
-	grpcCookieInfo := authProto.CookieInfo{UserID: int64(cookieInfo.UserID), Cookie: &grpcCookie}
+	grpcCookieInfo := grpcAuth.CookieInfo{UserID: int64(cookieInfo.UserID), Cookie: &grpcCookie}
 	_, err := cookieApp.grpcClient.AddCookieInfo(context.Background(), &grpcCookieInfo)
 
 	return err // Will actually almost always be nil
 }
 
-func (cookieApp *CookieApp) RemoveCookie(cookieInfo *authProto.CookieInfo) error {
+func (cookieApp *CookieApp) RemoveCookie(cookieInfo *grpcAuth.CookieInfo) error {
 	_, err := cookieApp.grpcClient.RemoveCookie(context.Background(), cookieInfo)
 
 	return err
 }
 
-func FillGRPCCookie(grpcCookie *authProto.Cookie, cookie *http.Cookie) {
+func FillGRPCCookie(grpcCookie *grpcAuth.Cookie, cookie *http.Cookie) {
 	grpcCookie.Value = cookie.Value
 	grpcCookie.Expires = timestamppb.New(cookie.Expires)
 }
