@@ -12,7 +12,6 @@ services:
       - pins-service
       - comments-service
       - tarantool
-      - prometheus
     command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "server_main.go"]
   
   user-service:
@@ -65,24 +64,6 @@ services:
       - "3301:3301"
     volumes:
       - tarantool-volume:/var/lib/tarantool
-
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - "./prometheus:/etc/prometheus"
-
-  grafana:
-    image: grafana/grafana:latest
-    depends_on:
-      - prometheus
-    ports:
-      - 3000:3000
-    volumes:
-      - ./grafana/provisioning/:/etc/grafana/provisioning/
-    env_file:
-      - ./grafana/config.grafana
 
 volumes:
   tarantool-volume:
