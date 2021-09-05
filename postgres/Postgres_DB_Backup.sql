@@ -530,7 +530,8 @@ CREATE UNIQUE INDEX users_un_avatar ON public.users USING btree (avatar) WHERE (
 -- Name: users_vk_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE UNIQUE INDEX users_vk_id_idx ON public.users USING btree (vk_id);
+CREATE UNIQUE INDEX users_vk_id_idx ON public.users USING btree (vk_id)
+WHERE NOT vk_id = 0;
 
 
 --
