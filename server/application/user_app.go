@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"pinterest/domain/entity"
 	grpcUser "pinterest/services/user/proto"
@@ -240,7 +239,7 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 	}
 	err = stream.Send(req)
 	if err != nil {
-		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
+		return fmt.Errorf("cannot send image info to server: \n%s\n%s", err, stream.RecvMsg(nil))
 	}
 	reader := bufio.NewReader(file)
 	buffer := make([]byte, 3.5*1024*1024) // jrpc cannot receive packages larger than 4 MB
@@ -251,7 +250,7 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 			break
 		}
 		if err != nil {
-			log.Fatal("cannot read chunk to buffer: ", err)
+			return fmt.Errorf("cannot read chunk to buffer: \n%s", err)
 		}
 
 		req = &grpcUser.UploadAvatar{
@@ -261,13 +260,13 @@ func (userApp *UserApp) UpdateAvatar(userID int, file io.Reader, extension strin
 		}
 		err = stream.Send(req)
 		if err != nil {
-			log.Fatal("cannot send chunk to server: ", err)
+			return fmt.Errorf("cannot send chunk to server: \n%s", err)
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Fatal("cannot receive response: ", err)
+		return fmt.Errorf("cannot receive response: \n%s", err)
 	}
 
 	oldAvatarPath := user.Avatar

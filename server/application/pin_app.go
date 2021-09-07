@@ -9,7 +9,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
-	"log"
 	"pinterest/domain/entity"
 	grpcPins "pinterest/services/pins/proto"
 	"strings"
@@ -352,7 +351,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 	}
 	err = stream.Send(req)
 	if err != nil {
-		log.Fatal("cannot send image info to server: ", err, stream.RecvMsg(nil))
+		return fmt.Errorf("cannot send image info to server: \n%s\n%s", err, stream.RecvMsg(nil))
 	}
 	reader := bytes.NewReader(fileAsBytes)
 	buffer := make([]byte, 3.5*1024*1024) // jrpc cannot receive packages larger than 4 MB
@@ -363,7 +362,7 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 			break
 		}
 		if err != nil {
-			log.Fatal("cannot read chunk to buffer: ", err)
+			return fmt.Errorf("cannot read chunk to buffer: \n%s", err)
 		}
 
 		req = &grpcPins.UploadImage{
@@ -373,13 +372,13 @@ func (pinApp *PinApp) UploadPicture(pinID int, file io.Reader, extension string)
 		}
 		err = stream.Send(req)
 		if err != nil {
-			log.Fatal("cannot send chunk to server: ", err)
+			return fmt.Errorf("cannot send chunk to server: \n%s", err)
 		}
 	}
 
 	res, err := stream.CloseAndRecv()
 	if err != nil {
-		log.Fatal("cannot receive response: ", err)
+		return fmt.Errorf("cannot receive response: \n%s", err)
 	}
 
 	pin.ImageLink = res.Path
