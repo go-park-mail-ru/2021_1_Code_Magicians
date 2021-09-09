@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -47,7 +48,9 @@ func NoAuthMid(next http.HandlerFunc, cookieApp application.AuthAppInterface) ht
 // PanicMid logges error if handler errors
 func PanicMid(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL.String())
 		defer func() {
+			log.Printf("Done, %s", r.URL.String())
 			err := recover()
 			if err != nil {
 				logger.Info(err.(error).Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
