@@ -119,7 +119,7 @@ func (websocketApp *WebsocketApp) CheckToken(userID int, csrfToken string) error
 func sendMessage(client *websocket.Conn, message []byte) error { // Is not safe for concurrent use
 	w, err := client.NextWriter(websocket.TextMessage)
 	if err != nil {
-		return fmt.Errorf("Could not start writing")
+		return fmt.Errorf("Could not start writing, %s", err)
 	}
 
 	w.Write(message)
