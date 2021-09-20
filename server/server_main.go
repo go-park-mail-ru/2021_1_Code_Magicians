@@ -154,9 +154,9 @@ func runServer(addr string) {
 	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {
 	case "true":
-		allowedOrigins = append(allowedOrigins, "https://pinter-best.com:8081", "https://pinter-best.com", "https://127.0.0.1:8081")
+		allowedOrigins = append(allowedOrigins, "https://pinterbest.ru:8081", "https://pinterbest.ru", "https://127.0.0.1:8081", "https://10.114.0.2:8081")
 	case "false":
-		allowedOrigins = append(allowedOrigins, "http://pinter-best.com:8081", "http://pinter-best.com", "http://127.0.0.1:8081")
+		allowedOrigins = append(allowedOrigins, "http://pinterbest.ru:8081", "http://pinterbest.ru", "http://127.0.0.1:8081", "http://10.114.0.2:8081")
 	default:
 		sugarLogger.Fatal("HTTPS_ON variable is not set")
 	}
