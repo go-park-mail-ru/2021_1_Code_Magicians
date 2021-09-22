@@ -167,6 +167,7 @@ func runServer(addr string) {
 		AllowedOrigins:   allowedOrigins,
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		Debug: true,
 	})
 
 	handler := c.Handler(r)
