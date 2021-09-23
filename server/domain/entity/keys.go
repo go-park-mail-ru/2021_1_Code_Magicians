@@ -7,9 +7,9 @@ const CookieNameKey key = "session_id"
 
 const VkAuthURLKey key = "https://oauth.vk.com/"
 const VkAPIURLKey key = "https://api.vk.com/"
-const VkAuthenticateURLKey key = "https://pinter-best.com/login/callback"
-const VkAddTokenURLKey key = "https://pinter-best.com/add_vk/callback"
-const VkCreateUserURLKey key = "https://pinter-best.com/signup/callback"
+const VkAuthenticateURLKey key = "https://pinterbest.ru/login/callback"
+const VkAddTokenURLKey key = "https://pinterbest.ru/add_vk/callback"
+const VkCreateUserURLKey key = "https://pinterbest.ru/signup/callback"
 
 const IDKey key = "id"
 const UsernameKey key = "username"

@@ -102,7 +102,7 @@ func (commentInfo *CommentInfo) HandleGetComments(w http.ResponseWriter, r *http
 	pinComments, err := commentInfo.commentApp.GetComments(pinID)
 	if err != nil && err != entity.CommentsNotFoundError {
 		commentInfo.logger.Info(err.Error(), zap.String("url", r.RequestURI), zap.String("method", r.Method))
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 

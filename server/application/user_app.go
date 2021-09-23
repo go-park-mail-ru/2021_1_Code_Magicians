@@ -25,17 +25,16 @@ func NewUserApp(us grpcUser.UserClient, boardApp BoardAppInterface) *UserApp {
 }
 
 type UserAppInterface interface {
-	CreateUser(user *entity.User) (int, error) // Create user, returns created user's ID
-	CreateUserWithVK(tokenInput *entity.UserVkTokenInput,
-		redirectURI string) (int, error) // Create user using vk's info
-	SaveUser(user *entity.User) error                                // Save changed user to database
-	ChangePassword(user *entity.User) error                          // Change user's password
-	DeleteUser(userID int) error                                     // Delete user with passed userID from database
-	GetUser(userID int) (*entity.User, error)                        // Get user by his ID
-	GetUsers() ([]entity.User, error)                                // Get all users
-	GetUserByUsername(username string) (*entity.User, error)         // Get user by his username
-	UpdateAvatar(userID int, file io.Reader, extension string) error // Replace user's avatar with one passed as second parameter
-	SearchUsers(keywords string) ([]entity.User, error)              // Get all users by passed keywords
+	CreateUser(user *entity.User) (int, error)                         // Create user, returns created user's ID
+	CreateUserWithVK(tokenInput *entity.UserVkTokenInput) (int, error) // Create user using vk's info
+	SaveUser(user *entity.User) error                                  // Save changed user to database
+	ChangePassword(user *entity.User) error                            // Change user's password
+	DeleteUser(userID int) error                                       // Delete user with passed userID from database
+	GetUser(userID int) (*entity.User, error)                          // Get user by his ID
+	GetUsers() ([]entity.User, error)                                  // Get all users
+	GetUserByUsername(username string) (*entity.User, error)           // Get user by his username
+	UpdateAvatar(userID int, file io.Reader, extension string) error   // Replace user's avatar with one passed as second parameter
+	SearchUsers(keywords string) ([]entity.User, error)                // Get all users by passed keywords
 }
 
 // CreateUser adds new user to database with passed fields
@@ -54,8 +53,7 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 	initialBoard := &entity.Board{UserID: int(userID.Uid), Title: "Saved pins", Description: "Fast save"}
 	_, err = userApp.boardApp.CreateBoard(initialBoard)
 	if err != nil {
-
-		_ = userApp.DeleteUser(user.UserID)
+		userApp.DeleteUser(user.UserID)
 		return -1, err
 	}
 
@@ -64,7 +62,7 @@ func (userApp *UserApp) CreateUser(user *entity.User) (int, error) {
 
 // CreateUserWithVK add new user to database with fields from vk's response
 // It returns user's assigned ID and nil on success, any number and error on failure
-func (userApp *UserApp) CreateUserWithVK(tokenInput *entity.UserVkTokenInput, redirectURI string) (int, error) {
+func (userApp *UserApp) CreateUserWithVK(tokenInput *entity.UserVkTokenInput) (int, error) {
 	user, err := userApp.parseUserByVkToken(tokenInput)
 	if err != nil {
 		return -1, err

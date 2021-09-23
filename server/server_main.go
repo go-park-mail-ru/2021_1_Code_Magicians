@@ -151,7 +151,7 @@ func runServer(addr string) {
 	r := routing.CreateRouter(authApp, boardInfo, authInfo, profileInfo, followInfo, pinInfo, commentsInfo,
 		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true", os.Getenv("HTTPS_ON") == "true")
 
-	allowedOrigins := make([]string, 3) // If needed, replace 3 with number of needed origins
+	allowedOrigins := make([]string, 0) // If needed, replace 3 with number of needed origins
 	switch os.Getenv("HTTPS_ON") {
 	case "true":
 		allowedOrigins = append(allowedOrigins, "https://pinterbest.ru:8081", "https://pinterbest.ru",
