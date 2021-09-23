@@ -151,14 +151,14 @@ func runServer(addr string) {
 	r := routing.CreateRouter(authApp, boardInfo, authInfo, profileInfo, followInfo, pinInfo, commentsInfo,
 		websocketInfo, notificationInfo, chatInfo, os.Getenv("CSRF_ON") == "true", os.Getenv("HTTPS_ON") == "true")
 
-	allowedOrigins := make([]string, 0) // If needed, replace 3 with number of needed origins
+	allowedOrigins := make([]string, 0)
 	switch os.Getenv("HTTPS_ON") {
 	case "true":
 		allowedOrigins = append(allowedOrigins, "https://pinterbest.ru:8081", "https://pinterbest.ru",
-			"https://127.0.0.1:8081", "https://164.90.222.152:8081")
+			"https://127.0.0.1:8081", "https://164.90.222.152")
 	case "false":
 		allowedOrigins = append(allowedOrigins, "http://pinterbest.ru:8081", "http://pinterbest.ru",
-			"http://127.0.0.1:8081", "http://164.90.222.152:8081")
+			"http://127.0.0.1:8081", "http://164.90.222.152")
 	default:
 		sugarLogger.Fatal("HTTPS_ON variable is not set")
 	}
