@@ -76,7 +76,7 @@ jobs:
           username: ${{ secrets.SECRET_USERNAME }}
           key: ${{ secrets.PINTEREST_SSH }}
           script: |
-            cd /home/deploy/backend
+            cd /home/Backend
             sudo docker-compose -f docker-compose-no-monitoring.yaml down
 
             git checkout master
